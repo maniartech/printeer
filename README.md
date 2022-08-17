@@ -1,5 +1,5 @@
 
-# Print Web
+# Printeer
 
 Testing!
 Print web is a smiple npx utilities that prints the any webpage to PDF.
