@@ -1,5 +1,5 @@
-import printWeb from "./printweb";
-import printUsage from "./usage";
+import printWeb from "./print.js";
+import printUsage from "./usage.js";
 
 /**
  * Main entry point of the print-web command!
