@@ -10,7 +10,7 @@ var // networkidle0 - consider navigation to be finished when there are no more 
  * Generate the report.
  * @param {string} reportName The name of the report.
  * @returns The promise of the report file.
- */ $0e022d1b047ab8cc$export$2e2bcd8739ae039 = (url, outputFile, outputType = "pdf")=>{
+ */ $173d6c6c8da44cf1$export$2e2bcd8739ae039 = (url, outputFile, outputType = "pdf")=>{
     return new Promise(async (resolve, reject)=>{
         outputFile = (0, $eSn2T$normalize)(outputFile);
         const browser = await (0, $eSn2T$puppeteer).launch({
@@ -18,7 +18,7 @@ var // networkidle0 - consider navigation to be finished when there are no more 
         });
         const page = await browser.newPage();
         const res = await page.goto(url, {
-            waitUntil: "networkidle2"
+            waitUntil: "networkidle0"
         });
         if (!res) return reject(new Error("Could not load the page."));
         if (res.status() !== 200) reject(`Error: ${res.status()}: ${res.statusText()}`);
@@ -37,7 +37,7 @@ var // networkidle0 - consider navigation to be finished when there are no more 
 var /**
  * Prints the usage of the command line tool.
  */ $ca8fa687ca32fe66$export$2e2bcd8739ae039 = ()=>{
-    console.log("Usage: npx print-web <url> <outputFile>");
+    console.log("Usage: printeer <url> <outputFile>");
 };
 
 
@@ -54,7 +54,7 @@ var /**
         (0, $ca8fa687ca32fe66$export$2e2bcd8739ae039)();
         $eSn2T$exit(1);
     }
-    await (0, $0e022d1b047ab8cc$export$2e2bcd8739ae039)(url, outputFile);
+    await (0, $173d6c6c8da44cf1$export$2e2bcd8739ae039)(url, outputFile);
 })();
 
 

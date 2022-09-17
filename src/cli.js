@@ -1,4 +1,4 @@
-import printWeb from "./print.js";
+import printeer from "./printeer.js";
 import printUsage from "./usage.js";
 
 /**
@@ -17,6 +17,6 @@ import printUsage from "./usage.js";
     process.exit(1);
   }
 
-  await printWeb(url, outputFile);
+  await printeer(url, outputFile);
 
 })();

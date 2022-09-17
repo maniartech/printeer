@@ -9,7 +9,7 @@ var // networkidle0 - consider navigation to be finished when there are no more 
  * Generate the report.
  * @param {string} reportName The name of the report.
  * @returns The promise of the report file.
- */ $0e022d1b047ab8cc$export$2e2bcd8739ae039 = (url, outputFile, outputType = "pdf")=>{
+ */ $173d6c6c8da44cf1$export$2e2bcd8739ae039 = (url, outputFile, outputType = "pdf")=>{
     return new Promise(async (resolve, reject)=>{
         outputFile = (0, $l7i9T$normalize)(outputFile);
         const browser = await (0, $l7i9T$puppeteer).launch({
@@ -17,7 +17,7 @@ var // networkidle0 - consider navigation to be finished when there are no more 
         });
         const page = await browser.newPage();
         const res = await page.goto(url, {
-            waitUntil: "networkidle2"
+            waitUntil: "networkidle0"
         });
         if (!res) return reject(new Error("Could not load the page."));
         if (res.status() !== 200) reject(`Error: ${res.status()}: ${res.statusText()}`);
@@ -33,8 +33,8 @@ var // networkidle0 - consider navigation to be finished when there are no more 
 };
 
 
-const $cf838c15c8b009ba$export$472aaf7a87fdeecf = (0, $0e022d1b047ab8cc$export$2e2bcd8739ae039);
+const $cf838c15c8b009ba$export$4f653a8d4fdb37ed = (0, $173d6c6c8da44cf1$export$2e2bcd8739ae039);
 
 
-export {$cf838c15c8b009ba$export$472aaf7a87fdeecf as printWeb};
+export {$cf838c15c8b009ba$export$4f653a8d4fdb37ed as printeer};
 //# sourceMappingURL=index.js.map

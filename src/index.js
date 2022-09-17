@@ -1,4 +1,4 @@
-import _printWeb  from './printweb';
+import _printeer  from './printeer';
 
 
-export const printWeb = _printWeb;
+export const printeer = _printeer;
