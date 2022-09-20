@@ -15,6 +15,10 @@ export default (url, outputFile, outputType='pdf') => {
   return new Promise(async (resolve, reject) => {
     outputFile        = normalize(outputFile);
 
+    if (!url.startsWith('http')) {
+      throw new Error('URL must start with http or https');
+    }
+
     const browser = await puppeteer.launch({ headless: true });
     const page    = await browser.newPage();
     const res     = await page.goto(url, {waitUntil: 'networkidle0'});
