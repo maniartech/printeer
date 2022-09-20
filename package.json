@@ -1,10 +1,10 @@
 {
   "name": "printeer",
   "version": "1.1.4",
-  "description": "Prints the specified web url to PDF or Image!",
+  "description": "Prints specified web url to PDF (or Image - Coming Soon)!",
   "main": "index.js",
-  "repository": "git@github.com:maniartech/printweb.git",
-  "author": "Aamir Maniar <aamir.maniar@maniartech.com>",
+  "repository": "git@github.com:maniartech/printeer.git",
+  "author": "Mohamed Aamir Maniar <aamir.maniar@maniartech.com>",
   "license": "ISC",
   "type": "module",
   "bin": {
