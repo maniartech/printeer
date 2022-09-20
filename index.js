@@ -12,6 +12,7 @@ var // networkidle0 - consider navigation to be finished when there are no more 
  */ $173d6c6c8da44cf1$export$2e2bcd8739ae039 = (url, outputFile, outputType = "pdf")=>{
     return new Promise(async (resolve, reject)=>{
         outputFile = (0, $l7i9T$normalize)(outputFile);
+        if (!url.startsWith("http")) throw new Error("URL must start with http or https");
         const browser = await (0, $l7i9T$puppeteer).launch({
             headless: true
         });
