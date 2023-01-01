@@ -16,7 +16,7 @@
     "parcel": "parcel"
   },
   "dependencies": {
-    "puppeteer": "^16.1.0"
+    "puppeteer": "^19.4.1"
   },
   "devDependencies": {
     "assert": "^2.0.0",
