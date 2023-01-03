@@ -10,13 +10,13 @@ import { normalize } from 'path';
  * @param {string} reportName The name of the report.
  * @returns The promise of the report file.
  */
-export default (url, outputFile, outputType='pdf') => {
+export default (url, outputFile, outputType=null) => {
 
   return new Promise(async (resolve, reject) => {
     outputFile        = normalize(outputFile);
 
     if (!url.startsWith('http')) {
-      throw new Error('URL must start with http or https');
+      reject('URL must start with http or https');
     }
 
     const browser = await puppeteer.launch({ headless: true });
@@ -27,13 +27,32 @@ export default (url, outputFile, outputType='pdf') => {
       return reject(new Error("Could not load the page."));
     }
 
+    // Detect outputType
+    outputType = detectOutputType(outputFile, outputType);
+
     if (res.status() !== 200) {
       reject(`Error: ${res.status()}: ${res.statusText()}`);
     } else {
-      await page.pdf({ format: 'A4', path: outputFile });
+      if (outputType === 'png') {
+        await page.screenshot({ path: outputFile });
+      } else {
+        await page.pdf({ format: 'A4', path: outputFile });
+      }
       resolve(outputFile);
     }
     return await browser.close();
   })
+}
 
+function detectOutputType(fname, outputType) {
+  const validOutputTypes = ["pdf", "png"]
+
+  if (!outputType) {
+    const ext = fname.split('.').pop()
+    if (validOutputTypes.includes(ext)) { return ext }
+    return 'pdf'
+  }
+
+  if (!validOutputTypes.includes(outputType)) { return 'pdf' }
+  return outputType
 }

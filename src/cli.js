@@ -17,6 +17,11 @@ import printUsage from "./usage.js";
     process.exit(1);
   }
 
-  await printeer(url, outputFile);
-
+  // Wait for the printeer to finish.
+  try {
+    await printeer(url, outputFile);
+  } catch (e) {
+    console.error("Error:", e);
+    process.exit(1);
+  }
 })();
