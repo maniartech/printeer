@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // src/printeer.js
 import puppeteer from "puppeteer";
 import { normalize } from "path";

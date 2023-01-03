@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import printeer from "./printeer.js";
 import printUsage from "./usage.js";
 
