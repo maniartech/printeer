@@ -1,6 +1,5 @@
-import {argv as $eSn2T$argv, exit as $eSn2T$exit} from "process";
-import $eSn2T$puppeteer from "puppeteer";
-import {normalize as $eSn2T$normalize} from "path";
+import $l7i9T$puppeteer from "puppeteer";
+import {normalize as $l7i9T$normalize} from "path";
 
 
 
@@ -12,9 +11,9 @@ var // networkidle0 - consider navigation to be finished when there are no more 
  * @returns The promise of the report file.
  */ $173d6c6c8da44cf1$export$2e2bcd8739ae039 = (url, outputFile, outputType = "pdf")=>{
     return new Promise(async (resolve, reject)=>{
-        outputFile = (0, $eSn2T$normalize)(outputFile);
+        outputFile = (0, $l7i9T$normalize)(outputFile);
         if (!url.startsWith("http")) throw new Error("URL must start with http or https");
-        const browser = await (0, $eSn2T$puppeteer).launch({
+        const browser = await (0, $l7i9T$puppeteer).launch({
             headless: true
         });
         const page = await browser.newPage();
@@ -35,28 +34,8 @@ var // networkidle0 - consider navigation to be finished when there are no more 
 };
 
 
-var /**
- * Prints the usage of the command line tool.
- */ $ca8fa687ca32fe66$export$2e2bcd8739ae039 = ()=>{
-    console.log("Usage: printeer <url> <outputFile>");
-};
+const $cf838c15c8b009ba$export$4f653a8d4fdb37ed = (0, $173d6c6c8da44cf1$export$2e2bcd8739ae039);
 
 
-
-/**
- * Main entry point of the print-web command!
- */ (async function main() {
-    // First argument is the URL that should be used to generate the PDF.
-    // Second argument is the output file name.
-    const url = $eSn2T$argv[2];
-    const outputFile = $eSn2T$argv[3];
-    // If url or outputFile is not provided, print usage and exit.
-    if (!url || !outputFile) {
-        (0, $ca8fa687ca32fe66$export$2e2bcd8739ae039)();
-        $eSn2T$exit(1);
-    }
-    await (0, $173d6c6c8da44cf1$export$2e2bcd8739ae039)(url, outputFile);
-})();
-
-
+export {$cf838c15c8b009ba$export$4f653a8d4fdb37ed as printeer};
 //# sourceMappingURL=index.js.map
