@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-// src/printeer.js
+// src/printeer.ts
 import puppeteer from "puppeteer";
 import { normalize } from "path";
-var printeer_default = (url, outputFile, outputType = null) => {
+var printeer_default = async (url, outputFile, outputType = null) => {
+  getPackageJson();
   return new Promise(async (resolve, reject) => {
     outputFile = normalize(outputFile);
     if (!url.startsWith("http")) {
@@ -24,15 +25,22 @@ var printeer_default = (url, outputFile, outputType = null) => {
       } else {
         await page.pdf({ format: "A4", path: outputFile });
       }
+      outputFile = normalize(outputFile);
       resolve(outputFile);
     }
     return await browser.close();
   });
 };
+function getPackageJson() {
+  console.log("Process exec path", process.execPath);
+}
 function detectOutputType(fname, outputType) {
   const validOutputTypes = ["pdf", "png"];
   if (!outputType) {
     const ext = fname.split(".").pop();
+    if (!ext) {
+      return "pdf";
+    }
     if (validOutputTypes.includes(ext)) {
       return ext;
     }
@@ -44,12 +52,12 @@ function detectOutputType(fname, outputType) {
   return outputType;
 }
 
-// src/usage.js
+// src/usage.ts
 var usage_default = () => {
   console.log("Usage: printeer <url> <outputFile>");
 };
 
-// src/cli.js
+// src/cli.ts
 (async function main() {
   const url = process.argv[2];
   const outputFile = process.argv[3];
