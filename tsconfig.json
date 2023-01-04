@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2015",
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "moduleResolution": "node",
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "module": "NodeNext",
+  },
+  "files": [
+    "index.js",
+  ]
+}
