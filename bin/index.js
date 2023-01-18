@@ -20,10 +20,15 @@ var printeer_default = async (url, outputFile, outputType = null) => {
     if (!url.startsWith("http")) {
       reject("URL must start with http or https");
     }
-    const browser = await puppeteer.launch({
+    const launchOptions = {
       headless: true,
       args: isCurrentUserRoot() ? ["--no-sandbox", "--disable-setuid-sandbox"] : []
-    });
+    };
+    const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    if (exePath) {
+      launchOptions.executablePath = exePath;
+    }
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     const res = await page.goto(url, { waitUntil: "networkidle0" });
     if (!res) {

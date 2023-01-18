@@ -23,11 +23,22 @@ export default async (url:string, outputFile:string, outputType:string|null=null
       reject('URL must start with http or https');
     }
 
-    const browser = await puppeteer.launch({
+
+    const launchOptions:any = {
       headless: true,
       args: isCurrentUserRoot() ? ['--no-sandbox', '--disable-setuid-sandbox'] : []
-    });
+    }
 
+    // PUPPETEER_EXECUTABLE_PATH
+    // Read the environment variable PUPPETEER_EXECUTABLE_PATH and use it as the path to the executable.
+    // If the environment variable is not set, the default executable path is used.
+    const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    if (exePath) {
+      launchOptions.executablePath = exePath;
+    }
+
+
+    const browser = await puppeteer.launch(launchOptions);
     const page    = await browser.newPage();
     const res     = await page.goto(url, {waitUntil: 'networkidle0'});
 

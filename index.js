@@ -1,6 +1,16 @@
 // src/printeer.ts
 import puppeteer from "puppeteer";
 import { normalize } from "path";
+
+// src/utils.ts
+var isCurrentUserRoot = function() {
+  if (process && process.getuid) {
+    return process.getuid() == 0;
+  }
+  return false;
+};
+
+// src/printeer.ts
 var printeer_default = async (url, outputFile, outputType = null) => {
   getPackageJson();
   return new Promise(async (resolve, reject) => {
@@ -8,7 +18,15 @@ var printeer_default = async (url, outputFile, outputType = null) => {
     if (!url.startsWith("http")) {
       reject("URL must start with http or https");
     }
-    const browser = await puppeteer.launch({ headless: true });
+    const launchOptions = {
+      headless: true,
+      args: isCurrentUserRoot() ? ["--no-sandbox", "--disable-setuid-sandbox"] : []
+    };
+    const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    if (exePath) {
+      launchOptions.executablePath = exePath;
+    }
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     const res = await page.goto(url, { waitUntil: "networkidle0" });
     if (!res) {
