@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer';
 import { normalize } from 'path';
+import { isCurrentUserRoot } from './utils';
 
 
 // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms
@@ -15,8 +16,6 @@ export default async (url:string, outputFile:string, outputType:string|null=null
 
   getPackageJson();
 
-
-
   return new Promise(async (resolve, reject) => {
     outputFile        = normalize(outputFile);
 
@@ -24,7 +23,11 @@ export default async (url:string, outputFile:string, outputType:string|null=null
       reject('URL must start with http or https');
     }
 
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: isCurrentUserRoot() ? ['--no-sandbox', '--disable-setuid-sandbox'] : []
+    });
+
     const page    = await browser.newPage();
     const res     = await page.goto(url, {waitUntil: 'networkidle0'});
 
