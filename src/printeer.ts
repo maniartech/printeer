@@ -1,6 +1,5 @@
 import puppeteer from 'puppeteer';
 import { normalize } from 'path';
-import { isCurrentUserRoot } from './utils';
 
 
 // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms
@@ -18,15 +17,13 @@ export default async (url:string, outputFile:string, outputType:string|null=null
 
   return new Promise(async (resolve, reject) => {
     outputFile        = normalize(outputFile);
-
     if (!url.startsWith('http')) {
       reject('URL must start with http or https');
     }
 
-
     const launchOptions:any = {
       headless: true,
-      args: isCurrentUserRoot() ? ['--no-sandbox', '--disable-setuid-sandbox'] : []
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] // <- Handle this better, only for root users!
     }
 
     // PUPPETEER_EXECUTABLE_PATH
@@ -37,10 +34,22 @@ export default async (url:string, outputFile:string, outputType:string|null=null
       launchOptions.executablePath = exePath;
     }
 
+    console.log("Launch Options:", launchOptions)
 
-    const browser = await puppeteer.launch(launchOptions);
-    const page    = await browser.newPage();
-    const res     = await page.goto(url, {waitUntil: 'networkidle0'});
+    let res:any = null
+    let page:any = null
+    let browser:any = null
+
+    try {
+      browser = await puppeteer.launch(launchOptions);
+      page    = await browser.newPage();
+      res     = await page.goto(url, {waitUntil: 'networkidle0'});
+    } catch (err) {
+      console.error("Browser Launch Error:", err)
+      console.error("Browser Launch Options:", launchOptions)
+
+      return reject(err);
+    }
 
     if (!res) {
       return reject(new Error("Could not load the page."));
@@ -64,6 +73,7 @@ export default async (url:string, outputFile:string, outputType:string|null=null
 
       resolve(outputFile);
     }
+
     return await browser.close();
   })
 }
