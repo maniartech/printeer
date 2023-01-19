@@ -1,6 +1,6 @@
 {
   "name": "printeer",
-  "version": "1.2.6",
+  "version": "1.2.15",
   "description": "Prints specified web url to PDF (or Image - Coming Soon)!",
   "main": "index.js",
   "repository": "git@github.com:maniartech/printeer.git",
@@ -19,7 +19,7 @@
     "tsc": "tsc"
   },
   "dependencies": {
-    "puppeteer": "^19.4.1"
+    "puppeteer": "^19.5.2"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",

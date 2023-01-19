@@ -3,16 +3,6 @@
 // src/printeer.ts
 import puppeteer from "puppeteer";
 import { normalize } from "path";
-
-// src/utils.ts
-var isCurrentUserRoot = function() {
-  if (process && process.getuid) {
-    return process.getuid() == 0;
-  }
-  return false;
-};
-
-// src/printeer.ts
 var printeer_default = async (url, outputFile, outputType = null) => {
   getPackageJson();
   return new Promise(async (resolve, reject) => {
@@ -22,15 +12,25 @@ var printeer_default = async (url, outputFile, outputType = null) => {
     }
     const launchOptions = {
       headless: true,
-      args: isCurrentUserRoot() ? ["--no-sandbox", "--disable-setuid-sandbox"] : []
+      args: ["--no-sandbox", "--disable-setuid-sandbox"]
     };
     const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
     if (exePath) {
       launchOptions.executablePath = exePath;
     }
-    const browser = await puppeteer.launch(launchOptions);
-    const page = await browser.newPage();
-    const res = await page.goto(url, { waitUntil: "networkidle0" });
+    console.log("Launch Options:", launchOptions);
+    let res = null;
+    let page = null;
+    let browser = null;
+    try {
+      browser = await puppeteer.launch(launchOptions);
+      page = await browser.newPage();
+      res = await page.goto(url, { waitUntil: "networkidle0" });
+    } catch (err) {
+      console.error("Browser Launch Error:", err);
+      console.error("Browser Launch Options:", launchOptions);
+      return reject(err);
+    }
     if (!res) {
       return reject(new Error("Could not load the page."));
     }
