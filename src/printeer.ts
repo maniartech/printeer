@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer';
 import { normalize } from 'path';
+import { getDefaultBrowserOptions } from './utils';
 
 
 // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms
@@ -11,7 +12,7 @@ import { normalize } from 'path';
  * @param {string} reportName The name of the report.
  * @returns The promise of the report file.
  */
-export default async (url:string, outputFile:string, outputType:string|null=null) => {
+export default async (url:string, outputFile:string, outputType:string|null=null, browserOptions:any) => {
 
   getPackageJson();
 
@@ -21,9 +22,10 @@ export default async (url:string, outputFile:string, outputType:string|null=null
       reject('URL must start with http or https');
     }
 
-    const launchOptions:any = {
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] // <- Handle this better, only for root users!
+    let launchOptions:any = getDefaultBrowserOptions()
+
+    if (browserOptions) {
+      launchOptions  = { ...launchOptions, ...browserOptions}
     }
 
     // PUPPETEER_EXECUTABLE_PATH
@@ -33,8 +35,6 @@ export default async (url:string, outputFile:string, outputType:string|null=null
     if (exePath) {
       launchOptions.executablePath = exePath;
     }
-
-    console.log("Launch Options:", launchOptions)
 
     let res:any = null
     let page:any = null
