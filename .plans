@@ -1,0 +1,47 @@
+# Plans
+
+## Spreading the word about the project
+
+- [ ] Write a blog post about the project
+- [ ] Find the forums and QA sites where the project can be discussed
+- [ ] Find the mailing list where the project can be discussed
+- [ ] Find the platform where the project can be discussed
+
+## Writing the documentation
+
+- [ ] About command line interface
+- [ ] About library interface
+- [ ] About the configuration file
+
+## Find send to print node libraries for windows, linux and mac
+
+- [ ] Windows \
+      <https://www.npmjs.com/search?q=print+windows>`
+
+- [ ] Linux \
+      <https://www.npmjs.com/search?q=print+linux>`
+
+- [ ] Mac \
+      <https://www.npmjs.com/search?q=print+mac>`
+
+- [ ] unix-print \
+      <https://www.npmjs.com/package/unix-print>
+
+- [ ] pdf-printer \
+      <https://www.npmjs.com/package/pdf-to-printer>
+
+- [ ] node-printer \
+      <https://www.npmjs.com/package/node-printer>
+
+## Study the other similar projects
+
+- [ ] html-pdf \
+      <https://www.npmjs.com/package/html-pdf>
+- [ ] html-pdf-node \
+      <https://www.npmjs.com/package/html-pdf-node>
+
+## Forums and QA sites
+
+- HTML to PDF with Node.js \
+  <https://stackoverflow.com/questions/14552112/html-to-pdf-with-node-js>
+
