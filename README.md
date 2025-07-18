@@ -1,6 +1,8 @@
 
 # Printeer
 
+> ⚠️ The master branch is not stable. Use the latest release instead.
+
 Printeer is a litttle yet robust **print to PDF/PNG** utility. It employs Puppeteer, which makes it simple to print the website to PDF. It may be used as a command-line utility or a library. It does not yet support any print options yet. They will, however, be added in the future.
 
 It automatically detects the output format from the file extension. If the extension is `.pdf`, it will print to PDF. If the extension is `.png`, it will print to PNG. If the extension is anything else, it will print to PDF.
