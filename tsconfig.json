@@ -4,7 +4,7 @@
     "target": "ES2015",
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "emitDeclarationOnly": true,
     "declaration": true,
     "module": "NodeNext",
