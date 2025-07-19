@@ -16,66 +16,64 @@ export default async (url:string, outputFile:string, outputType:string|null=null
 
   getPackageJson();
 
-  return new Promise(async (resolve, reject) => {
-    outputFile        = normalize(outputFile);
-    if (!url.startsWith('http')) {
-      reject('URL must start with http or https');
-    }
+  outputFile = normalize(outputFile);
+  if (!url.startsWith('http')) {
+    throw new Error('URL must start with http or https');
+  }
 
-    let launchOptions:any = getDefaultBrowserOptions()
+  let launchOptions:any = getDefaultBrowserOptions()
 
-    if (browserOptions) {
-      launchOptions  = { ...launchOptions, ...browserOptions}
-    }
+  if (browserOptions) {
+    launchOptions  = { ...launchOptions, ...browserOptions}
+  }
 
-    // PUPPETEER_EXECUTABLE_PATH
-    // Read the environment variable PUPPETEER_EXECUTABLE_PATH and use it as the path to the executable.
-    // If the environment variable is not set, the default executable path is used.
-    const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    if (exePath) {
-      launchOptions.executablePath = exePath;
-    }
+  // PUPPETEER_EXECUTABLE_PATH
+  // Read the environment variable PUPPETEER_EXECUTABLE_PATH and use it as the path to the executable.
+  // If the environment variable is not set, the default executable path is used.
+  const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (exePath) {
+    launchOptions.executablePath = exePath;
+  }
 
-    let res:any = null
-    let page:any = null
-    let browser:any = null
+  let res:any = null
+  let page:any = null
+  let browser:unknown = null
 
-    try {
-      browser = await puppeteer.launch(launchOptions);
-      page    = await browser.newPage();
-      res     = await page.goto(url, {waitUntil: 'networkidle0'});
-    } catch (err) {
-      console.error("Browser Launch Error:", err)
-      console.error("Browser Launch Options:", launchOptions)
+  try {
+    browser = await puppeteer.launch(launchOptions);
+    page    = await browser.newPage();
+    res     = await page.goto(url, {waitUntil: 'networkidle0'});
+  } catch (err) {
+    console.error("Browser Launch Error:", err)
+    console.error("Browser Launch Options:", launchOptions)
+    throw err;
+  }
 
-      return reject(err);
-    }
+  if (!res) {
+    throw new Error("Could not load the page.");
+  }
 
-    if (!res) {
-      return reject(new Error("Could not load the page."));
-    }
+  // Detect outputType
+  outputType = detectOutputType(outputFile, outputType);
 
-    // Detect outputType
+  if (res.status() !== 200) {
+    throw new Error(`Error: ${res.status()}: ${res.statusText()}`);
+  }
 
-    outputType = detectOutputType(outputFile, outputType);
-
-    if (res.status() !== 200) {
-      reject(`Error: ${res.status()}: ${res.statusText()}`);
+  try {
+    if (outputType === 'png') {
+      await page.screenshot({ path: outputFile });
     } else {
-      if (outputType === 'png') {
-        await page.screenshot({ path: outputFile });
-      } else {
-        await page.pdf({ format: 'A4', path: outputFile });
-      }
-
-      // convert outputFile to absolute path
-      outputFile = normalize(outputFile);
-
-      resolve(outputFile);
+      await page.pdf({ format: 'A4', path: outputFile });
     }
 
-    return await browser.close();
-  })
+    // convert outputFile to absolute path
+    outputFile = normalize(outputFile);
+
+    return outputFile;
+  } finally {
+    await browser.close();
+  }
 }
 
 function getPackageJson() {
