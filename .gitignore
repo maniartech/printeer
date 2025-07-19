@@ -75,3 +75,11 @@ typings/
 # parcel-bundler cache (https://parceljs.org/)
 .parcel-cache
 .kiro
+.dist
+dist
+./bin
+
+# compile files in root dir
+*.js
+*.js.map
+*d.ts
