@@ -1,0 +1,47 @@
+{
+  "mode": "long-running",
+  "environment": "production",
+  "browser": {
+    "headless": true,
+    "timeout": 30000,
+    "args": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu"
+    ],
+    "pool": {
+      "min": 2,
+      "max": 8,
+      "idleTimeout": 300000
+    }
+  },
+  "resources": {
+    "maxMemoryMB": 2048,
+    "maxCpuPercent": 80,
+    "maxDiskMB": 1000,
+    "maxConcurrentRequests": 20
+  },
+  "longRunning": {
+    "coolingPeriodMs": 600000,
+    "healthCheckInterval": 30000,
+    "maxUptime": 86400000
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "destination": "console"
+  },
+  "security": {
+    "allowedDomains": [
+      "example.com",
+      "*.trusted-domain.com"
+    ],
+    "blockedDomains": [
+      "malicious.com",
+      "*.spam-domain.com"
+    ],
+    "maxFileSize": 10485760,
+    "sanitizeInput": true
+  }
+}
