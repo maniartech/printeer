@@ -248,7 +248,27 @@ export class DefaultBrowserManager implements BrowserManager {
 
   private async destroyBrowserInstance(browserInstance: BrowserInstance): Promise<void> {
     try {
+      const process = browserInstance.browser.process();
+
+      // Close browser gracefully first
       await browserInstance.browser.close();
+
+      // Wait for process termination and force kill if necessary
+      if (process && !process.killed) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Force kill if still alive
+        try {
+          if (!process.killed) {
+            process.kill('SIGKILL');
+            // Wait a bit more after force kill
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        } catch (error) {
+          // Process already dead, ignore
+        }
+      }
+
       this.pool.total--;
       this.pool.metrics.destroyed++;
     } catch (error) {
@@ -578,10 +598,15 @@ export class DefaultBrowserFactory implements BrowserFactory {
 
   getOptimalLaunchOptions(): unknown {
     const baseOptions = {
-      headless: true,
+      headless: true, // Always headless in tests and by default
       timeout: 30000,
       args: []
     };
+
+    // Force headless mode in test environment to prevent UI windows
+    if (process.env.NODE_ENV === 'test') {
+      baseOptions.headless = true;
+    }
 
     // Detect system Chrome/Chromium first
     const systemBrowserPath = this.detectSystemBrowser();
