@@ -9,22 +9,22 @@ import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from '
 export class DefaultDoctorModule implements DoctorModule {
   async runFullDiagnostics(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
-    
+
     // Run all diagnostic checks
     const systemDeps = await this.checkSystemDependencies();
     const browserValidation = await this.validateBrowserInstallation();
     const envCompatibility = await this.checkEnvironmentCompatibility();
-    
+
     results.push(...systemDeps);
     results.push(...browserValidation);
     results.push(...envCompatibility);
-    
+
     return results;
   }
 
   async checkSystemDependencies(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
-    
+
     // Check system information
     const systemInfo = this.getSystemEnvironment();
     results.push({
@@ -33,7 +33,7 @@ export class DefaultDoctorModule implements DoctorModule {
       message: `System: ${systemInfo.os} ${systemInfo.arch}, Node.js ${systemInfo.nodeVersion}`,
       details: systemInfo
     });
-    
+
     // Check browser availability
     const browserInfo = await this.getBrowserInfo();
     if (browserInfo.available) {
@@ -52,24 +52,24 @@ export class DefaultDoctorModule implements DoctorModule {
         details: browserInfo
       });
     }
-    
+
     // Check display server
     const displayServerResult = this.checkDisplayServer();
     results.push(displayServerResult);
-    
+
     // Check font availability
     const fontResult = this.checkFontAvailability();
     results.push(fontResult);
-    
+
     return results;
   }
 
   async validateBrowserInstallation(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
-    
+
     // Get browser info
     const browserInfo = await this.getBrowserInfo();
-    
+
     if (!browserInfo.available) {
       results.push({
         status: 'fail',
@@ -98,7 +98,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
   async testBrowserLaunch(): Promise<DiagnosticResult> {
     const browserInfo = await this.getBrowserInfo();
-    
+
     if (!browserInfo.available) {
       return {
         status: 'fail',
@@ -110,21 +110,21 @@ export class DefaultDoctorModule implements DoctorModule {
 
     // Test basic browser launch
     const basicLaunchResult = await this.testBasicBrowserLaunch(browserInfo);
-    
+
     // Test browser launch with fallback configurations
     const fallbackResults = await this.testFallbackConfigurations(browserInfo);
-    
+
     // Combine basic launch result with fallback results
     const allResults = [basicLaunchResult, ...fallbackResults];
     const passedConfigs = allResults.filter(r => r.status === 'pass');
-    
+
     if (passedConfigs.length === 0) {
       return {
         status: 'fail',
         component: 'browser-launch',
         message: 'All browser launch configurations failed',
         remediation: 'Check browser installation and system permissions',
-        details: { 
+        details: {
           basicLaunchResult,
           fallbackResults,
           allResults
@@ -136,7 +136,7 @@ export class DefaultDoctorModule implements DoctorModule {
       status: 'pass',
       component: 'browser-launch',
       message: `Browser launch successful (${passedConfigs.length}/${allResults.length} configurations work)`,
-      details: { 
+      details: {
         workingConfigurations: passedConfigs.length,
         totalConfigurations: allResults.length,
         basicLaunchResult,
@@ -148,7 +148,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
   async checkEnvironmentCompatibility(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
-    
+
     // Check platform compatibility
     const platformResult = this.checkPlatformCompatibility();
     results.push(platformResult);
@@ -170,7 +170,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
   async generateReport(): Promise<string> {
     const results = await this.runFullDiagnostics();
-    
+
     const report = this.formatDiagnosticReport(results);
     return report;
   }
@@ -180,14 +180,14 @@ export class DefaultDoctorModule implements DoctorModule {
     const passCount = results.filter(r => r.status === 'pass').length;
     const warnCount = results.filter(r => r.status === 'warn').length;
     const failCount = results.filter(r => r.status === 'fail').length;
-    
+
     let report = `# Printeer System Diagnostic Report\n\n`;
     report += `Generated: ${timestamp}\n\n`;
     report += `## Summary\n\n`;
     report += `- ✅ Passed: ${passCount}\n`;
     report += `- ⚠️  Warnings: ${warnCount}\n`;
     report += `- ❌ Failed: ${failCount}\n\n`;
-    
+
     if (failCount > 0) {
       report += `## Critical Issues\n\n`;
       const failedResults = results.filter(r => r.status === 'fail');
@@ -202,7 +202,7 @@ export class DefaultDoctorModule implements DoctorModule {
         }
       }
     }
-    
+
     if (warnCount > 0) {
       report += `## Warnings\n\n`;
       const warnResults = results.filter(r => r.status === 'warn');
@@ -217,7 +217,7 @@ export class DefaultDoctorModule implements DoctorModule {
         }
       }
     }
-    
+
     report += `## All Checks\n\n`;
     for (const result of results) {
       const icon = result.status === 'pass' ? '✅' : result.status === 'warn' ? '⚠️' : '❌';
@@ -228,7 +228,7 @@ export class DefaultDoctorModule implements DoctorModule {
         report += `**Action:** ${result.remediation}\n\n`;
       }
     }
-    
+
     return report;
   }
 
@@ -241,12 +241,12 @@ export class DefaultDoctorModule implements DoctorModule {
       warnings: results.filter(r => r.status === 'warn').length,
       failed: results.filter(r => r.status === 'fail').length
     };
-    
+
     const report = {
       summary,
       results
     };
-    
+
     return JSON.stringify(report, null, 2);
   }
 
@@ -315,7 +315,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private getSystemBrowserPaths(): string[] {
     const platform = os.platform();
-    
+
     switch (platform) {
       case 'win32':
         return [
@@ -344,8 +344,8 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private async getBrowserVersion(browserPath: string): Promise<string | null> {
     try {
-      const result = execSync(`"${browserPath}" --version`, { 
-        encoding: 'utf8', 
+      const result = execSync(`"${browserPath}" --version`, {
+        encoding: 'utf8',
         timeout: 5000,
         stdio: ['ignore', 'pipe', 'ignore']
       });
@@ -357,7 +357,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private checkDisplayServer(): DiagnosticResult {
     const platform = os.platform();
-    
+
     if (platform === 'win32' || platform === 'darwin') {
       return {
         status: 'pass',
@@ -370,7 +370,7 @@ export class DefaultDoctorModule implements DoctorModule {
     // Linux - check for display server
     const display = process.env.DISPLAY;
     const waylandDisplay = process.env.WAYLAND_DISPLAY;
-    
+
     if (display || waylandDisplay) {
       return {
         status: 'pass',
@@ -453,8 +453,8 @@ export class DefaultDoctorModule implements DoctorModule {
   private getFontFiles(dir: string): string[] {
     try {
       const files = fs.readdirSync(dir);
-      return files.filter(file => 
-        file.toLowerCase().endsWith('.ttf') || 
+      return files.filter(file =>
+        file.toLowerCase().endsWith('.ttf') ||
         file.toLowerCase().endsWith('.otf') ||
         file.toLowerCase().endsWith('.woff') ||
         file.toLowerCase().endsWith('.woff2')
@@ -470,7 +470,7 @@ export class DefaultDoctorModule implements DoctorModule {
       if (fs.existsSync('/.dockerenv')) {
         return true;
       }
-      
+
       // Check cgroup for docker
       const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
       return cgroup.includes('docker') || cgroup.includes('containerd');
@@ -481,11 +481,11 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private isHeadlessEnvironment(): boolean {
     const platform = os.platform();
-    
+
     if (platform === 'win32' || platform === 'darwin') {
       return false; // Assume GUI available on Windows/macOS
     }
-    
+
     // Linux - check for display
     return !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
   }
@@ -494,7 +494,7 @@ export class DefaultDoctorModule implements DoctorModule {
   private async testBasicBrowserLaunch(browserInfo: BrowserInfo): Promise<DiagnosticResult> {
     try {
       const puppeteer = await import('puppeteer');
-      
+
       const browser = await puppeteer.launch({
         executablePath: browserInfo.path,
         headless: true,
@@ -505,7 +505,7 @@ export class DefaultDoctorModule implements DoctorModule {
       const page = await browser.newPage();
       await page.goto('data:text/html,<h1>Test</h1>', { waitUntil: 'load' });
       const title = await page.title();
-      
+
       await browser.close();
 
       return {
@@ -527,7 +527,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private async testFallbackConfigurations(browserInfo: BrowserInfo): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
-    
+
     // Test different browser configurations
     const configurations = [
       {
@@ -560,12 +560,12 @@ export class DefaultDoctorModule implements DoctorModule {
   }
 
   private async testBrowserConfiguration(
-    browserInfo: BrowserInfo, 
+    browserInfo: BrowserInfo,
     config: { name: string; args: string[] }
   ): Promise<DiagnosticResult> {
     try {
       const puppeteer = await import('puppeteer');
-      
+
       const browser = await puppeteer.launch({
         executablePath: browserInfo.path,
         headless: true,
@@ -574,11 +574,11 @@ export class DefaultDoctorModule implements DoctorModule {
       });
 
       const page = await browser.newPage();
-      await page.goto('data:text/html,<h1>Config Test</h1>', { 
+      await page.goto('data:text/html,<h1>Config Test</h1>', {
         waitUntil: 'load',
         timeout: 5000
       });
-      
+
       await browser.close();
 
       return {
@@ -592,8 +592,8 @@ export class DefaultDoctorModule implements DoctorModule {
         status: 'fail',
         component: `browser-config-${config.name}`,
         message: `Browser configuration '${config.name}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        details: { 
-          configuration: config.name, 
+        details: {
+          configuration: config.name,
           args: config.args,
           error: error instanceof Error ? error.message : 'Unknown error'
         }
@@ -623,7 +623,7 @@ export class DefaultDoctorModule implements DoctorModule {
     }
 
     const majorVersion = parseInt(versionMatch[1], 10);
-    
+
     // Chrome/Chromium version compatibility check
     // Puppeteer generally supports Chrome 70+ (released in 2018)
     if (majorVersion >= 70) {
@@ -647,7 +647,7 @@ export class DefaultDoctorModule implements DoctorModule {
   private async testSandboxCapabilities(browserInfo: BrowserInfo): Promise<DiagnosticResult> {
     const platform = os.platform();
     const isRoot = this.isCurrentUserRoot();
-    
+
     // Test sandbox capabilities based on environment
     if (platform === 'linux' && isRoot) {
       return {
@@ -662,7 +662,7 @@ export class DefaultDoctorModule implements DoctorModule {
     // Test if browser can run with sandbox enabled
     try {
       const puppeteer = await import('puppeteer');
-      
+
       const browser = await puppeteer.launch({
         executablePath: browserInfo.path,
         headless: true,
@@ -682,7 +682,7 @@ export class DefaultDoctorModule implements DoctorModule {
       // Try with sandbox disabled
       try {
         const puppeteer = await import('puppeteer');
-        
+
         const browser = await puppeteer.launch({
           executablePath: browserInfo.path,
           headless: true,
@@ -697,9 +697,9 @@ export class DefaultDoctorModule implements DoctorModule {
           component: 'browser-sandbox',
           message: 'Browser requires sandbox to be disabled',
           remediation: 'This is normal in Docker containers or when running as root',
-          details: { 
-            platform, 
-            isRoot, 
+          details: {
+            platform,
+            isRoot,
             sandboxEnabled: false,
             sandboxError: error instanceof Error ? error.message : 'Unknown error'
           }
@@ -710,8 +710,8 @@ export class DefaultDoctorModule implements DoctorModule {
           component: 'browser-sandbox',
           message: 'Browser cannot launch with or without sandbox',
           remediation: 'Check browser installation and system configuration',
-          details: { 
-            platform, 
+          details: {
+            platform,
             isRoot,
             sandboxError: error instanceof Error ? error.message : 'Unknown error',
             fallbackError: fallbackError instanceof Error ? fallbackError.message : 'Unknown error'
@@ -724,10 +724,10 @@ export class DefaultDoctorModule implements DoctorModule {
   private checkPlatformCompatibility(): DiagnosticResult {
     const platform = os.platform();
     const arch = os.arch();
-    
+
     const supportedPlatforms = ['linux', 'win32', 'darwin'];
     const supportedArchs = ['x64', 'arm64'];
-    
+
     if (!supportedPlatforms.includes(platform)) {
       return {
         status: 'fail',
@@ -737,7 +737,7 @@ export class DefaultDoctorModule implements DoctorModule {
         details: { platform, arch, supportedPlatforms }
       };
     }
-    
+
     if (!supportedArchs.includes(arch)) {
       return {
         status: 'warn',
@@ -747,7 +747,7 @@ export class DefaultDoctorModule implements DoctorModule {
         details: { platform, arch, supportedArchs }
       };
     }
-    
+
     return {
       status: 'pass',
       component: 'platform-compatibility',
@@ -759,7 +759,7 @@ export class DefaultDoctorModule implements DoctorModule {
   private checkPermissions(): DiagnosticResult {
     const permissions: string[] = [];
     const issues: string[] = [];
-    
+
     // Check file system permissions
     try {
       const tempDir = os.tmpdir();
@@ -770,7 +770,7 @@ export class DefaultDoctorModule implements DoctorModule {
     } catch (error) {
       issues.push('Cannot write to temporary directory');
     }
-    
+
     // Check if running as root (security concern)
     const isRoot = this.isCurrentUserRoot();
     if (isRoot) {
@@ -778,7 +778,7 @@ export class DefaultDoctorModule implements DoctorModule {
     } else {
       permissions.push('non-root-user');
     }
-    
+
     // Check process permissions
     try {
       if (process.getuid && process.getgid) {
@@ -787,7 +787,7 @@ export class DefaultDoctorModule implements DoctorModule {
     } catch (error) {
       // Not available on Windows
     }
-    
+
     if (issues.length > 0) {
       return {
         status: 'warn',
@@ -797,7 +797,7 @@ export class DefaultDoctorModule implements DoctorModule {
         details: { permissions, issues, isRoot }
       };
     }
-    
+
     return {
       status: 'pass',
       component: 'permissions',
@@ -810,31 +810,31 @@ export class DefaultDoctorModule implements DoctorModule {
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
     const cpuCores = os.cpus().length;
-    
+
     const memoryGB = totalMemory / (1024 * 1024 * 1024);
     const freeMemoryGB = freeMemory / (1024 * 1024 * 1024);
-    
+
     const issues: string[] = [];
-    
+
     // Check minimum memory requirements (1GB total, 512MB free)
     if (memoryGB < 1) {
       issues.push('Low total memory (< 1GB)');
     }
-    
+
     if (freeMemoryGB < 0.5) {
       issues.push('Low available memory (< 512MB)');
     }
-    
+
     // Check CPU cores
     if (cpuCores < 2) {
       issues.push('Single CPU core may impact performance');
     }
-    
+
     const status = issues.length > 0 ? 'warn' : 'pass';
-    const message = issues.length > 0 
+    const message = issues.length > 0
       ? `Resource constraints detected: ${issues.join(', ')}`
       : `System resources adequate: ${memoryGB.toFixed(1)}GB RAM, ${cpuCores} CPU cores`;
-    
+
     return {
       status,
       component: 'resource-availability',
@@ -860,7 +860,7 @@ export class DefaultDoctorModule implements DoctorModule {
           else resolve(true);
         });
       });
-      
+
       return {
         status: 'pass',
         component: 'network-connectivity',
@@ -873,7 +873,7 @@ export class DefaultDoctorModule implements DoctorModule {
         component: 'network-connectivity',
         message: 'Network connectivity issues detected',
         remediation: 'Check network configuration for web content loading',
-        details: { 
+        details: {
           dnsResolution: false,
           error: error instanceof Error ? error.message : 'Unknown error'
         }
