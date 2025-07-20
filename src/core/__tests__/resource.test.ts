@@ -447,8 +447,13 @@ describe('DefaultCleanupManager', () => {
 
   describe('browser resource cleanup', () => {
     it('should call garbage collection', async () => {
+      // Mock console.warn to prevent error messages in test output
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
       await cleanupManager.cleanupBrowserResources();
       expect(mockGc).toHaveBeenCalled();
+      
+      consoleWarnSpy.mockRestore();
     });
 
     it('should cleanup browser temp directories', async () => {
@@ -1548,7 +1553,7 @@ describe('DefaultDiskSpaceManager', () => {
       mockReaddir.mockResolvedValue([
         'cache.tmp',
         'temp.temp'
-      ] as any);
+      ] as unknown);
 
       const recommendations = await diskManager.getRecommendedCleanupActions();
 
