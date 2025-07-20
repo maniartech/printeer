@@ -1542,7 +1542,7 @@ describe('DefaultDiskSpaceManager', () => {
       mockReaddir.mockResolvedValue([
         'puppeteer_dev_chrome_profile-123',
         'chrome_temp_456'
-      ] as any);
+      ] as unknown);
 
       const recommendations = await diskManager.getRecommendedCleanupActions();
 
@@ -1606,6 +1606,7 @@ describe('ResourceManager with Optimization Integration', () => {
   describe('resource optimization', () => {
     it('should optimize resources', async () => {
       const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
       resourceManager.startMonitoring(50);
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -1621,6 +1622,7 @@ describe('ResourceManager with Optimization Integration', () => {
 
       resourceManager.stopMonitoring();
       consoleInfoSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
 
     it('should get optimization recommendations', async () => {
