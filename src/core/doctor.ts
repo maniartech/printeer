@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo, ResourceInfo, DependencyInfo } from '../types/diagnostics';
+import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from '../types/diagnostics';
 
 export class DefaultDoctorModule implements DoctorModule {
   async runFullDiagnostics(): Promise<DiagnosticResult[]> {
@@ -117,7 +117,6 @@ export class DefaultDoctorModule implements DoctorModule {
     // Combine basic launch result with fallback results
     const allResults = [basicLaunchResult, ...fallbackResults];
     const passedConfigs = allResults.filter(r => r.status === 'pass');
-    const failedConfigs = allResults.filter(r => r.status === 'fail');
     
     if (passedConfigs.length === 0) {
       return {
