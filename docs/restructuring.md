@@ -18,6 +18,7 @@ This document captures the agreed classification of modules and a concrete, low-
 - When in doubt, use thin re-export barrels to maintain compatibility while clarifying ownership.
  - Domain-specific types must live under that domain's `types/` folder (e.g., `src/printing/types/*`). Keep only truly shared types under `src/types/`.
  - Tests must live under the project-root `tests/` folder, grouped by domain (e.g., `tests/printing/*.test.ts`). The `tests/` folder should be a sibling of `src/`.
+ - Contracts (interfaces) are domain-owned. Define domain-specific contracts under `src/{domain}/types/`. Avoid a central `src/interfaces/` folder; only keep truly shared contracts under `src/types/` if needed.
 
 ## Current classification (by concern)
 
@@ -59,12 +60,12 @@ This document captures the agreed classification of modules and a concrete, low-
 - src/core/doctor.ts
 - src/types/diagnostics.ts
 
-### Interfaces (process/command/service abstractions)
+### Contracts (domain-owned; relocate from src/interfaces to domain types)
 
-- src/interfaces/command-manager.ts
-- src/interfaces/process-manager.ts
-- src/interfaces/service.ts
-- src/interfaces/index.ts
+- src/interfaces/command-manager.ts → src/<domain>/types/command-manager.ts
+- src/interfaces/process-manager.ts → src/<domain>/types/process-manager.ts
+- src/interfaces/service.ts → src/<domain>/types/service.ts
+- src/interfaces/index.ts → temporary compatibility barrel only
 
 ### Utilities and errors
 
@@ -112,30 +113,25 @@ Within `src/`, group by domain; expose library APIs through `src/api/` and keep 
 		- manager.ts
 		- cli-config-loader.ts
 		- types/
-			- configuration.ts
+	- configuration.ts        # DTOs + contracts for config
 	- printing/           # printing browser + conversion pipeline
 		- index.ts
 		- browser.ts
 		- converter.ts
 		- types/
-			- browser.ts
-			- conversion.ts
+	- browser.ts              # DTOs + contracts for printing
+	- conversion.ts
 	- resources/          # resource handling + validation
 		- index.ts
 		- resource.ts
 		- validator.ts
 		- types/
-			- resource.ts
+	- resource.ts            # DTOs + contracts for resources
 	- diagnostics/
 		- index.ts
 		- doctor.ts
 		- types/
-			- diagnostics.ts
-	- interfaces/         # contracts only
-		- index.ts
-		- command-manager.ts
-		- process-manager.ts
-		- service.ts
+	- diagnostics.ts         # DTOs + contracts for diagnostics
 	- types/              # shared (cross-domain) DTOs and types only
 		- index.ts
 		- errors.ts
@@ -193,6 +189,13 @@ Transitional barrels: keep `src/index.ts` as the package entry that re-exports f
 
 - src/core/index.ts → remove after migration (covered by domain barrels)
 
+### Contracts relocation (interfaces → domain types)
+
+- src/interfaces/command-manager.ts → src/{domain}/types/command-manager.ts (assign to owning domain during migration)
+- src/interfaces/process-manager.ts → src/{domain}/types/process-manager.ts (assign to owning domain during migration)
+- src/interfaces/service.ts → src/{domain}/types/service.ts (assign to owning domain during migration)
+- src/interfaces/index.ts → temporary compatibility barrel re-exporting from their new domain locations; remove after imports are updated
+
 Tests should remain colocated under their domain folders (keep `__tests__` directories), adjusting import paths accordingly.
 
 ### Tests relocation (src → tests)
@@ -205,9 +208,9 @@ Tests should remain colocated under their domain folders (keep `__tests__` direc
 - src/core/__tests__/interfaces.test.ts → tests/interfaces/interfaces.test.ts
 - src/core/__tests__/resource.integration.test.ts → tests/resources/resource.integration.test.ts
 - src/core/__tests__/resource.test.ts → tests/resources/resource.test.ts
-- src/interfaces/__tests__/command-manager.test.ts → tests/interfaces/command-manager.test.ts
-- src/interfaces/__tests__/process-manager.test.ts → tests/interfaces/process-manager.test.ts
-- src/interfaces/__tests__/service.test.ts → tests/interfaces/service.test.ts
+- src/interfaces/__tests__/command-manager.test.ts → tests/{domain}/command-manager.test.ts (match contract's owning domain)
+- src/interfaces/__tests__/process-manager.test.ts → tests/{domain}/process-manager.test.ts (match owning domain)
+- src/interfaces/__tests__/service.test.ts → tests/{domain}/service.test.ts (match owning domain)
 - src/types/__tests__/browser.test.ts → tests/printing/browser.types.test.ts
 - src/types/__tests__/configuration.test.ts → tests/config/configuration.types.test.ts
 - src/types/__tests__/conversion.test.ts → tests/printing/conversion.types.test.ts
@@ -222,6 +225,7 @@ Tests should remain colocated under their domain folders (keep `__tests__` direc
 	- Temporary `src/core/*.ts` files can re-export from their new domain paths until all imports are updated.
 	- Alternatively, update imports and keep a compatibility `src/core/index.ts` that re-exports domain barrels.
 	- Move domain types first, then update imports to reference `<domain>/types/*` or the domain barrel.
+	- For contracts, add re-export shims in `src/interfaces/*.ts` pointing to their new domain types until all imports are updated.
 
 ## Phased migration plan
 
@@ -232,6 +236,7 @@ Tests should remain colocated under their domain folders (keep `__tests__` direc
 2. Move non-breaking items first
 	- Move `utils.ts`, `config/*`, `diagnostics/*` with re-exports left in the old locations (thin files) if needed.
 	- Move domain-specific types from `src/types/*` into `src/<domain>/types/*`. Keep cross-domain `errors.ts` in `src/types/`.
+	- Move contracts from `src/interfaces/*` into `src/<domain>/types/*` (select the owning domain). Leave compatibility re-exports in `src/interfaces/*` temporarily.
 
 3. Move printing and resources
 	- Move `core/browser.ts`, `core/converter.ts`, `core/resource.ts`, `core/resource-validator.ts` into their domains.
