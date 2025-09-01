@@ -93,3 +93,18 @@ export interface CleanupManager {
   scheduleCleanup(intervalMs: number): void;
   stopScheduledCleanup(): void;
 }
+
+export interface NetworkOptimizer {
+  optimizeBandwidthUsage(): Promise<void>;
+  enableCompressionStrategies(): Promise<void>;
+  optimizeResourceLoading(): Promise<void>;
+  isCompressionEnabled(): boolean;
+  isBandwidthThrottleEnabled(): boolean;
+  isResourceLoadingOptimized(): boolean;
+  resetOptimizations(): Promise<void>;
+  getNetworkOptimizationStatus(): {
+    compression: boolean;
+    bandwidthThrottle: boolean;
+    resourceLoading: boolean;
+  };
+}
