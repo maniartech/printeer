@@ -24,7 +24,7 @@ export class Options {
   detectOutputType(fname: string, outputType?: ValidOutputType | null): ValidOutputType {
     if (!outputType) {
       const ext = fname.split('.').pop();
-      if (ext && validOutputTypes.includes(ext as ValidOutputType)) { 
+      if (ext && validOutputTypes.includes(ext as ValidOutputType)) {
         return ext as ValidOutputType;
       }
       throw new Error(`Invalid output file name: ${fname}`);

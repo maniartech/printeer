@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ConfigurationManager } from '../config-manager.js';
-import type { Configuration } from '../../types/configuration.js';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -8,16 +7,35 @@ import { tmpdir } from 'os';
 describe('ConfigurationManager', () => {
   let configManager: ConfigurationManager;
   let tempDir: string;
-  let originalEnv: NodeJS.ProcessEnv;
+  let originalEnv: typeof process.env;
+
+  // Robust recursive removal for Windows where files can be briefly locked
+  async function removeDirWithRetry(dir: string, attempts = 5, delayMs = 100): Promise<void> {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        await rm(dir, { recursive: true, force: true });
+        return;
+      } catch (err: unknown) {
+        const codeVal = (err as { code?: unknown })?.code;
+        const code = typeof codeVal === 'string' ? codeVal : undefined;
+        // Retry on common transient Windows errors
+        if (code && ['ENOTEMPTY', 'EPERM', 'EBUSY'].includes(code) && i < attempts - 1) {
+          await new Promise(res => setTimeout(res, delayMs));
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
 
   beforeEach(async () => {
     // Create temporary directory for test configs
     tempDir = join(tmpdir(), `printeer-test-${Date.now()}`);
     await mkdir(tempDir, { recursive: true });
-    
+
     // Save original environment
     originalEnv = { ...process.env };
-    
+
     // Clear environment variables
     delete process.env.NODE_ENV;
     delete process.env.PRINTEER_ENV;
@@ -32,17 +50,17 @@ describe('ConfigurationManager', () => {
     delete process.env.PRINTEER_LOG_FORMAT;
     delete process.env.PRINTEER_ALLOWED_DOMAINS;
     delete process.env.PRINTEER_BLOCKED_DOMAINS;
-    
+
     configManager = new ConfigurationManager(tempDir);
   });
 
   afterEach(async () => {
     // Restore environment
     process.env = originalEnv;
-    
+
     // Cleanup
     configManager.destroy();
-    await rm(tempDir, { recursive: true, force: true });
+  await removeDirWithRetry(tempDir);
   });
 
   describe('Environment Detection', () => {
@@ -79,7 +97,7 @@ describe('ConfigurationManager', () => {
   describe('Default Configuration', () => {
     it('should load default configuration successfully', async () => {
       const config = await configManager.load();
-      
+
       expect(config).toBeDefined();
       expect(config.mode).toBe('single-shot');
       expect(config.environment).toBe('development');
@@ -93,22 +111,22 @@ describe('ConfigurationManager', () => {
     it('should have different defaults for production environment', async () => {
       process.env.NODE_ENV = 'production';
       configManager = new ConfigurationManager(tempDir);
-      
-      const config = await configManager.load();
-      
-      expect(config.environment).toBe('production');
-      expect(config.browser.headless).toBe(true);
-      expect(config.logging.format).toBe('json');
-      expect(config.logging.level).toBe('info');
-      expect(config.resources.maxMemoryMB).toBe(1024);
+
+  const config = await configManager.load();
+
+  expect(config.environment).toBe('production');
+  expect(config.browser.headless).toBe(true);
+  expect(config.logging.format).toBe('json');
+  expect(config.logging.level).toBe('info');
+  expect(config.resources.maxMemoryMB).toBe(1024);
     });
 
     it('should have different defaults for development environment', async () => {
       process.env.NODE_ENV = 'development';
       configManager = new ConfigurationManager(tempDir);
-      
+
       const config = await configManager.load();
-      
+
       expect(config.environment).toBe('development');
       expect(config.browser.headless).toBe('auto');
       expect(config.logging.format).toBe('text');
@@ -135,7 +153,7 @@ describe('ConfigurationManager', () => {
       );
 
       const config = await configManager.load();
-      
+
       expect(config.mode).toBe('long-running');
       expect(config.browser.timeout).toBe(60000);
       expect(config.logging.level).toBe('warn');
@@ -194,7 +212,7 @@ describe('ConfigurationManager', () => {
       // Create config file
       await writeFile(
         join(tempDir, 'printeer.config.json'),
-        JSON.stringify({ 
+        JSON.stringify({
           browser: { timeout: 30000 },
           logging: { level: 'info' }
         })
@@ -212,9 +230,9 @@ describe('ConfigurationManager', () => {
 
   describe('Configuration Validation', () => {
     it('should validate valid configuration', async () => {
-      const config = await configManager.load();
+      await configManager.load();
       const validation = configManager.validate();
-      
+
       expect(validation.valid).toBe(true);
       expect(validation.errors).toHaveLength(0);
     });
@@ -317,7 +335,7 @@ describe('ConfigurationManager', () => {
       expect(config.security.allowedDomains).toEqual(['example.com', '*.example.com', '*']);
     });
 
-    it('should generate warnings for potentially problematic values', async () => {
+  it('should generate warnings for potentially problematic values', async () => {
       await writeFile(
         join(tempDir, 'printeer.config.json'),
         JSON.stringify({
@@ -328,9 +346,9 @@ describe('ConfigurationManager', () => {
         })
       );
 
-      const config = await configManager.load();
+  await configManager.load();
       const validation = configManager.validate();
-      
+
       expect(validation.valid).toBe(true);
       expect(validation.warnings.length).toBeGreaterThan(0);
       expect(validation.warnings.some(w => w.includes('very low'))).toBe(true);
@@ -341,7 +359,7 @@ describe('ConfigurationManager', () => {
   describe('Configuration Access', () => {
     it('should get configuration values by key path', async () => {
       await configManager.load();
-      
+
       expect(configManager.get('mode')).toBe('single-shot');
       expect(configManager.get('browser.timeout')).toBe(30000);
       expect(configManager.get('browser.pool.max')).toBe(2);
@@ -350,7 +368,7 @@ describe('ConfigurationManager', () => {
 
     it('should throw error for non-existent keys', async () => {
       await configManager.load();
-      
+
       expect(() => configManager.get('nonexistent')).toThrow('Configuration key \'nonexistent\' not found');
       expect(() => configManager.get('browser.nonexistent')).toThrow('Configuration key \'browser.nonexistent\' not found');
     });
@@ -361,10 +379,10 @@ describe('ConfigurationManager', () => {
 
     it('should set configuration values by key path', async () => {
       await configManager.load();
-      
+
       configManager.set('browser.timeout', 45000);
       expect(configManager.get('browser.timeout')).toBe(45000);
-      
+
       configManager.set('new.nested.value', 'test');
       expect(configManager.get('new.nested.value')).toBe('test');
     });
@@ -395,20 +413,20 @@ describe('ConfigurationManager', () => {
   describe('Hot Reload', () => {
     it('should enable and disable hot reload without errors', async () => {
       await configManager.load();
-      
+
       expect(() => configManager.enableHotReload()).not.toThrow();
       expect(() => configManager.disableHotReload()).not.toThrow();
     });
 
     it('should not enable hot reload multiple times', async () => {
       await configManager.load();
-      
-      configManager.enableHotReload();
-      const watcherCount1 = (configManager as any).watchers.size;
-      
-      configManager.enableHotReload();
-      const watcherCount2 = (configManager as any).watchers.size;
-      
+
+  configManager.enableHotReload();
+  const watcherCount1 = (configManager as unknown as { watchers: Map<string, unknown> }).watchers.size;
+
+  configManager.enableHotReload();
+  const watcherCount2 = (configManager as unknown as { watchers: Map<string, unknown> }).watchers.size;
+
       expect(watcherCount1).toBe(watcherCount2);
     });
   });
@@ -448,7 +466,7 @@ describe('ConfigurationManager', () => {
     it('should handle file system errors gracefully', async () => {
       // Try to load from a directory that doesn't exist
       const invalidConfigManager = new ConfigurationManager('/nonexistent/path');
-      
+
       // Should not throw, should use defaults
       const config = await invalidConfigManager.load();
       expect(config).toBeDefined();
@@ -480,16 +498,18 @@ describe('ConfigurationManager', () => {
 
   describe('Cleanup', () => {
     it('should cleanup resources on destroy', async () => {
-      await configManager.load();
-      configManager.enableHotReload();
-      
-      expect((configManager as any).config).not.toBeNull();
-      expect((configManager as any).watchers.size).toBeGreaterThan(0);
-      
-      configManager.destroy();
-      
-      expect((configManager as any).config).toBeNull();
-      expect((configManager as unknown).watchers.size).toBe(0);
+  await configManager.load();
+  configManager.enableHotReload();
+
+  const internals1 = configManager as unknown as { config: unknown; watchers: Map<string, unknown> };
+  expect(internals1.config).not.toBeNull();
+  expect(internals1.watchers.size).toBeGreaterThan(0);
+
+  configManager.destroy();
+
+  const internals2 = configManager as unknown as { config: unknown; watchers: Map<string, unknown> };
+  expect(internals2.config).toBeNull();
+  expect(internals2.watchers.size).toBe(0);
     });
   });
 
@@ -533,7 +553,7 @@ describe('ConfigurationManager', () => {
       // Create config file
       await writeFile(
         join(tempDir, 'printeer.config.json'),
-        JSON.stringify({ 
+        JSON.stringify({
           browser: { timeout: 30000 },
           logging: { level: 'info' }
         })
@@ -555,7 +575,7 @@ describe('ConfigurationManager', () => {
       // Create config file
       await writeFile(
         join(tempDir, 'printeer.config.json'),
-        JSON.stringify({ 
+        JSON.stringify({
           browser: { timeout: 30000 },
           resources: { maxMemoryMB: 512 }
         })
@@ -626,7 +646,7 @@ describe('ConfigurationManager', () => {
     it('should prioritize PRINTEER_ENV over NODE_ENV', () => {
       process.env.NODE_ENV = 'production';
       process.env.PRINTEER_ENV = 'development';
-      
+
       // Create new instance to pick up environment changes
       const newConfigManager = new ConfigurationManager(tempDir);
       expect(newConfigManager.getEnvironment()).toBe('development');
@@ -638,7 +658,7 @@ describe('ConfigurationManager', () => {
       // Create config file (lowest precedence for this test)
       await writeFile(
         join(tempDir, 'printeer.config.json'),
-        JSON.stringify({ 
+        JSON.stringify({
           browser: { timeout: 10000 },
           logging: { level: 'error' },
           resources: { maxMemoryMB: 256 }
@@ -656,10 +676,10 @@ describe('ConfigurationManager', () => {
 
       // CLI should win
       expect(config.browser.timeout).toBe(30000);
-      
+
       // Env var should win over config file
       expect(config.logging.level).toBe('warn');
-      
+
       // Config file should be used when no override
       expect(config.resources.maxMemoryMB).toBe(256);
     });
@@ -674,7 +694,7 @@ describe('ConfigurationManager', () => {
       // Update config file
       await writeFile(
         join(tempDir, 'printeer.config.json'),
-        JSON.stringify({ 
+        JSON.stringify({
           browser: { timeout: 45000 },
           logging: { level: 'warn' }
         })
@@ -688,7 +708,7 @@ describe('ConfigurationManager', () => {
 
       // CLI should still take precedence
       expect(configManager.get('browser.timeout')).toBe(30000);
-      
+
       // But new values should be loaded
       expect(configManager.get('logging.level')).toBe('warn');
       expect(configManager.get('resources.maxMemoryMB')).toBe(1024);

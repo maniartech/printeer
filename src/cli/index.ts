@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 
-import printeer from "./printeer";
+import printeer from "../printeer";
 import printUsage from "./usage";
-import { DefaultDoctorModule } from "./core/doctor";
+import { DefaultDoctorModule } from "../core/doctor";
 
 /**
  * Main entry point of the print-web command!
  */
 (async function main() {
   const args = process.argv.slice(2);
-  
+
   // Handle doctor command
   if (args[0] === 'doctor') {
     await handleDoctorCommand(args.slice(1));
     return;
   }
-  
+
   // Handle help command
   if (args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
     printUsage();
     return;
   }
-  
+
   // Handle version command
   if (args[0] === 'version' || args[0] === '--version' || args[0] === '-v') {
     // Read version from package.json at runtime
@@ -60,18 +60,18 @@ import { DefaultDoctorModule } from "./core/doctor";
 async function handleDoctorCommand(args: string[]) {
   const json = args.includes('--json');
   const help = args.includes('--help') || args.includes('-h');
-  
+
   if (help) {
     printDoctorUsage();
     return;
   }
-  
+
   try {
     console.log('🔍 Running system diagnostics...\n');
-    
+
     const doctorModule = new DefaultDoctorModule();
     const results = await doctorModule.runFullDiagnostics();
-    
+
     if (json) {
       const jsonReport = doctorModule.formatDiagnosticReportJson(results);
       console.log(jsonReport);
@@ -79,11 +79,11 @@ async function handleDoctorCommand(args: string[]) {
       const report = await doctorModule.generateReport();
       console.log(report);
     }
-    
+
     // Exit with appropriate code
     const hasFailures = results.some(r => r.status === 'fail');
     const hasWarnings = results.some(r => r.status === 'warn');
-    
+
     if (hasFailures) {
       console.error('\n❌ Critical issues found. Please address the failures above.');
       process.exit(1);
@@ -94,7 +94,7 @@ async function handleDoctorCommand(args: string[]) {
       console.log('\n✅ All checks passed! Your system is ready for printeer.');
       process.exit(0);
     }
-    
+
   } catch (error) {
     console.error('❌ Error running diagnostics:', error instanceof Error ? error.message : 'Unknown error');
     process.exit(1);
@@ -116,7 +116,7 @@ OPTIONS:
 DESCRIPTION:
   The doctor command runs comprehensive system diagnostics to ensure
   your environment is properly configured for printeer. It checks:
-  
+
   • System dependencies (Node.js, OS compatibility)
   • Browser installation and availability
   • Display server configuration (for headless environments)
