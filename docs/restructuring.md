@@ -192,6 +192,61 @@ Transitional barrels: keep `src/index.ts` as the package entry that re-exports f
 - src/interfaces/service.ts → src/{domain}/types/service.ts (assign to owning domain during migration)
 - src/interfaces/index.ts → temporary compatibility barrel re-exporting from their new domain locations; remove after imports are updated
 
+## Complete source → target mapping (runtime code and types)
+
+This table supersedes the bullet lists above and covers all files under `src/` (excluding tests, which are in the next table).
+
+| Source | Target | Notes |
+| --- | --- | --- |
+| src/cli.ts | src/cli/index.ts | CLI entry |
+| src/options.ts | src/cli/options.ts | CLI options |
+| src/usage.ts | src/cli/usage.ts | CLI usage/help |
+| src/index.ts | src/index.ts | Thin re-export to ./api |
+| src/printeer.ts | src/api/index.ts | Library surface (not CLI); may re-export |
+| src/utils.ts | src/utils/index.ts | Moved into utils folder |
+| src/config.ts | src/config/index.ts | Config barrel/entry |
+| src/core/cli-config-loader.ts | src/config/cli-config-loader.ts | Config loader |
+| src/core/config-manager.ts | src/config/manager.ts | Config manager |
+| src/core/configuration.ts | src/config/configuration.ts | Config model |
+| src/core/browser.ts | src/printing/browser.ts | Printing/browser |
+| src/core/converter.ts | src/printing/converter.ts | Printing/conversion |
+| src/types/browser.ts | src/printing/types/browser.ts | Domain types |
+| src/types/conversion.ts | src/printing/types/conversion.ts | Domain types |
+| src/core/resource.ts | src/resources/resource.ts | Resource handling |
+| src/core/resource-validator.ts | src/resources/validator.ts | Resource validation |
+| src/types/resource.ts | src/resources/types/resource.ts | Domain types |
+| src/core/doctor.ts | src/diagnostics/doctor.ts | Diagnostics |
+| src/types/diagnostics.ts | src/diagnostics/types/diagnostics.ts | Domain types |
+| src/types/errors.ts | src/types/errors.ts | Shared type (unchanged) |
+| src/types/index.ts | src/types/index.ts | Shared barrel (unchanged) |
+| src/core/index.ts | — | Remove after migration (covered by domain barrels) |
+| src/interfaces/command-manager.ts | src/{domain}/types/command-manager.ts | Domain-owned contract; add temp re-export |
+| src/interfaces/process-manager.ts | src/{domain}/types/process-manager.ts | Domain-owned contract; add temp re-export |
+| src/interfaces/service.ts | src/{domain}/types/service.ts | Domain-owned contract; add temp re-export |
+| src/interfaces/index.ts | — | Temporary compatibility barrel; remove at end |
+
+## Tests: source → target mapping
+
+| Source test | Target test | Notes |
+| --- | --- | --- |
+| src/config.test.ts | tests/config/config.test.ts | Top-level config test |
+| src/core/__tests__/browser.test.ts | tests/printing/browser.test.ts | Printing |
+| src/core/__tests__/cli-config-loader.test.ts | tests/config/cli-config-loader.test.ts | Config |
+| src/core/__tests__/config-manager.test.ts | tests/config/config-manager.test.ts | Config |
+| src/core/__tests__/doctor.test.ts | tests/diagnostics/doctor.test.ts | Diagnostics |
+| src/core/__tests__/interfaces.test.ts | tests/{domain}/interfaces.test.ts | If applicable; otherwise split per contract |
+| src/core/__tests__/resource.integration.test.ts | tests/resources/resource.integration.test.ts | Resources |
+| src/core/__tests__/resource.test.ts | tests/resources/resource.test.ts | Resources |
+| src/interfaces/__tests__/command-manager.test.ts | tests/{domain}/command-manager.test.ts | Match contract’s owning domain |
+| src/interfaces/__tests__/process-manager.test.ts | tests/{domain}/process-manager.test.ts | Match owning domain |
+| src/interfaces/__tests__/service.test.ts | tests/{domain}/service.test.ts | Match owning domain |
+| src/types/__tests__/browser.test.ts | tests/printing/browser.types.test.ts | Printing types |
+| src/types/__tests__/configuration.test.ts | tests/config/configuration.types.test.ts | Config types |
+| src/types/__tests__/conversion.test.ts | tests/printing/conversion.types.test.ts | Printing types |
+| src/types/__tests__/diagnostics.test.ts | tests/diagnostics/diagnostics.types.test.ts | Diagnostics types |
+| src/types/__tests__/errors.test.ts | tests/shared/errors.types.test.ts | Shared types |
+| src/types/__tests__/resource.test.ts | tests/resources/resource.types.test.ts | Resources types |
+
 Tests should remain colocated under their domain folders (keep `__tests__` directories), adjusting import paths accordingly.
 
 ### Tests relocation (src → tests)
