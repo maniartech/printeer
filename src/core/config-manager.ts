@@ -6,8 +6,61 @@ import type {
   Configuration,
   Environment,
   ValidationResult,
-  ConfigurationManager as IConfigurationManager
+  ConfigurationManager as IConfigurationManager,
+  BrowserConfig,
+  ResourceLimits,
+  LoggingConfig,
+  SecurityConfig,
+  LongRunningConfig
 } from '../types/configuration.js';
+
+/**
+ * Helper function to merge browser config safely
+ */
+function mergeBrowserConfig(existing: Partial<BrowserConfig> | undefined, updates: Partial<BrowserConfig>): BrowserConfig {
+  return {
+    executablePath: updates.executablePath ?? existing?.executablePath,
+    headless: updates.headless ?? existing?.headless ?? 'auto',
+    args: updates.args ?? existing?.args ?? [],
+    timeout: updates.timeout ?? existing?.timeout ?? 30000,
+    pool: updates.pool ?? existing?.pool ?? { min: 0, max: 2, idleTimeout: 60000 }
+  };
+}
+
+/**
+ * Helper function to merge resource limits safely
+ */
+function mergeResourceLimits(existing: Partial<ResourceLimits> | undefined, updates: Partial<ResourceLimits>): ResourceLimits {
+  return {
+    maxMemoryMB: updates.maxMemoryMB ?? existing?.maxMemoryMB ?? 512,
+    maxCpuPercent: updates.maxCpuPercent ?? existing?.maxCpuPercent ?? 90,
+    maxDiskMB: updates.maxDiskMB ?? existing?.maxDiskMB ?? 100,
+    maxConcurrentRequests: updates.maxConcurrentRequests ?? existing?.maxConcurrentRequests ?? 3
+  };
+}
+
+/**
+ * Helper function to merge logging config safely
+ */
+function mergeLoggingConfig(existing: Partial<LoggingConfig> | undefined, updates: Partial<LoggingConfig>): LoggingConfig {
+  return {
+    level: updates.level ?? existing?.level ?? 'debug',
+    format: updates.format ?? existing?.format ?? 'text',
+    destination: updates.destination ?? existing?.destination ?? 'console'
+  };
+}
+
+/**
+ * Helper function to merge security config safely
+ */
+function mergeSecurityConfig(existing: Partial<SecurityConfig> | undefined, updates: Partial<SecurityConfig>): SecurityConfig {
+  return {
+    allowedDomains: updates.allowedDomains ?? existing?.allowedDomains,
+    blockedDomains: updates.blockedDomains ?? existing?.blockedDomains,
+    maxFileSize: updates.maxFileSize ?? existing?.maxFileSize ?? 10485760,
+    sanitizeInput: updates.sanitizeInput ?? existing?.sanitizeInput ?? true
+  };
+}
 
 /**
  * Configuration Manager - Handles loading, validation, and management of configuration
@@ -271,77 +324,67 @@ export class ConfigurationManager implements IConfigurationManager {
 
     // Browser configuration
     if (process.env.PRINTEER_BROWSER_EXECUTABLE) {
-      config.browser = {
-        ...config.browser,
+      config.browser = mergeBrowserConfig(config.browser, {
         executablePath: process.env.PRINTEER_BROWSER_EXECUTABLE
-      };
+      });
     }
 
     if (process.env.PRINTEER_BROWSER_HEADLESS) {
       const headless = process.env.PRINTEER_BROWSER_HEADLESS.toLowerCase();
-      config.browser = {
-        ...config.browser,
+      config.browser = mergeBrowserConfig(config.browser, {
         headless: headless === 'auto' ? 'auto' : headless === 'true'
-      };
+      });
     }
 
     if (process.env.PRINTEER_BROWSER_TIMEOUT) {
-      config.browser = {
-        ...config.browser,
+      config.browser = mergeBrowserConfig(config.browser, {
         timeout: parseInt(process.env.PRINTEER_BROWSER_TIMEOUT, 10)
-      };
+      });
     }
 
     // Resource limits
     if (process.env.PRINTEER_MAX_MEMORY_MB) {
-      config.resources = {
-        ...config.resources,
+      config.resources = mergeResourceLimits(config.resources, {
         maxMemoryMB: parseInt(process.env.PRINTEER_MAX_MEMORY_MB, 10)
-      };
+      });
     }
 
     if (process.env.PRINTEER_MAX_CPU_PERCENT) {
-      config.resources = {
-        ...config.resources,
+      config.resources = mergeResourceLimits(config.resources, {
         maxCpuPercent: parseInt(process.env.PRINTEER_MAX_CPU_PERCENT, 10)
-      };
+      });
     }
 
     if (process.env.PRINTEER_MAX_CONCURRENT_REQUESTS) {
-      config.resources = {
-        ...config.resources,
+      config.resources = mergeResourceLimits(config.resources, {
         maxConcurrentRequests: parseInt(process.env.PRINTEER_MAX_CONCURRENT_REQUESTS, 10)
-      };
+      });
     }
 
     // Logging
     if (process.env.PRINTEER_LOG_LEVEL) {
-      config.logging = {
-        ...config.logging,
+      config.logging = mergeLoggingConfig(config.logging, {
         level: process.env.PRINTEER_LOG_LEVEL as any
-      };
+      });
     }
 
     if (process.env.PRINTEER_LOG_FORMAT) {
-      config.logging = {
-        ...config.logging,
+      config.logging = mergeLoggingConfig(config.logging, {
         format: process.env.PRINTEER_LOG_FORMAT as any
-      };
+      });
     }
 
     // Security
     if (process.env.PRINTEER_ALLOWED_DOMAINS) {
-      config.security = {
-        ...config.security,
+      config.security = mergeSecurityConfig(config.security, {
         allowedDomains: process.env.PRINTEER_ALLOWED_DOMAINS.split(',').map(d => d.trim())
-      };
+      });
     }
 
     if (process.env.PRINTEER_BLOCKED_DOMAINS) {
-      config.security = {
-        ...config.security,
+      config.security = mergeSecurityConfig(config.security, {
         blockedDomains: process.env.PRINTEER_BLOCKED_DOMAINS.split(',').map(d => d.trim())
-      };
+      });
     }
 
     return config;

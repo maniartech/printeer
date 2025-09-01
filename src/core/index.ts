@@ -1,5 +1,5 @@
 // Core configuration management exports
-export { ConfigurationManager } from './config-manager.js';
+export { ConfigurationManager as DefaultConfigurationManagerImpl } from './config-manager.js';
 export { CliConfigLoader } from './cli-config-loader.js';
 
 // Doctor module exports

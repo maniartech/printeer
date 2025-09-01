@@ -7,7 +7,7 @@ import {
   BrowserFactory,
   BrowserPoolState
 } from '../types/browser';
-import { Browser } from 'puppeteer';
+import { Browser, PuppeteerLaunchOptions } from 'puppeteer';
 
 export class DefaultBrowserManager implements BrowserManager {
   private pool: BrowserPoolState;
@@ -538,7 +538,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
     for (const config of DefaultBrowserFactory.FALLBACK_CONFIGURATIONS) {
       try {
         const fallbackOptions = {
-          ...launchOptions,
+          ...(launchOptions as any),
           args: config.args
         };
 
@@ -573,7 +573,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
       });
 
       // Test basic page evaluation
-      const title = await page.evaluate(() => document.title);
+      const title = await page.evaluate(() => (globalThis as any).document.title);
 
       // Clean up test page
       await page.close();
@@ -596,8 +596,8 @@ export class DefaultBrowserFactory implements BrowserFactory {
     }
   }
 
-  getOptimalLaunchOptions(): unknown {
-    const baseOptions = {
+  getOptimalLaunchOptions(): PuppeteerLaunchOptions {
+    const baseOptions: PuppeteerLaunchOptions = {
       headless: true, // Always headless in tests and by default
       timeout: 30000,
       args: []
@@ -611,18 +611,18 @@ export class DefaultBrowserFactory implements BrowserFactory {
     // Detect system Chrome/Chromium first
     const systemBrowserPath = this.detectSystemBrowser();
     if (systemBrowserPath) {
-      baseOptions.executablePath = systemBrowserPath;
+      (baseOptions as any).executablePath = systemBrowserPath;
     }
 
     // Check for custom executable path
     const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
     if (customPath) {
-      baseOptions.executablePath = customPath;
+      (baseOptions as any).executablePath = customPath;
     }
 
     // Add environment-specific optimizations
     const optimizedArgs = this.getEnvironmentOptimizedArgs();
-    baseOptions.args = optimizedArgs;
+    (baseOptions as any).args = optimizedArgs;
 
     return baseOptions;
   }

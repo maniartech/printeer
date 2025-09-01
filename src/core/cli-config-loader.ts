@@ -1,4 +1,63 @@
-import type { Configuration } from '../types/configuration.js';
+import type { Configuration, BrowserConfig, ResourceLimits, LoggingConfig, SecurityConfig, LongRunningConfig } from '../types/configuration.js';
+
+/**
+ * Helper function to merge browser config safely
+ */
+function mergeBrowserConfig(existing: Partial<BrowserConfig> | undefined, updates: Partial<BrowserConfig>): BrowserConfig {
+  return {
+    executablePath: updates.executablePath ?? existing?.executablePath,
+    headless: updates.headless ?? existing?.headless ?? 'auto',
+    args: updates.args ?? existing?.args ?? [],
+    timeout: updates.timeout ?? existing?.timeout ?? 30000,
+    pool: updates.pool ?? existing?.pool ?? { min: 0, max: 2, idleTimeout: 60000 }
+  };
+}
+
+/**
+ * Helper function to merge resource limits safely
+ */
+function mergeResourceLimits(existing: Partial<ResourceLimits> | undefined, updates: Partial<ResourceLimits>): ResourceLimits {
+  return {
+    maxMemoryMB: updates.maxMemoryMB ?? existing?.maxMemoryMB ?? 512,
+    maxCpuPercent: updates.maxCpuPercent ?? existing?.maxCpuPercent ?? 90,
+    maxDiskMB: updates.maxDiskMB ?? existing?.maxDiskMB ?? 100,
+    maxConcurrentRequests: updates.maxConcurrentRequests ?? existing?.maxConcurrentRequests ?? 3
+  };
+}
+
+/**
+ * Helper function to merge logging config safely
+ */
+function mergeLoggingConfig(existing: Partial<LoggingConfig> | undefined, updates: Partial<LoggingConfig>): LoggingConfig {
+  return {
+    level: updates.level ?? existing?.level ?? 'debug',
+    format: updates.format ?? existing?.format ?? 'text',
+    destination: updates.destination ?? existing?.destination ?? 'console'
+  };
+}
+
+/**
+ * Helper function to merge security config safely
+ */
+function mergeSecurityConfig(existing: Partial<SecurityConfig> | undefined, updates: Partial<SecurityConfig>): SecurityConfig {
+  return {
+    allowedDomains: updates.allowedDomains ?? existing?.allowedDomains,
+    blockedDomains: updates.blockedDomains ?? existing?.blockedDomains,
+    maxFileSize: updates.maxFileSize ?? existing?.maxFileSize ?? 10485760,
+    sanitizeInput: updates.sanitizeInput ?? existing?.sanitizeInput ?? true
+  };
+}
+
+/**
+ * Helper function to merge long running config safely
+ */
+function mergeLongRunningConfig(existing: Partial<LongRunningConfig> | undefined, updates: Partial<LongRunningConfig>): LongRunningConfig {
+  return {
+    coolingPeriodMs: updates.coolingPeriodMs ?? existing?.coolingPeriodMs ?? 60000,
+    healthCheckInterval: updates.healthCheckInterval ?? existing?.healthCheckInterval ?? 10000,
+    maxUptime: updates.maxUptime ?? existing?.maxUptime ?? 3600000
+  };
+}
 
 /**
  * CLI Configuration Loader - Parses command line arguments into configuration overrides
@@ -32,136 +91,134 @@ export class CliConfigLoader {
           
         case '--headless':
           if (nextArg === 'auto') {
-            config.browser = { ...config.browser, headless: 'auto' };
+            config.browser = mergeBrowserConfig(config.browser, { headless: 'auto' });
             i++; // Skip next argument
           } else {
             // Boolean flag
-            config.browser = { ...config.browser, headless: true };
+            config.browser = mergeBrowserConfig(config.browser, { headless: true });
           }
           break;
           
         case '--no-headless':
-          config.browser = { ...config.browser, headless: false };
+          config.browser = mergeBrowserConfig(config.browser, { headless: false });
           break;
           
         case '--browser-timeout':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.browser = { ...config.browser, timeout: parseInt(nextArg, 10) };
+            config.browser = mergeBrowserConfig(config.browser, { timeout: parseInt(nextArg, 10) });
             i++; // Skip next argument
           }
           break;
           
         case '--browser-executable':
           if (nextArg) {
-            config.browser = { ...config.browser, executablePath: nextArg };
+            config.browser = mergeBrowserConfig(config.browser, { executablePath: nextArg });
             i++; // Skip next argument
           }
           break;
           
         case '--max-memory':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.resources = { ...config.resources, maxMemoryMB: parseInt(nextArg, 10) };
+            config.resources = mergeResourceLimits(config.resources, { maxMemoryMB: parseInt(nextArg, 10) });
             i++; // Skip next argument
           }
           break;
           
         case '--max-cpu':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.resources = { ...config.resources, maxCpuPercent: parseInt(nextArg, 10) };
+            config.resources = mergeResourceLimits(config.resources, { maxCpuPercent: parseInt(nextArg, 10) });
             i++; // Skip next argument
           }
           break;
           
         case '--max-concurrent':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.resources = { ...config.resources, maxConcurrentRequests: parseInt(nextArg, 10) };
+            config.resources = mergeResourceLimits(config.resources, { maxConcurrentRequests: parseInt(nextArg, 10) });
             i++; // Skip next argument
           }
           break;
           
         case '--log-level':
           if (nextArg && ['error', 'warn', 'info', 'debug'].includes(nextArg)) {
-            config.logging = { ...config.logging, level: nextArg as any };
+            config.logging = mergeLoggingConfig(config.logging, { level: nextArg as any });
             i++; // Skip next argument
           }
           break;
           
         case '--log-format':
           if (nextArg && ['json', 'text'].includes(nextArg)) {
-            config.logging = { ...config.logging, format: nextArg as any };
+            config.logging = mergeLoggingConfig(config.logging, { format: nextArg as any });
             i++; // Skip next argument
           }
           break;
           
         case '--log-destination':
           if (nextArg && ['console', 'file', 'both'].includes(nextArg)) {
-            config.logging = { ...config.logging, destination: nextArg as any };
+            config.logging = mergeLoggingConfig(config.logging, { destination: nextArg as any });
             i++; // Skip next argument
           }
           break;
           
         case '--allowed-domains':
           if (nextArg) {
-            config.security = { 
-              ...config.security, 
+            config.security = mergeSecurityConfig(config.security, { 
               allowedDomains: nextArg.split(',').map(d => d.trim()) 
-            };
+            });
             i++; // Skip next argument
           }
           break;
           
         case '--blocked-domains':
           if (nextArg) {
-            config.security = { 
-              ...config.security, 
+            config.security = mergeSecurityConfig(config.security, { 
               blockedDomains: nextArg.split(',').map(d => d.trim()) 
-            };
+            });
             i++; // Skip next argument
           }
           break;
           
         case '--cooling-period':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.longRunning = { ...config.longRunning, coolingPeriodMs: parseInt(nextArg, 10) };
+            config.longRunning = mergeLongRunningConfig(config.longRunning, { coolingPeriodMs: parseInt(nextArg, 10) });
             i++; // Skip next argument
           }
           break;
           
         case '--max-uptime':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.longRunning = { ...config.longRunning, maxUptime: parseInt(nextArg, 10) };
+            config.longRunning = mergeLongRunningConfig(config.longRunning, { maxUptime: parseInt(nextArg, 10) });
             i++; // Skip next argument
           }
           break;
           
         case '--pool-min':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.browser = { 
-              ...config.browser, 
-              pool: { ...config.browser?.pool, min: parseInt(nextArg, 10) } 
-            };
+            const currentPool = config.browser?.pool || { min: 0, max: 2, idleTimeout: 60000 };
+            config.browser = mergeBrowserConfig(config.browser, { 
+              pool: { ...currentPool, min: parseInt(nextArg, 10) } 
+            });
             i++; // Skip next argument
           }
           break;
           
         case '--pool-max':
           if (nextArg && !isNaN(parseInt(nextArg, 10))) {
-            config.browser = { 
-              ...config.browser, 
-              pool: { ...config.browser?.pool, max: parseInt(nextArg, 10) } 
-            };
+            const currentPool = config.browser?.pool || { min: 0, max: 2, idleTimeout: 60000 };
+            config.browser = mergeBrowserConfig(config.browser, { 
+              pool: { ...currentPool, max: parseInt(nextArg, 10) } 
+            });
             i++; // Skip next argument
           }
           break;
           
         case '--verbose':
         case '-v':
-          config.logging = { ...config.logging, level: 'debug' };
+          config.logging = mergeLoggingConfig(config.logging, { level: 'debug' });
           break;
           
         case '--quiet':
         case '-q':
-          config.logging = { ...config.logging, level: 'error' };
+          config.logging = mergeLoggingConfig(config.logging, { level: 'error' });
           break;
           
         case '--production':

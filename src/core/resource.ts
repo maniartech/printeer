@@ -4,12 +4,13 @@
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { ResourceLimits } from '../types/configuration';
 import {
   ResourceManager,
   ResourceMetrics,
   ResourcePressure,
   ResourceThresholds,
-  ResourceLimits,
+  ExtendedResourceLimits,
   ResourceLimitEnforcer,
   DegradationStrategy,
   ResourceOptimizer,
@@ -330,11 +331,11 @@ export class DefaultResourceManager implements ResourceManager {
 }
 
 export class DefaultResourceLimitEnforcer implements ResourceLimitEnforcer {
-  private limits: ResourceLimits;
+  private limits: ExtendedResourceLimits;
   private degradationStrategy: DefaultDegradationStrategy;
   private isDegradationEnabled = false;
 
-  constructor(limits?: Partial<ResourceLimits>) {
+  constructor(limits?: Partial<ExtendedResourceLimits>) {
     this.limits = {
       maxMemoryMB: 512,
       maxCpuPercent: 50,
@@ -347,11 +348,11 @@ export class DefaultResourceLimitEnforcer implements ResourceLimitEnforcer {
     this.degradationStrategy = new DefaultDegradationStrategy();
   }
 
-  setLimits(limits: Partial<ResourceLimits>): void {
+  setLimits(limits: Partial<ExtendedResourceLimits>): void {
     this.limits = { ...this.limits, ...limits };
   }
 
-  getLimits(): ResourceLimits {
+  getLimits(): ExtendedResourceLimits {
     return { ...this.limits };
   }
 
@@ -560,7 +561,7 @@ export class DefaultCleanupManager implements CleanupManager {
       const stats = await fs.stat(filePath);
 
       if (stats.isDirectory()) {
-        await fs.rmdir(filePath, { recursive: true });
+        await fs.rm(filePath, { recursive: true, force: true });
       } else {
         await fs.unlink(filePath);
       }
@@ -894,7 +895,7 @@ export class DefaultDiskSpaceManager implements DiskSpaceManager {
 
       if (stats.mtime.getTime() < cutoffTime) {
         if (stats.isDirectory()) {
-          await fs.rmdir(filePath, { recursive: true });
+          await fs.rm(filePath, { recursive: true, force: true });
         } else {
           await fs.unlink(filePath);
         }
@@ -912,7 +913,7 @@ export class DefaultDiskSpaceManager implements DiskSpaceManager {
 
       if (stats.size > maxSizeBytes) {
         if (stats.isDirectory()) {
-          await fs.rmdir(filePath, { recursive: true });
+          await fs.rm(filePath, { recursive: true, force: true });
         } else {
           await fs.unlink(filePath);
         }
@@ -970,11 +971,7 @@ export class DefaultNetworkOptimizer implements NetworkOptimizer {
     console.info('Network optimizations reset');
   }
 
-  getNetworkOptimizationStatus(): {
-    compression: boolean;
-    bandwidthThrottle: boolean;
-    resourceLoading: boolean;
-  } {
+  getOptimizationStatus(): { compression: boolean; bandwidthThrottle: boolean; resourceLoading: boolean } {
     return {
       compression: this.compressionEnabled,
       bandwidthThrottle: this.bandwidthThrottleEnabled,
