@@ -26,7 +26,7 @@ export interface ResourceThresholds {
   diskCritical: number;
 }
 
-export interface ResourceLimits {
+export interface ExtendedResourceLimits {
   maxMemoryMB: number;
   maxCpuPercent: number;
   maxDiskMB: number;
@@ -42,8 +42,8 @@ export interface DegradationStrategy {
 }
 
 export interface ResourceLimitEnforcer {
-  setLimits(limits: Partial<ResourceLimits>): void;
-  getLimits(): ResourceLimits;
+  setLimits(limits: Partial<ExtendedResourceLimits>): void;
+  getLimits(): ExtendedResourceLimits;
   checkLimitsViolation(metrics: ResourceMetrics): boolean;
   enforceLimits(metrics: ResourceMetrics): Promise<void>;
   enableGracefulDegradation(): Promise<void>;
