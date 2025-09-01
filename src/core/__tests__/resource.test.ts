@@ -2593,7 +2593,7 @@ describe('DefaultNetworkOptimizer', () => {
 
   describe('optimization status', () => {
     it('should return correct optimization status', async () => {
-      expect(networkOptimizer.getOptimizationStatus()).toEqual({
+      expect(networkOptimizer.getNetworkOptimizationStatus()).toEqual({
         compression: false,
         bandwidthThrottle: false,
         resourceLoading: false
@@ -2602,7 +2602,7 @@ describe('DefaultNetworkOptimizer', () => {
       await networkOptimizer.enableCompressionStrategies();
       await networkOptimizer.optimizeBandwidthUsage();
 
-      expect(networkOptimizer.getOptimizationStatus()).toEqual({
+      expect(networkOptimizer.getNetworkOptimizationStatus()).toEqual({
         compression: true,
         bandwidthThrottle: true,
         resourceLoading: false
@@ -2620,7 +2620,7 @@ describe('DefaultNetworkOptimizer', () => {
       // Reset optimizations
       await networkOptimizer.resetOptimizations();
 
-      expect(networkOptimizer.getOptimizationStatus()).toEqual({
+      expect(networkOptimizer.getNetworkOptimizationStatus()).toEqual({
         compression: false,
         bandwidthThrottle: false,
         resourceLoading: false

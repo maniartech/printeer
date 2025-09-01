@@ -2,10 +2,10 @@ import { readFile, access, watch } from 'fs/promises';
 import { resolve, join } from 'path';
 import { homedir } from 'os';
 import { FSWatcher } from 'fs';
-import type { 
-  Configuration, 
-  ConfigurationManager, 
-  ValidationResult, 
+import type {
+  Configuration,
+  ConfigurationManager,
+  ValidationResult,
   Environment,
   OperationMode,
   LogLevel,
@@ -22,17 +22,17 @@ export class EnvironmentDetector {
    */
   static detectEnvironment(): Environment {
     const nodeEnv = process.env.NODE_ENV?.toLowerCase();
-    
+
     // Check NODE_ENV first
     if (nodeEnv === 'production') return 'production';
     if (nodeEnv === 'test') return 'test';
     if (nodeEnv === 'development') return 'development';
-    
+
     // Check for test indicators
     if (process.env.CI || process.env.VITEST || process.env.JEST_WORKER_ID) {
       return 'test';
     }
-    
+
     // Check for production indicators
     if (process.env.NODE_ENV === undefined && (
       process.env.PM2_HOME ||
@@ -43,7 +43,7 @@ export class EnvironmentDetector {
     )) {
       return 'production';
     }
-    
+
     // Default to development
     return 'development';
   }
@@ -548,12 +548,12 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
 
     // Watch project configuration files
     const configFilePaths = await this.getWatchableConfigFiles();
-    
+
     for (const filePath of configFilePaths) {
       try {
         const watcher = await watch(filePath);
         this.fileWatchers.push(watcher as any);
-        
+
         // Set up async iterator to handle file changes
         this.watchConfigFile(watcher as any, filePath);
       } catch (error) {
@@ -635,7 +635,7 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
   private async watchConfigFile(watcher: any, filePath: string): Promise<void> {
     try {
       for await (const event of watcher) {
-        if ((event as unknown).eventType === 'change') {
+        if ((event as any).eventType === 'change') {
           this.debouncedReload();
         }
       }

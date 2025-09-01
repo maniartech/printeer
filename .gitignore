@@ -77,9 +77,6 @@ typings/
 .kiro
 .dist
 dist
-./bin
 
-# compile files in root dir
-*.js
-*.js.map
-*d.ts
+# Build output
+dist/

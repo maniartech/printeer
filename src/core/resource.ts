@@ -971,7 +971,7 @@ export class DefaultNetworkOptimizer implements NetworkOptimizer {
     console.info('Network optimizations reset');
   }
 
-  getOptimizationStatus(): { compression: boolean; bandwidthThrottle: boolean; resourceLoading: boolean } {
+  getNetworkOptimizationStatus(): { compression: boolean; bandwidthThrottle: boolean; resourceLoading: boolean } {
     return {
       compression: this.compressionEnabled,
       bandwidthThrottle: this.bandwidthThrottleEnabled,

@@ -2,20 +2,22 @@
   "name": "printeer",
   "version": "1.2.15",
   "description": "Prints specified web url to PDF (or Image - Coming Soon)!",
-  "main": "index.js",
+  "main": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
   "repository": "git@github.com:maniartech/printeer.git",
   "author": "Mohamed Aamir Maniar <aamir.maniar@maniartech.com>",
   "license": "ISC",
   "type": "module",
   "bin": {
-    "printeer": "bin/index.js"
+    "printeer": "./dist/bin/cli.js"
   },
   "scripts": {
     "esbuild": "esbuild",
-    "build-cli": "npm run esbuild -- ./src/cli.ts --outfile=./bin/index.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
-    "build-lib": "npm run esbuild -- ./src/index.ts --outfile=./index.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
-    "build-typings": "tsc --project tsconfig.build.json",
-    "build": "npm run build-lib && npm run build-cli && npm run build-typings",
+    "clean": "rm -rf dist",
+    "build:lib": "npm run esbuild -- ./src/index.ts --outfile=./dist/lib/index.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
+    "build:cli": "npm run esbuild -- ./src/cli.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
+    "build:types": "tsc --project tsconfig.build.json",
+    "build": "npm run clean && npm run build:lib && npm run build:cli && npm run build:types",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
