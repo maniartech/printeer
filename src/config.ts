@@ -275,7 +275,7 @@ export class ConfigurationLoader {
       mode: 'single-shot',
       environment,
       browser: {
-        headless: isHeadless ? true : 'auto',
+        headless: isTest || isHeadless,
         args: isProduction ? [
           '--no-sandbox',
           '--disable-setuid-sandbox',

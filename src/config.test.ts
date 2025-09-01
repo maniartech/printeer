@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { 
-  EnvironmentDetector, 
-  ConfigurationLoader, 
-  PrinteerConfigurationManager 
+import {
+  EnvironmentDetector,
+  ConfigurationLoader,
+  PrinteerConfigurationManager
 } from './config';
 import type { Configuration, Environment } from './types/configuration';
 
@@ -252,9 +252,9 @@ describe('ConfigurationLoader', () => {
           delete process.env[key];
         }
       });
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.mode).toBe('single-shot');
       expect(config.environment).toBeDefined();
       expect(config.browser).toBeDefined();
@@ -269,9 +269,9 @@ describe('ConfigurationLoader', () => {
       process.env.PRINTEER_BROWSER_TIMEOUT = '45000';
       process.env.PRINTEER_MAX_MEMORY_MB = '2048';
       process.env.PRINTEER_LOG_LEVEL = 'warn';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.mode).toBe('long-running');
       expect(config.browser.timeout).toBe(45000);
       expect(config.resources.maxMemoryMB).toBe(2048);
@@ -280,18 +280,18 @@ describe('ConfigurationLoader', () => {
 
     it('should parse browser args from environment variable', async () => {
       process.env.PRINTEER_BROWSER_ARGS = '--no-sandbox, --disable-gpu, --headless';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.browser.args).toEqual(['--no-sandbox', '--disable-gpu', '--headless']);
     });
 
     it('should parse domain lists from environment variables', async () => {
       process.env.PRINTEER_ALLOWED_DOMAINS = 'example.com, test.com, localhost';
       process.env.PRINTEER_BLOCKED_DOMAINS = 'malicious.com, spam.com';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.security.allowedDomains).toEqual(['example.com', 'test.com', 'localhost']);
       expect(config.security.blockedDomains).toEqual(['malicious.com', 'spam.com']);
     });
@@ -299,18 +299,18 @@ describe('ConfigurationLoader', () => {
     it('should handle boolean environment variables correctly', async () => {
       process.env.PRINTEER_BROWSER_HEADLESS = 'true';
       process.env.PRINTEER_SANITIZE_INPUT = 'false';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.browser.headless).toBe(true);
       expect(config.security.sanitizeInput).toBe(false);
     });
 
     it('should handle auto headless mode from environment', async () => {
       process.env.PRINTEER_BROWSER_HEADLESS = 'auto';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.browser.headless).toBe('auto');
     });
 
@@ -326,6 +326,7 @@ describe('ConfigurationLoader', () => {
         }
       };
 
+      await mkdir(tempDir, { recursive: true });
       await writeFile(
         join(tempDir, '.printeerrc.json'),
         JSON.stringify(projectConfig, null, 2)
@@ -337,7 +338,7 @@ describe('ConfigurationLoader', () => {
 
       try {
         const config = await ConfigurationLoader.loadConfiguration();
-        
+
         expect(config.mode).toBe('long-running');
         expect(config.browser.timeout).toBe(60000);
         expect(config.browser.args).toEqual(['--custom-arg']);
@@ -382,7 +383,7 @@ describe('ConfigurationLoader', () => {
         };
 
         const config = await ConfigurationLoader.loadConfiguration(cliArgs);
-        
+
         // CLI args should have highest priority
         expect(config.mode).toBe('long-running');
         expect(config.browser.timeout).toBe(60000);
@@ -393,9 +394,9 @@ describe('ConfigurationLoader', () => {
 
     it('should use environment-specific defaults', async () => {
       process.env.NODE_ENV = 'production';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.environment).toBe('production');
       expect(config.browser.args).toContain('--no-sandbox');
       expect(config.logging.format).toBe('json');
@@ -404,9 +405,9 @@ describe('ConfigurationLoader', () => {
 
     it('should use test environment defaults', async () => {
       process.env.NODE_ENV = 'test';
-      
+
       const config = await ConfigurationLoader.loadConfiguration();
-      
+
       expect(config.environment).toBe('test');
       expect(config.browser.timeout).toBe(10000);
       expect(config.logging.level).toBe('error');
@@ -423,7 +424,7 @@ describe('ConfigurationLoader', () => {
 
       try {
         const config = await ConfigurationLoader.loadConfiguration();
-        
+
         // Should still load with defaults when config file is invalid
         expect(config.mode).toBe('single-shot');
         expect(config.browser).toBeDefined();
@@ -450,11 +451,11 @@ describe('PrinteerConfigurationManager', () => {
   describe('load and get', () => {
     it('should load configuration and allow getting values', async () => {
       await configManager.load();
-      
+
       const mode = configManager.get<string>('mode');
       const browserTimeout = configManager.get<number>('browser.timeout');
       const poolMax = configManager.get<number>('browser.pool.max');
-      
+
       expect(mode).toBeDefined();
       expect(typeof browserTimeout).toBe('number');
       expect(typeof poolMax).toBe('number');
@@ -466,7 +467,7 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should throw error when getting non-existent key', async () => {
       await configManager.load();
-      
+
       expect(() => configManager.get('nonexistent.key')).toThrow("Configuration key 'nonexistent.key' not found");
     });
   });
@@ -474,17 +475,17 @@ describe('PrinteerConfigurationManager', () => {
   describe('set', () => {
     it('should allow setting configuration values', async () => {
       await configManager.load();
-      
+
       configManager.set('browser.timeout', 50000);
-      
+
       expect(configManager.get<number>('browser.timeout')).toBe(50000);
     });
 
     it('should create nested objects when setting deep keys', async () => {
       await configManager.load();
-      
+
       configManager.set('custom.nested.value', 'test');
-      
+
       expect(configManager.get<string>('custom.nested.value')).toBe('test');
     });
 
@@ -496,9 +497,9 @@ describe('PrinteerConfigurationManager', () => {
   describe('validate', () => {
     it('should validate a valid configuration', async () => {
       await configManager.load();
-      
+
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
     });
@@ -506,9 +507,9 @@ describe('PrinteerConfigurationManager', () => {
     it('should detect invalid operation mode', async () => {
       await configManager.load();
       configManager.set('mode', 'invalid-mode');
-      
+
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Operation mode must be "single-shot" or "long-running"');
     });
@@ -516,9 +517,9 @@ describe('PrinteerConfigurationManager', () => {
     it('should detect invalid environment', async () => {
       await configManager.load();
       configManager.set('environment', 'invalid-env');
-      
+
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Environment must be "development", "production", or "test"');
     });
@@ -526,9 +527,9 @@ describe('PrinteerConfigurationManager', () => {
     it('should detect negative browser timeout', async () => {
       await configManager.load();
       configManager.set('browser.timeout', -1000);
-      
+
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Browser timeout must be positive');
     });
@@ -537,9 +538,9 @@ describe('PrinteerConfigurationManager', () => {
       await configManager.load();
       configManager.set('browser.pool.min', 5);
       configManager.set('browser.pool.max', 2);
-      
+
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Browser pool maximum size must be greater than or equal to minimum size');
     });
@@ -549,9 +550,9 @@ describe('PrinteerConfigurationManager', () => {
       configManager.set('resources.maxMemoryMB', -100);
       configManager.set('resources.maxCpuPercent', 150);
       configManager.set('resources.maxConcurrentRequests', 0);
-      
+
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Maximum memory limit must be positive');
       expect(result.errors).toContain('Maximum CPU percentage must be between 1 and 100');
@@ -564,9 +565,9 @@ describe('PrinteerConfigurationManager', () => {
       configManager.set('resources.maxMemoryMB', 8192);
       configManager.set('environment', 'production');
       configManager.set('logging.level', 'debug');
-      
+
       const result = configManager.validate();
-      
+
       expect(result.warnings).toContain('Large browser pool size may consume significant resources');
       expect(result.warnings).toContain('High memory limit may affect system stability');
       expect(result.warnings).toContain('Debug logging in production may impact performance');
@@ -574,7 +575,7 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should return error when configuration not loaded', () => {
       const result = configManager.validate();
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('Configuration not loaded');
     });
@@ -584,13 +585,13 @@ describe('PrinteerConfigurationManager', () => {
     it('should return environment from loaded configuration', async () => {
       process.env.NODE_ENV = 'production';
       await configManager.load();
-      
+
       expect(configManager.getEnvironment()).toBe('production');
     });
 
     it('should detect environment even when configuration not loaded', () => {
       process.env.NODE_ENV = 'test';
-      
+
       expect(configManager.getEnvironment()).toBe('test');
     });
   });
@@ -598,30 +599,30 @@ describe('PrinteerConfigurationManager', () => {
   describe('reload and watchers', () => {
     it('should reload configuration and notify watchers', async () => {
       await configManager.load();
-      
+
       let watcherCalled = false;
       const watcher = () => { watcherCalled = true; };
-      
+
       configManager.onConfigChange(watcher);
-      
+
       process.env.PRINTEER_MODE = 'long-running';
       await configManager.reload();
-      
+
       expect(watcherCalled).toBe(true);
       expect(configManager.get<string>('mode')).toBe('long-running');
     });
 
     it('should remove watchers correctly', async () => {
       await configManager.load();
-      
+
       let watcherCalled = false;
       const watcher = () => { watcherCalled = true; };
-      
+
       configManager.onConfigChange(watcher);
       configManager.removeConfigWatcher(watcher);
-      
+
       await configManager.reload();
-      
+
       expect(watcherCalled).toBe(false);
     });
   });
@@ -645,22 +646,22 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should enable and disable hot-reloading', async () => {
       await configManager.load();
-      
+
       expect(configManager.isHotReloadEnabled()).toBe(false);
-      
+
       await configManager.enableHotReload();
       expect(configManager.isHotReloadEnabled()).toBe(true);
-      
+
       await configManager.disableHotReload();
       expect(configManager.isHotReloadEnabled()).toBe(false);
     });
 
     it('should not enable hot-reloading twice', async () => {
       await configManager.load();
-      
+
       await configManager.enableHotReload();
       expect(configManager.isHotReloadEnabled()).toBe(true);
-      
+
       // Should not throw or cause issues
       await configManager.enableHotReload();
       expect(configManager.isHotReloadEnabled()).toBe(true);
@@ -668,9 +669,9 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should handle disabling hot-reload when not enabled', async () => {
       await configManager.load();
-      
+
       expect(configManager.isHotReloadEnabled()).toBe(false);
-      
+
       // Should not throw or cause issues
       await configManager.disableHotReload();
       expect(configManager.isHotReloadEnabled()).toBe(false);
@@ -678,18 +679,18 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should cleanup properly', async () => {
       await configManager.load();
-      
+
       let watcherCalled = false;
       const watcher = () => { watcherCalled = true; };
       configManager.onConfigChange(watcher);
-      
+
       await configManager.enableHotReload();
       expect(configManager.isHotReloadEnabled()).toBe(true);
-      
+
       await configManager.cleanup();
-      
+
       expect(configManager.isHotReloadEnabled()).toBe(false);
-      
+
       // Watchers should be cleared
       await configManager.reload();
       expect(watcherCalled).toBe(false);
@@ -697,22 +698,22 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should handle file watching errors gracefully', async () => {
       await configManager.load();
-      
+
       // Create a config file in temp directory
       const configPath = join(tempDir, '.printeerrc.json');
       await writeFile(configPath, JSON.stringify({ mode: 'long-running' }));
-      
+
       const originalCwd = process.cwd;
       vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-      
+
       try {
         await configManager.enableHotReload();
         expect(configManager.isHotReloadEnabled()).toBe(true);
-        
+
         // Should handle cleanup gracefully even if files are deleted
         await rm(configPath, { force: true });
         await configManager.disableHotReload();
-        
+
         expect(configManager.isHotReloadEnabled()).toBe(false);
       } finally {
         vi.mocked(process.cwd).mockRestore();
@@ -721,15 +722,15 @@ describe('PrinteerConfigurationManager', () => {
 
     it('should handle non-existent config files gracefully', async () => {
       await configManager.load();
-      
+
       const originalCwd = process.cwd;
       vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-      
+
       try {
         // Should not throw even when no config files exist
         await configManager.enableHotReload();
         expect(configManager.isHotReloadEnabled()).toBe(true);
-        
+
         await configManager.disableHotReload();
         expect(configManager.isHotReloadEnabled()).toBe(false);
       } finally {
