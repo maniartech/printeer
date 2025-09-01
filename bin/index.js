@@ -61,7 +61,9 @@ var printeer_default = async (url, outputFile, outputType = null, browserOptions
     outputFile = normalize(outputFile);
     return outputFile;
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 };
 function getPackageJson() {
@@ -196,7 +198,6 @@ var DefaultDoctorModule = class {
     const fallbackResults = await this.testFallbackConfigurations(browserInfo);
     const allResults = [basicLaunchResult, ...fallbackResults];
     const passedConfigs = allResults.filter((r) => r.status === "pass");
-    const failedConfigs = allResults.filter((r) => r.status === "fail");
     if (passedConfigs.length === 0) {
       return {
         status: "fail",
