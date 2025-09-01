@@ -370,7 +370,7 @@ export class ConfigurationLoader {
       userConfig,
       projectConfig,
       envConfig,
-      cliArgs
+      cliArgs || null
     );
   }
 }
@@ -381,7 +381,7 @@ export class ConfigurationLoader {
 export class PrinteerConfigurationManager implements ConfigurationManager {
   private config: Configuration | null = null;
   private watchers: Array<() => void> = [];
-  private fileWatchers: FSWatcher[] = [];
+  private fileWatchers: any[] = [];
   private hotReloadEnabled = false;
   private reloadDebounceTimer: NodeJS.Timeout | null = null;
   private readonly RELOAD_DEBOUNCE_MS = 500;
@@ -555,7 +555,7 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
         this.fileWatchers.push(watcher as any);
         
         // Set up async iterator to handle file changes
-        this.watchConfigFile(watcher, filePath);
+        this.watchConfigFile(watcher as any, filePath);
       } catch (error) {
         // File doesn't exist or can't be watched, skip silently
         continue;
@@ -632,10 +632,10 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
   /**
    * Watch a specific configuration file for changes
    */
-  private async watchConfigFile(watcher: unknown, filePath: string): Promise<void> {
+  private async watchConfigFile(watcher: any, filePath: string): Promise<void> {
     try {
       for await (const event of watcher) {
-        if (event.eventType === 'change') {
+        if ((event as unknown).eventType === 'change') {
           this.debouncedReload();
         }
       }

@@ -37,7 +37,7 @@ export default async (url:string, outputFile:string, outputType:string|null=null
 
   let res:any = null
   let page:any = null
-  let browser:unknown = null
+  let browser: any = null
 
   try {
     browser = await puppeteer.launch(launchOptions);
@@ -72,7 +72,9 @@ export default async (url:string, outputFile:string, outputType:string|null=null
 
     return outputFile;
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 }
 
