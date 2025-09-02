@@ -625,7 +625,14 @@ export class DefaultBrowserFactory implements BrowserFactory {
 
     // Add environment-specific optimizations
     const optimizedArgs = this.getEnvironmentOptimizedArgs();
-    launchOptions.args = [...new Set([...(launchOptions.args || []), ...optimizedArgs])];
+    const alwaysArgs: string[] = [];
+    if (!(launchOptions.args || []).some(a => a.startsWith('--headless'))) {
+      alwaysArgs.push('--headless=new');
+    }
+    if (this.os.platform() === 'win32') {
+      alwaysArgs.push('--no-startup-window');
+    }
+    launchOptions.args = [...new Set([...(launchOptions.args || []), ...optimizedArgs, ...alwaysArgs])];
 
     return launchOptions;
   }

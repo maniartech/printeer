@@ -20,12 +20,23 @@ export class DefaultDoctorModule implements DoctorModule {
       options.executablePath = browserInfo.path;
     }
 
-    if (overrideArgs && overrideArgs.length) {
-      const baseArgs = Array.isArray(base.args) ? base.args : [];
-      // Merge and de-duplicate args while preserving order (base first)
-      const merged = [...baseArgs, ...overrideArgs];
-      options.args = Array.from(new Set(merged));
+    const baseArgs = Array.isArray(base.args) ? base.args : [];
+    const extraArgs: string[] = [];
+    // Belt-and-suspenders: ensure Chromium headless flags are present
+    // Puppeteer headless:true should suffice, but we also pass CLI flags to avoid any UI flashes on some platforms
+    if (!baseArgs.some(a => a.startsWith('--headless'))) {
+      extraArgs.push('--headless=new');
     }
+    if (process.platform === 'win32') {
+      // Prevent any startup window on Windows (harmless elsewhere but gated for safety)
+      extraArgs.push('--no-startup-window');
+    }
+
+    const mergedOnce = [...baseArgs, ...(overrideArgs || []), ...extraArgs];
+    options.args = Array.from(new Set(mergedOnce));
+
+  // Always force headless at API level as well
+  options.headless = true as unknown as boolean; // keep type compatibility across puppeteer versions
 
     return options;
   }

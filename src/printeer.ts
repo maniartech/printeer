@@ -35,6 +35,15 @@ export default async (url:string, outputFile:string, outputType:string|null=null
     launchOptions.executablePath = exePath;
   }
 
+  // Ensure fully headless behavior even if upstream toggles default
+  launchOptions.headless = true;
+  const baseArgs: string[] = Array.isArray(launchOptions.args) ? launchOptions.args : [];
+  const extraArgs = [
+    baseArgs.some((a:string)=>a.startsWith('--headless')) ? null : '--headless=new',
+    process.platform === 'win32' ? '--no-startup-window' : null
+  ].filter(Boolean) as string[];
+  launchOptions.args = Array.from(new Set([...baseArgs, ...extraArgs]));
+
   let res:any = null
   let page:any = null
   let browser: any = null
