@@ -8,11 +8,13 @@ import {
   BrowserPoolState
 } from '../types/browser';
 import { Browser, PuppeteerLaunchOptions } from 'puppeteer';
+import * as NodeFS from 'fs';
+import * as NodeOS from 'os';
 
 export class DefaultBrowserManager implements BrowserManager {
   private pool: BrowserPoolState;
   private factory: BrowserFactory;
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setInterval>;
   private isInitialized = false;
   private isShuttingDown = false;
 
@@ -448,7 +450,7 @@ export class DefaultBrowserManager implements BrowserManager {
     return `browser-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private getBrowserProcessId(browser: any): number | undefined {
+  private getBrowserProcessId(browser: Browser): number | undefined {
     try {
       // Try to get process ID from browser instance
       return browser.process()?.pid;
@@ -459,13 +461,13 @@ export class DefaultBrowserManager implements BrowserManager {
 }
 
 export class DefaultBrowserFactory implements BrowserFactory {
-  private fs: any;
-  private os: any;
+  private fs: typeof NodeFS;
+  private os: typeof NodeOS;
 
-  constructor(private config: PuppeteerLaunchOptions = {}, fs?: any, os?: any) {
+  constructor(private config: PuppeteerLaunchOptions = {}, fsImpl: typeof NodeFS = NodeFS, osImpl: typeof NodeOS = NodeOS) {
     // Allow dependency injection for testing
-    this.fs = fs || require('fs');
-    this.os = os || require('os');
+    this.fs = fsImpl;
+    this.os = osImpl;
   }
 
   private static readonly FALLBACK_CONFIGURATIONS = [
@@ -537,8 +539,8 @@ export class DefaultBrowserFactory implements BrowserFactory {
     // Try fallback configurations
     for (const config of DefaultBrowserFactory.FALLBACK_CONFIGURATIONS) {
       try {
-        const fallbackOptions = {
-          ...(launchOptions as any),
+        const fallbackOptions: PuppeteerLaunchOptions = {
+          ...launchOptions,
           args: config.args
         };
 
@@ -573,7 +575,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
       });
 
       // Test basic page evaluation
-      const title = await page.evaluate(() => (globalThis as any).document.title);
+  const title = await page.title();
 
       // Clean up test page
       await page.close();

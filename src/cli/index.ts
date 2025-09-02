@@ -61,6 +61,7 @@ import type { DiagnosticResult } from "../types/diagnostics";
 async function handleDoctorCommand(args: string[]) {
   const json = args.includes('--json');
   const help = args.includes('--help') || args.includes('-h');
+  const verbose = args.includes('--verbose') || args.includes('-v') || args.includes('--trace');
 
   if (help) {
     printDoctorUsage();
@@ -70,14 +71,18 @@ async function handleDoctorCommand(args: string[]) {
   try {
     console.log('🔍 Running system diagnostics...\n');
 
-    const doctorModule = new DefaultDoctorModule();
+    if (verbose) {
+      process.env.PRINTEER_DOCTOR_TRACE = '1';
+    }
+  const doctorModule = new DefaultDoctorModule();
   const results = await doctorModule.runFullDiagnostics();
 
     if (json) {
       const jsonReport = doctorModule.formatDiagnosticReportJson(results);
       console.log(jsonReport);
     } else {
-      const report = await doctorModule.generateReport();
+  // Use already computed results to avoid re-running diagnostics (and extra launches)
+  const report = doctorModule.formatDiagnosticReport(results);
       console.log(report);
       // Also print a concise, color-coded remediation guide for any issues
       printRemediationGuide(results);
