@@ -3,6 +3,7 @@
 import printeer from "../printeer";
 import printUsage from "./usage";
 import { DefaultDoctorModule } from "../core/doctor";
+import type { DiagnosticResult } from "../types/diagnostics";
 
 /**
  * Main entry point of the print-web command!
@@ -70,7 +71,7 @@ async function handleDoctorCommand(args: string[]) {
     console.log('🔍 Running system diagnostics...\n');
 
     const doctorModule = new DefaultDoctorModule();
-    const results = await doctorModule.runFullDiagnostics();
+  const results = await doctorModule.runFullDiagnostics();
 
     if (json) {
       const jsonReport = doctorModule.formatDiagnosticReportJson(results);
@@ -78,6 +79,8 @@ async function handleDoctorCommand(args: string[]) {
     } else {
       const report = await doctorModule.generateReport();
       console.log(report);
+      // Also print a concise, color-coded remediation guide for any issues
+      printRemediationGuide(results);
     }
 
     // Exit with appropriate code
@@ -131,4 +134,64 @@ EXAMPLES:
   printeer doctor --verbose          # Show detailed information
   printeer doctor --json             # Output in JSON format
 `);
+}
+
+// Simple ANSI color helpers (no external deps) with enable/disable logic
+const colorsEnabled = process.env.NO_COLOR ? false : Boolean(process.stdout && process.stdout.isTTY);
+const color = {
+  bold: (s: string) => colorsEnabled ? `\x1b[1m${s}\x1b[0m` : s,
+  red: (s: string) => colorsEnabled ? `\x1b[31m${s}\x1b[0m` : s,
+  yellow: (s: string) => colorsEnabled ? `\x1b[33m${s}\x1b[0m` : s,
+  green: (s: string) => colorsEnabled ? `\x1b[32m${s}\x1b[0m` : s,
+  cyan: (s: string) => colorsEnabled ? `\x1b[36m${s}\x1b[0m` : s,
+  dim: (s: string) => colorsEnabled ? `\x1b[2m${s}\x1b[0m` : s,
+};
+
+function printRemediationGuide(results: DiagnosticResult[]) {
+  const issues = results.filter(r => r.status !== 'pass');
+  if (issues.length === 0) return;
+
+  console.log("\n" + color.bold('Remediation Guide'));
+  for (const r of issues) {
+    const icon = r.status === 'fail' ? '❌' : '⚠️';
+    const titleColor = r.status === 'fail' ? color.red : color.yellow;
+    console.log(`\n${titleColor(`${icon} ${r.component.toUpperCase()}`)}`);
+    console.log(`  ${r.message}`);
+
+    if (r.remediation) {
+      console.log(`  ${color.green('Solution:')} ${r.remediation}`);
+    }
+
+    // Helpful tips for common scenarios
+    if (r.component === 'browser-availability' && r.status === 'fail') {
+      console.log(`  ${color.cyan('Tip:')} Set a custom Chrome/Chromium path via PUPPETEER_EXECUTABLE_PATH`);
+      console.log(color.dim('    bash:      export PUPPETEER_EXECUTABLE_PATH=/path/to/chrome'));
+      console.log(color.dim('    PowerShell: $Env:PUPPETEER_EXECUTABLE_PATH = "C:/Path/To/chrome.exe"'));
+    }
+
+    if (r.component === 'display-server' && r.status !== 'pass') {
+      console.log(`  ${color.cyan('Tip:')} On Linux, you can use Xvfb for headless GUIs:`);
+      console.log(color.dim('    sudo apt-get install -y xvfb'));
+      console.log(color.dim('    Xvfb :99 -screen 0 1280x800x24 & export DISPLAY=:99'));
+    }
+
+    if (r.component === 'browser-sandbox' && r.status === 'warn') {
+      console.log(`  ${color.cyan('Tip:')} In containers/root, launch with --no-sandbox --disable-setuid-sandbox.`);
+    }
+
+    // Optional compact details for quick context
+    if (r.details) {
+      const path = (r.details as Record<string, unknown>).path || (r.details as Record<string, unknown>).browserPath;
+      const source = (r.details as Record<string, unknown>).source;
+      const version = (r.details as Record<string, unknown>).version;
+      const ctxParts = [
+        path ? `path=${String(path)}` : null,
+        version ? `version=${String(version)}` : null,
+        source ? `source=${String(source)}` : null,
+      ].filter(Boolean);
+      if (ctxParts.length) {
+        console.log(color.dim('  context: ' + ctxParts.join('  ')));
+      }
+    }
+  }
 }
