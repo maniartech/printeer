@@ -520,6 +520,17 @@ export class DefaultBrowserFactory implements BrowserFactory {
     const puppeteer = await import('puppeteer');
     const launchOptions = this.getOptimalLaunchOptions();
 
+    // If bundled-only mode is enabled, force use of bundled Chromium
+    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === '1';
+    if (bundledOnly) {
+      try {
+        const bundledPath = puppeteer.executablePath();
+        launchOptions.executablePath = bundledPath;
+      } catch (error) {
+        throw new Error('Bundled Chromium not available and PRINTEER_BUNDLED_ONLY is set');
+      }
+    }
+
     // Try to launch browser with optimal configuration first
     try {
       const browser = await puppeteer.launch(launchOptions);
@@ -534,6 +545,11 @@ export class DefaultBrowserFactory implements BrowserFactory {
       await browser.close();
     } catch (error) {
       console.warn(`Failed to launch browser with optimal configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Skip fallback configurations if bundled-only mode is enabled
+    if (bundledOnly) {
+      throw new Error('Failed to launch bundled Chromium and PRINTEER_BUNDLED_ONLY is set');
     }
 
     // Try fallback configurations
@@ -613,16 +629,29 @@ export class DefaultBrowserFactory implements BrowserFactory {
       launchOptions.headless = true;
     }
 
-    // Detect system Chrome/Chromium first
-    const systemBrowserPath = this.detectSystemBrowser();
-    if (systemBrowserPath && !launchOptions.executablePath) {
-      launchOptions.executablePath = systemBrowserPath;
-    }
+    // Check if we should use bundled Chromium only
+    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === '1';
 
-    // Check for custom executable path from environment
-    const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    if (customPath) {
-      launchOptions.executablePath = customPath;
+    if (!bundledOnly) {
+      // Detect system Chrome/Chromium first (only if not bundled-only)
+      const systemBrowserPath = this.detectSystemBrowser();
+      if (systemBrowserPath && !launchOptions.executablePath) {
+        launchOptions.executablePath = systemBrowserPath;
+      }
+
+      // Check for custom executable path from environment
+      const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      if (customPath) {
+        launchOptions.executablePath = customPath;
+      }
+    } else {
+      // Force bundled Chromium in bundled-only mode
+      try {
+        // This will be set dynamically during browser launch to use bundled executable
+        // We don't set executablePath here to let Puppeteer use its default bundled browser
+      } catch (error) {
+        // If bundled Chromium is not available, this will fail during launch
+      }
     }
 
     // Add environment-specific optimizations

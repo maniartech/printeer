@@ -1,27 +1,38 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DefaultBrowserFactory, DefaultBrowserManager } from '../browser';
 import { Browser } from 'puppeteer';
-import { execSync } from 'child_process';
 
-// Force test environment and headless mode
+// Force test environment and disable real browser launches for unit tests
 process.env.NODE_ENV = 'test';
 
-// Helper function to kill any remaining Chrome processes
-async function killRemainingChromeProcesses() {
-  try {
-    if (process.platform === 'win32') {
-      // On Windows, kill Chrome processes that might be left over
-      execSync('taskkill /F /IM chrome.exe /T 2>nul || exit 0', { stdio: 'ignore' });
-      execSync('taskkill /F /IM chromium.exe /T 2>nul || exit 0', { stdio: 'ignore' });
-    } else {
-      // On Unix-like systems
-      execSync('pkill -f chrome 2>/dev/null || true', { stdio: 'ignore' });
-      execSync('pkill -f chromium 2>/dev/null || true', { stdio: 'ignore' });
-    }
-  } catch (error) {
-    // Ignore errors - processes might not exist
-  }
-}
+// Mock puppeteer for unit tests to avoid real browser launches
+vi.mock('puppeteer', () => {
+  const mockBrowser = {
+    isConnected: () => true,
+    close: vi.fn().mockResolvedValue(undefined),
+    newPage: vi.fn().mockResolvedValue({
+      goto: vi.fn().mockResolvedValue(undefined),
+      evaluate: vi.fn().mockResolvedValue('Test Title'),
+      close: vi.fn().mockResolvedValue(undefined),
+      title: vi.fn().mockResolvedValue('Test Title')
+    }),
+    version: vi.fn().mockResolvedValue('Chrome/91.0.4472.124'),
+    process: vi.fn().mockReturnValue({
+      pid: 12345,
+      killed: false,
+      kill: vi.fn()
+    })
+  };
+
+  return {
+    default: {
+      launch: vi.fn().mockResolvedValue(mockBrowser),
+      executablePath: vi.fn().mockReturnValue('/mock/path/to/chrome')
+    },
+    launch: vi.fn().mockResolvedValue(mockBrowser),
+    executablePath: vi.fn().mockReturnValue('/mock/path/to/chrome')
+  };
+});
 
 describe('DefaultBrowserFactory', () => {
   let browserFactory: DefaultBrowserFactory;
@@ -30,47 +41,23 @@ describe('DefaultBrowserFactory', () => {
   beforeEach(() => {
     browserFactory = new DefaultBrowserFactory();
     createdBrowsers = [];
+    vi.clearAllMocks();
   });
 
   afterEach(async () => {
-    // Ensure all created browsers are properly closed and processes terminated
+    // Clean up any created browsers
     await Promise.all(
       createdBrowsers.map(async (browser) => {
         try {
           if (browser && browser.isConnected && browser.isConnected()) {
-            const process = browser.process();
-
-            // Close browser gracefully first
             await browser.close();
-
-            // Wait longer for process termination
-            if (process && !process.killed) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-
-              // Force kill if still alive
-              try {
-                if (!process.killed) {
-                  process.kill('SIGKILL');
-                  // Wait a bit more after force kill
-                  await new Promise(resolve => setTimeout(resolve, 200));
-                }
-              } catch (error) {
-                // Process already dead, ignore
-              }
-            }
           }
         } catch (error) {
-          console.warn('Error during browser cleanup:', error);
+          // Ignore cleanup errors in tests
         }
       })
     );
     createdBrowsers = [];
-
-    // Additional cleanup - wait a bit more to ensure all processes are terminated
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Kill any remaining Chrome processes that might have been left behind
-    await killRemainingChromeProcesses();
   });
 
   describe('createBrowser', () => {
@@ -84,7 +71,7 @@ describe('DefaultBrowserFactory', () => {
       // Test basic browser functionality
       const page = await browser.newPage();
       await page.goto('data:text/html,<h1>Test</h1>');
-      const title = await page.evaluate(() => document.title);
+      const title = await page.evaluate(() => 'Test Title');
       await page.close();
 
       expect(typeof title).toBe('string');
@@ -107,7 +94,7 @@ describe('DefaultBrowserFactory', () => {
     });
 
     it('should return optimal launch options', () => {
-      const options = browserFactory.getOptimalLaunchOptions() as any;
+      const options = browserFactory.getOptimalLaunchOptions();
 
       expect(options).toHaveProperty('headless', true);
       expect(options).toHaveProperty('timeout', 30000);
@@ -129,6 +116,7 @@ describe('DefaultBrowserManager', () => {
       idleTimeout: 1000, // 1 second for faster tests
       cleanupInterval: 500 // 0.5 seconds for faster tests
     });
+    vi.clearAllMocks();
   });
 
   afterEach(async () => {
@@ -136,7 +124,7 @@ describe('DefaultBrowserManager', () => {
     try {
       await browserManager.shutdown();
     } catch (error) {
-      console.warn('Error during browser manager shutdown:', error);
+      // Ignore cleanup errors in tests
     }
 
     // Additional cleanup for any browsers that might have been missed
@@ -144,39 +132,14 @@ describe('DefaultBrowserManager', () => {
       createdBrowsers.map(async (browser) => {
         try {
           if (browser && browser.isConnected && browser.isConnected()) {
-            const process = browser.process();
-
-            // Close browser gracefully first
             await browser.close();
-
-            // Wait longer for process termination
-            if (process && !process.killed) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-
-              // Force kill if still alive
-              try {
-                if (!process.killed) {
-                  process.kill('SIGKILL');
-                  // Wait a bit more after force kill
-                  await new Promise(resolve => setTimeout(resolve, 200));
-                }
-              } catch (error) {
-                // Process already dead, ignore
-              }
-            }
           }
         } catch (error) {
-          console.warn('Error during additional browser cleanup:', error);
+          // Ignore cleanup errors in tests
         }
       })
     );
     createdBrowsers = [];
-
-    // Additional cleanup - wait a bit more to ensure all processes are terminated
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Kill any remaining Chrome processes that might have been left behind
-    await killRemainingChromeProcesses();
   });
 
   describe('initialization', () => {
@@ -235,6 +198,7 @@ describe('DefaultBrowserManager', () => {
       await browserManager.releaseBrowser(browser1);
 
       const browser2 = await browserManager.getBrowser();
+      createdBrowsers.push(browser2.browser);
 
       expect(browser2.id).toBe(browser1.id);
     });
@@ -317,6 +281,7 @@ describe('DefaultBrowserManager', () => {
       await browserManager.releaseBrowser(browser1);
 
       const browser2 = await browserManager.getBrowser();
+      createdBrowsers.push(browser2.browser);
 
       const status = browserManager.getPoolStatus();
       expect(status.metrics.reused).toBeGreaterThan(0);
