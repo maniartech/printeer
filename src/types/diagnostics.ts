@@ -7,7 +7,9 @@ export interface DiagnosticResult {
   component: string;
   message: string;
   remediation?: string;
-  details?: Record<string, unknown>;
+  // Using any here for flexible diagnostic payloads across many checks
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  details?: Record<string, any>;
 }
 
 export interface SystemEnvironment {

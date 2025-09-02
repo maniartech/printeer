@@ -92,6 +92,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       expect(browserResult).toBeDefined();
       expect(browserResult?.status).toBe('pass');
       expect(browserResult?.message).toContain('/usr/bin/google-chrome');
+      expect(browserResult?.details?.source).toBe('system');
 
       // Check display server result
       const displayResult = results.find(r => r.component === 'display-server');
@@ -238,6 +239,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
 
       const browserResult = results.find(r => r.component === 'browser-availability');
       expect(browserResult?.details?.path).toContain('Chrome\\Application\\chrome.exe');
+  expect(browserResult?.details?.source).toBe('system');
     });
 
     it('should handle custom browser path from environment variable', async () => {
@@ -273,6 +275,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       expect(browserResult?.status).toBe('pass');
       expect(browserResult?.details?.path).toBe('/custom/chrome/path');
       expect(browserResult?.details?.version).toBe('Custom Chrome 120.0.0.0');
+  expect(browserResult?.details?.source).toBe('env');
     });
   });
 
@@ -673,10 +676,12 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
         setImmediate(() => callback(null, '8.8.8.8', 4));
       });
 
-      const report = await doctorModule.generateReport();
+  const report = await doctorModule.generateReport();
 
       expect(report).toContain('# Printeer System Diagnostic Report');
       expect(report).toContain('## Summary');
+  expect(report).toContain('### Browser');
+  expect(report).toMatch(/Path:\s/);
       expect(report).toContain('✅ Passed:');
       expect(report).toContain('⚠️  Warnings:');
       expect(report).toContain('❌ Failed:');
