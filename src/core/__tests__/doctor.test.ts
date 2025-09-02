@@ -45,12 +45,12 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.release.mockReturnValue('5.4.0');
       mockOs.arch.mockReturnValue('x64');
       mockOs.platform.mockReturnValue('linux');
-      
+
       // Mock process
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: { DISPLAY: ':0' },
-        configurable: true 
+        configurable: true
       });
 
       // Mock file system checks
@@ -79,7 +79,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       const results = await doctorModule.checkSystemDependencies();
 
       expect(results).toHaveLength(4);
-      
+
       // Check system info result
       const systemInfoResult = results.find(r => r.component === 'system-info');
       expect(systemInfoResult).toBeDefined();
@@ -112,11 +112,11 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.release.mockReturnValue('5.4.0');
       mockOs.arch.mockReturnValue('x64');
       mockOs.platform.mockReturnValue('linux');
-      
+
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: { DISPLAY: ':0' },
-        configurable: true 
+        configurable: true
       });
 
       // Mock no browser found
@@ -148,11 +148,11 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.release.mockReturnValue('5.4.0');
       mockOs.arch.mockReturnValue('x64');
       mockOs.platform.mockReturnValue('linux');
-      
+
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: {},
-        configurable: true 
+        configurable: true
       });
 
       // Mock Docker detection
@@ -180,11 +180,11 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.release.mockReturnValue('5.4.0');
       mockOs.arch.mockReturnValue('x64');
       mockOs.platform.mockReturnValue('linux');
-      
+
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: {}, // No DISPLAY
-        configurable: true 
+        configurable: true
       });
 
       mockFs.existsSync.mockImplementation((path) => {
@@ -196,7 +196,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
 
       mockFs.readFileSync.mockReturnValue('normal-process');
       mockFs.readdirSync.mockReturnValue(['arial.ttf'] as any);
-      
+
       // Mock Xvfb available
       mockExecSync.mockImplementation((command) => {
         if (command.includes('--version')) return 'Google Chrome 120.0.0.0';
@@ -218,7 +218,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.release.mockReturnValue('10.0.19041');
       mockOs.arch.mockReturnValue('x64');
       mockOs.platform.mockReturnValue('win32');
-      
+
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
 
       mockFs.existsSync.mockImplementation((path) => {
@@ -246,14 +246,14 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.release.mockReturnValue('5.4.0');
       mockOs.arch.mockReturnValue('x64');
       mockOs.platform.mockReturnValue('linux');
-      
+
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
-        value: { 
+      Object.defineProperty(process, 'env', {
+        value: {
           DISPLAY: ':0',
           PUPPETEER_EXECUTABLE_PATH: '/custom/chrome/path'
         },
-        configurable: true 
+        configurable: true
       });
 
       mockFs.existsSync.mockImplementation((path) => {
@@ -310,13 +310,13 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       const results = await doctorModule.validateBrowserInstallation();
 
       expect(results).toHaveLength(3);
-      
+
       const launchResult = results.find(r => r.component === 'browser-launch');
       expect(launchResult?.status).toBe('pass');
-      
+
       const versionResult = results.find(r => r.component === 'browser-version');
       expect(versionResult?.status).toBe('pass');
-      
+
       const sandboxResult = results.find(r => r.component === 'browser-sandbox');
       expect(sandboxResult?.status).toBe('pass');
     });
@@ -457,16 +457,16 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       const results = await doctorModule.checkEnvironmentCompatibility();
 
       expect(results).toHaveLength(4);
-      
+
       const platformResult = results.find(r => r.component === 'platform-compatibility');
       expect(platformResult?.status).toBe('pass');
-      
+
       const permissionsResult = results.find(r => r.component === 'permissions');
       expect(permissionsResult?.status).toBe('pass');
-      
+
       const resourceResult = results.find(r => r.component === 'resource-availability');
       expect(resourceResult?.status).toBe('pass');
-      
+
       const networkResult = results.find(r => r.component === 'network-connectivity');
       expect(networkResult?.status).toBe('pass');
     });
@@ -575,9 +575,9 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: { DISPLAY: ':0' },
-        configurable: true 
+        configurable: true
       });
 
       mockFs.existsSync.mockImplementation((path) => {
@@ -640,9 +640,9 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: { DISPLAY: ':0' },
-        configurable: true 
+        configurable: true
       });
 
       mockFs.existsSync.mockImplementation((path) => {
@@ -696,9 +696,9 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: { DISPLAY: ':0' },
-        configurable: true 
+        configurable: true
       });
 
       // Mock no browser found
@@ -740,9 +740,9 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', { 
+      Object.defineProperty(process, 'env', {
         value: { DISPLAY: ':0' },
-        configurable: true 
+        configurable: true
       });
 
       mockFs.existsSync.mockImplementation((path) => {

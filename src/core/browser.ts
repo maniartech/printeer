@@ -462,7 +462,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
   private fs: any;
   private os: any;
 
-  constructor(fs?: any, os?: any) {
+  constructor(private config: PuppeteerLaunchOptions = {}, fs?: any, os?: any) {
     // Allow dependency injection for testing
     this.fs = fs || require('fs');
     this.os = os || require('os');
@@ -603,28 +603,31 @@ export class DefaultBrowserFactory implements BrowserFactory {
       args: []
     };
 
+    // Merge constructor config, allowing it to override defaults
+    const launchOptions: PuppeteerLaunchOptions = { ...baseOptions, ...this.config };
+
     // Force headless mode in test environment to prevent UI windows
     if (process.env.NODE_ENV === 'test') {
-      baseOptions.headless = true;
+      launchOptions.headless = true;
     }
 
     // Detect system Chrome/Chromium first
     const systemBrowserPath = this.detectSystemBrowser();
-    if (systemBrowserPath) {
-      (baseOptions as any).executablePath = systemBrowserPath;
+    if (systemBrowserPath && !launchOptions.executablePath) {
+      launchOptions.executablePath = systemBrowserPath;
     }
 
-    // Check for custom executable path
+    // Check for custom executable path from environment
     const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
     if (customPath) {
-      (baseOptions as any).executablePath = customPath;
+      launchOptions.executablePath = customPath;
     }
 
     // Add environment-specific optimizations
     const optimizedArgs = this.getEnvironmentOptimizedArgs();
-    (baseOptions as any).args = optimizedArgs;
+    launchOptions.args = [...new Set([...(launchOptions.args || []), ...optimizedArgs])];
 
-    return baseOptions;
+    return launchOptions;
   }
 
   private detectSystemBrowser(): string | null {

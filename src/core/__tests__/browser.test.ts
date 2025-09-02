@@ -39,14 +39,14 @@ describe('DefaultBrowserFactory', () => {
         try {
           if (browser && browser.isConnected && browser.isConnected()) {
             const process = browser.process();
-            
+
             // Close browser gracefully first
             await browser.close();
-            
+
             // Wait longer for process termination
             if (process && !process.killed) {
               await new Promise(resolve => setTimeout(resolve, 500));
-              
+
               // Force kill if still alive
               try {
                 if (!process.killed) {
@@ -65,10 +65,10 @@ describe('DefaultBrowserFactory', () => {
       })
     );
     createdBrowsers = [];
-    
+
     // Additional cleanup - wait a bit more to ensure all processes are terminated
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     // Kill any remaining Chrome processes that might have been left behind
     await killRemainingChromeProcesses();
   });
@@ -80,13 +80,13 @@ describe('DefaultBrowserFactory', () => {
 
       expect(browser).toBeDefined();
       expect(browser.isConnected()).toBe(true);
-      
+
       // Test basic browser functionality
       const page = await browser.newPage();
       await page.goto('data:text/html,<h1>Test</h1>');
       const title = await page.evaluate(() => document.title);
       await page.close();
-      
+
       expect(typeof title).toBe('string');
     });
 
@@ -145,14 +145,14 @@ describe('DefaultBrowserManager', () => {
         try {
           if (browser && browser.isConnected && browser.isConnected()) {
             const process = browser.process();
-            
+
             // Close browser gracefully first
             await browser.close();
-            
+
             // Wait longer for process termination
             if (process && !process.killed) {
               await new Promise(resolve => setTimeout(resolve, 500));
-              
+
               // Force kill if still alive
               try {
                 if (!process.killed) {
@@ -171,10 +171,10 @@ describe('DefaultBrowserManager', () => {
       })
     );
     createdBrowsers = [];
-    
+
     // Additional cleanup - wait a bit more to ensure all processes are terminated
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     // Kill any remaining Chrome processes that might have been left behind
     await killRemainingChromeProcesses();
   });
@@ -190,7 +190,7 @@ describe('DefaultBrowserManager', () => {
     it('should not initialize twice', async () => {
       await browserManager.initialize();
       const status1 = browserManager.getPoolStatus();
-      
+
       await browserManager.initialize();
       const status2 = browserManager.getPoolStatus();
 
@@ -220,7 +220,7 @@ describe('DefaultBrowserManager', () => {
     it('should release browser back to pool', async () => {
       const browserInstance = await browserManager.getBrowser();
       createdBrowsers.push(browserInstance.browser);
-      
+
       await browserManager.releaseBrowser(browserInstance);
 
       const status = browserManager.getPoolStatus();
@@ -231,18 +231,18 @@ describe('DefaultBrowserManager', () => {
     it('should reuse released browsers', async () => {
       const browser1 = await browserManager.getBrowser();
       createdBrowsers.push(browser1.browser);
-      
+
       await browserManager.releaseBrowser(browser1);
 
       const browser2 = await browserManager.getBrowser();
-      
+
       expect(browser2.id).toBe(browser1.id);
     });
 
     it('should create new browser when pool is empty', async () => {
       const browser1 = await browserManager.getBrowser();
       const browser2 = await browserManager.getBrowser();
-      
+
       createdBrowsers.push(browser1.browser, browser2.browser);
 
       expect(browser1.id).not.toBe(browser2.id);
@@ -257,11 +257,11 @@ describe('DefaultBrowserManager', () => {
     it('should provide accurate pool status', async () => {
       const browser1 = await browserManager.getBrowser();
       const browser2 = await browserManager.getBrowser();
-      
+
       createdBrowsers.push(browser1.browser, browser2.browser);
 
       const status = browserManager.getPoolStatus();
-      
+
       expect(status.totalBrowsers).toBe(2);
       expect(status.busyBrowsers).toBe(2);
       expect(status.availableBrowsers).toBe(0);
@@ -283,9 +283,9 @@ describe('DefaultBrowserManager', () => {
     it('should shutdown gracefully', async () => {
       const browserInstance = await browserManager.getBrowser();
       createdBrowsers.push(browserInstance.browser);
-      
+
       await browserManager.shutdown();
-      
+
       const status = browserManager.getPoolStatus();
       expect(status.totalBrowsers).toBe(0);
     });
@@ -305,7 +305,7 @@ describe('DefaultBrowserManager', () => {
     it('should track browser creation metrics', async () => {
       const browserInstance = await browserManager.getBrowser();
       createdBrowsers.push(browserInstance.browser);
-      
+
       const status = browserManager.getPoolStatus();
       expect(status.metrics.created).toBeGreaterThan(0);
     });
@@ -313,11 +313,11 @@ describe('DefaultBrowserManager', () => {
     it('should track browser reuse metrics', async () => {
       const browser1 = await browserManager.getBrowser();
       createdBrowsers.push(browser1.browser);
-      
+
       await browserManager.releaseBrowser(browser1);
-      
+
       const browser2 = await browserManager.getBrowser();
-      
+
       const status = browserManager.getPoolStatus();
       expect(status.metrics.reused).toBeGreaterThan(0);
     });
