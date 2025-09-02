@@ -7,7 +7,7 @@ export interface DiagnosticResult {
   component: string;
   message: string;
   remediation?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface SystemEnvironment {
@@ -23,6 +23,7 @@ export interface BrowserInfo {
   path: string;
   version: string;
   launchable: boolean;
+  source?: 'env' | 'system' | 'bundled' | 'unknown';
 }
 
 export interface ResourceInfo {

@@ -210,6 +210,22 @@ export class DefaultDoctorModule implements DoctorModule {
     report += `- ⚠️  Warnings: ${warnCount}\n`;
     report += `- ❌ Failed: ${failCount}\n\n`;
 
+    // Browser quick summary if available
+  const availability = results.find(r => r.component === 'browser-availability');
+  const browserInfo = (availability?.details as Record<string, unknown>) || {};
+    const browserPath = browserInfo.path ?? '';
+    const browserVersion = browserInfo.version ?? '';
+    const browserSource = browserInfo.source ?? 'unknown';
+    const browserAvailable = typeof browserInfo.available === 'boolean' ? browserInfo.available : undefined;
+    report += `### Browser\n\n`;
+    report += `- Path: ${browserPath || 'n/a'}\n`;
+    report += `- Version: ${browserVersion || 'unknown'}\n`;
+    report += `- Source: ${browserSource}\n`;
+    if (browserAvailable !== undefined) {
+      report += `- Available: ${browserAvailable ? 'yes' : 'no'}\n`;
+    }
+    report += `\n`;
+
     if (failCount > 0) {
       report += `## Critical Issues\n\n`;
       const failedResults = results.filter(r => r.status === 'fail');
@@ -286,13 +302,14 @@ export class DefaultDoctorModule implements DoctorModule {
   private async getBrowserInfo(): Promise<BrowserInfo> {
     // Check for custom executable path first
     const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    if (customPath && fs.existsSync(customPath)) {
+  if (customPath && fs.existsSync(customPath)) {
       const version = await this.getBrowserVersion(customPath);
       return {
         available: true,
         path: customPath,
-        version: version || 'unknown',
-        launchable: true // Will be tested in browser validation
+    version: version || 'unknown',
+    launchable: true, // Will be tested in browser validation
+    source: 'env'
       };
     }
 
@@ -305,8 +322,31 @@ export class DefaultDoctorModule implements DoctorModule {
           available: true,
           path: browserPath,
           version: version || 'unknown',
-          launchable: true // Will be tested in browser validation
+          launchable: true, // Will be tested in browser validation
+          source: 'system'
         };
+      }
+    }
+
+    // Try PATH/which resolution on Unix-like systems
+    if (os.platform() !== 'win32') {
+      const candidates = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'chrome'];
+      for (const bin of candidates) {
+        try {
+          const resolved = execSync(`which ${bin}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+          if (resolved && fs.existsSync(resolved)) {
+            const version = await this.getBrowserVersion(resolved);
+            return {
+              available: true,
+              path: resolved,
+              version: version || 'unknown',
+              launchable: true,
+              source: 'system'
+            };
+          }
+        } catch {
+          // continue
+        }
       }
     }
 
@@ -314,13 +354,14 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
       const browserPath = puppeteer.executablePath();
-      if (fs.existsSync(browserPath)) {
+    if (fs.existsSync(browserPath)) {
         const version = await this.getBrowserVersion(browserPath);
         return {
           available: true,
           path: browserPath,
-          version: version || 'unknown',
-          launchable: true
+      version: version || 'unknown',
+      launchable: true,
+      source: 'bundled'
         };
       }
     } catch (error) {
@@ -328,10 +369,11 @@ export class DefaultDoctorModule implements DoctorModule {
     }
 
     return {
-      available: false,
-      path: '',
-      version: '',
-      launchable: false
+  available: false,
+  path: '',
+  version: '',
+  launchable: false,
+  source: 'unknown'
     };
   }
 
@@ -573,7 +615,7 @@ export class DefaultDoctorModule implements DoctorModule {
         status: 'pass',
         component: 'browser-basic-launch',
         message: 'Basic browser launch successful',
-        details: { browserPath: browserInfo.path, testTitle: title }
+        details: { browserPath: browserInfo.path, source: browserInfo.source, testTitle: title }
       };
     } catch (error) {
       return {
@@ -581,7 +623,7 @@ export class DefaultDoctorModule implements DoctorModule {
         component: 'browser-basic-launch',
         message: `Basic browser launch failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         remediation: 'Check browser installation and system permissions',
-        details: { browserPath: browserInfo.path, error: error instanceof Error ? error.message : 'Unknown error' }
+        details: { browserPath: browserInfo.path, source: browserInfo.source, error: error instanceof Error ? error.message : 'Unknown error' }
       };
     }
   }
@@ -643,7 +685,7 @@ export class DefaultDoctorModule implements DoctorModule {
         status: 'pass',
         component: `browser-config-${config.name}`,
         message: `Browser configuration '${config.name}' works`,
-        details: { configuration: config.name, args: config.args }
+        details: { configuration: config.name, args: config.args, browserPath: browserInfo.path, source: browserInfo.source }
       };
     } catch (error) {
       return {
@@ -653,6 +695,8 @@ export class DefaultDoctorModule implements DoctorModule {
         details: {
           configuration: config.name,
           args: config.args,
+          browserPath: browserInfo.path,
+          source: browserInfo.source,
           error: error instanceof Error ? error.message : 'Unknown error'
         }
       };
@@ -731,7 +775,7 @@ export class DefaultDoctorModule implements DoctorModule {
         status: 'pass',
         component: 'browser-sandbox',
         message: 'Browser sandbox is working correctly',
-        details: { platform, isRoot, sandboxEnabled: true }
+        details: { platform, isRoot, sandboxEnabled: true, browserPath: browserInfo.path, source: browserInfo.source }
       };
     } catch (error) {
       // Try with sandbox disabled
@@ -744,7 +788,7 @@ export class DefaultDoctorModule implements DoctorModule {
 
         await browser.close();
 
-        return {
+    return {
           status: 'warn',
           component: 'browser-sandbox',
           message: 'Browser requires sandbox to be disabled',
@@ -753,6 +797,8 @@ export class DefaultDoctorModule implements DoctorModule {
             platform,
             isRoot,
             sandboxEnabled: false,
+      browserPath: browserInfo.path,
+      source: browserInfo.source,
             sandboxError: error instanceof Error ? error.message : 'Unknown error'
           }
         };
@@ -765,6 +811,8 @@ export class DefaultDoctorModule implements DoctorModule {
           details: {
             platform,
             isRoot,
+      browserPath: browserInfo.path,
+      source: browserInfo.source,
             sandboxError: error instanceof Error ? error.message : 'Unknown error',
             fallbackError: fallbackError instanceof Error ? fallbackError.message : 'Unknown error'
           }
