@@ -25,7 +25,8 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "tsc": "tsc",
-  "doctor": "npm run build:doctor && node dist/bin/cli.js doctor"
+  "doctor": "npm run build:doctor && node dist/bin/cli.js doctor",
+  "printeer": "npm run build:cli && node dist/bin/cli.js"
   },
   "dependencies": {
     "puppeteer": "^19.5.2"

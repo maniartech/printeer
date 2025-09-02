@@ -70,8 +70,6 @@ async function handleDoctorCommand(args: string[]) {
   }
 
   try {
-    console.log('Running system diagnostics...\n');
-
     if (verbose) {
       process.env.PRINTEER_DOCTOR_VERBOSE = '1';
     }
@@ -84,10 +82,43 @@ async function handleDoctorCommand(args: string[]) {
     } else if (markdown) {
       const report = doctorModule.formatDiagnosticReport(results);
       console.log(report);
-      printRemediationGuide(results);
     } else {
-      // Default: Flutter-like summary
+  // Default: Flutter-like summary (core checks only)
       console.log(formatDoctorStyleSummary(results));
+
+      // If print checks are present, show them in a dedicated section after the core summary
+      const byComponent = new Map(results.map(r => [r.component, r] as const));
+      const printPdf = byComponent.get('print-pdf');
+      const printPng = byComponent.get('print-png');
+      if (printPdf || printPng) {
+        console.log("\nEverything seems to be okay, now lets try to print PDF and PNG output.\n");
+
+        const sym = {
+          pass: colorsEnabled ? '\u001b[32m[\u2713]\u001b[0m' : '[✓]',
+          warn: colorsEnabled ? '\u001b[33m[!]\u001b[0m' : '[!]',
+          fail: colorsEnabled ? '\u001b[31m[\u2717]\u001b[0m' : '[x]'
+        };
+        const line = (label: string, r?: DiagnosticResult) => {
+          if (!r) return;
+          const s = r.status === 'pass' ? sym.pass : r.status === 'warn' ? sym.warn : sym.fail;
+          const msg = r.status === 'pass' ? 'OK' : r.message.split('\n')[0];
+          console.log(`${s} ${label} — ${msg}`);
+        };
+        line('PDF output', printPdf);
+        line('PNG output', printPng);
+
+        const failsPrint = [printPdf, printPng].filter(r => r && r.status === 'fail').length;
+        const warnsPrint = [printPdf, printPng].filter(r => r && r.status === 'warn').length;
+        if (failsPrint === 0 && warnsPrint === 0) {
+          console.log(color.green('\n• No issues found!'));
+        } else if (failsPrint === 0) {
+          console.log(color.yellow(`\n• ${warnsPrint} warning(s). You can proceed, but review recommendations.`));
+        } else {
+          console.log(color.red(`\n• ${failsPrint} failure(s). Please review remediation below.`));
+        }
+      }
+
+      // Finally, remediation guide after all sections
       printRemediationGuide(results);
     }
 
@@ -160,6 +191,8 @@ function printRemediationGuide(results: DiagnosticResult[]) {
 
     if (r.remediation) {
       console.log(`  ${color.green('Solution:')} ${r.remediation}`);
+    } else if ((r.component === 'print-pdf' || r.component === 'print-png') && r.status === 'fail') {
+      console.log(`  ${color.green('Solution:')} Check write permissions and headless Chrome availability`);
     }
 
     if ((r.component === 'print-pdf' || r.component === 'print-png') && r.status !== 'pass') {
@@ -256,9 +289,7 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
   // Headless launch status only
   line('browser-launch', 'Headless launch');
 
-  // PDF/PNG generation
-  line('print-pdf', 'PDF output');
-  line('print-png', 'PNG output');
+  // PDF/PNG generation are shown later as a dedicated section, not in the core summary
 
   // Sandbox: succinct message
   line('browser-sandbox', 'Sandbox', (r) => (r.status === 'pass' ? 'OK' : r.status === 'warn' ? 'Requires --no-sandbox' : 'Failed'));

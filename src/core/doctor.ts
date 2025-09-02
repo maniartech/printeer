@@ -6,6 +6,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from '../types/diagnostics';
 import { DefaultBrowserFactory } from './browser';
+import printeer from '../printeer';
 import type { PuppeteerLaunchOptions } from 'puppeteer';
 type ExtraLaunchOptions = PuppeteerLaunchOptions & { waitForInitialPage?: boolean; dumpio?: boolean };
 
@@ -96,16 +97,20 @@ export class DefaultDoctorModule implements DoctorModule {
     const envCompatibility = await this.checkEnvironmentCompatibility();
   this.vlog('phase', 'checkEnvironmentCompatibility:done');
 
-  // Output checks: PDF and PNG generation using the library entrypoint
-  this.vlog('phase', 'output-checks:start');
-  const pdfResult = await this.withTimeout(this.testPdfOutput(), 45000, 'doctor-pdf-output');
-  const pngResult = await this.withTimeout(this.testPngOutput(), 45000, 'doctor-png-output');
-  this.vlog('phase', 'output-checks:done');
+  // Final output checks: run only if core browser tests passed to avoid redundant failures
+  const coreLaunch = browserValidation.find(r => r.component === 'browser-launch')?.status === 'pass';
+  const sandboxOk = browserValidation.find(r => r.component === 'browser-sandbox')?.status !== 'fail';
+  if (coreLaunch && sandboxOk) {
+    this.vlog('phase', 'output-checks:start');
+    const pdfResult = await this.withTimeout(this.testPdfOutput(), 45000, 'doctor-pdf-output');
+    const pngResult = await this.withTimeout(this.testPngOutput(), 45000, 'doctor-png-output');
+    this.vlog('phase', 'output-checks:done');
+    results.push(pdfResult, pngResult);
+  }
 
     results.push(...systemDeps);
     results.push(...browserValidation);
   results.push(...envCompatibility);
-  results.push(pdfResult, pngResult);
 
     return results;
   }
@@ -1229,16 +1234,48 @@ export class DefaultDoctorModule implements DoctorModule {
   // --- Output validation: Ensure PDF and PNG generation works end-to-end ---
   private async testPdfOutput(): Promise<DiagnosticResult> {
     try {
-      const { default: printeer } = await import('../printeer');
+      const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
       const out = path.resolve(process.cwd(), 'printeer-doctor-ouput.pdf');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       // Use conservative, headless-safe options
-      const options = {
+      const exe = puppeteer.executablePath();
+      const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
         headless: true,
-        args: ['--headless=new', ...(process.platform === 'win32' ? ['--no-startup-window'] : [])]
-      } as PuppeteerLaunchOptions;
-      await printeer(url, out, 'pdf', options as unknown as Record<string, unknown>);
+        pipe: true,
+        executablePath: exe,
+        timeout: 25000,
+        args: [
+          '--headless=new',
+          ...(process.platform === 'win32' ? ['--no-startup-window'] : []),
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-background-networking',
+          '--disable-extensions'
+        ]
+      };
+      // Silence library-level logs for doctor checks
+      const prevSilent = process.env.PRINTEER_SILENT;
+      process.env.PRINTEER_SILENT = '1';
+      try {
+        try {
+          await printeer(url, out, 'pdf', options as unknown as Record<string, unknown>);
+        } catch (e) {
+          // Fallback: try without pipe and allow random devtools port
+          const fb: PuppeteerLaunchOptions & { pipe?: boolean } = { ...options, pipe: false };
+          const fbArgs: string[] = Array.isArray(fb.args) ? [...fb.args] : [];
+          if (!fbArgs.some((a: string) => a.startsWith('--remote-debugging-port'))) {
+            fbArgs.push('--remote-debugging-port=0');
+          }
+          fb.args = fbArgs;
+          await printeer(url, out, 'pdf', fb as unknown as Record<string, unknown>);
+        }
+      } finally {
+        if (prevSilent === undefined) delete process.env.PRINTEER_SILENT; else process.env.PRINTEER_SILENT = prevSilent;
+      }
       const ok = fs.existsSync(out) && fs.statSync(out).size > 0;
       if (!ok) throw new Error('PDF file not created or empty');
       return {
@@ -1260,15 +1297,45 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private async testPngOutput(): Promise<DiagnosticResult> {
     try {
-      const { default: printeer } = await import('../printeer');
+      const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
       const out = path.resolve(process.cwd(), 'printeer-doctor-ouput.png');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
-      const options = {
+      const exe = puppeteer.executablePath();
+      const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
         headless: true,
-        args: ['--headless=new', ...(process.platform === 'win32' ? ['--no-startup-window'] : [])]
-      } as PuppeteerLaunchOptions;
-      await printeer(url, out, 'png', options as unknown as Record<string, unknown>);
+        pipe: true,
+        executablePath: exe,
+        timeout: 25000,
+        args: [
+          '--headless=new',
+          ...(process.platform === 'win32' ? ['--no-startup-window'] : []),
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-background-networking',
+          '--disable-extensions'
+        ]
+      };
+      const prevSilent = process.env.PRINTEER_SILENT;
+      process.env.PRINTEER_SILENT = '1';
+      try {
+        try {
+          await printeer(url, out, 'png', options as unknown as Record<string, unknown>);
+        } catch (e) {
+          const fb: PuppeteerLaunchOptions & { pipe?: boolean } = { ...options, pipe: false };
+          const fbArgs: string[] = Array.isArray(fb.args) ? [...fb.args] : [];
+          if (!fbArgs.some((a: string) => a.startsWith('--remote-debugging-port'))) {
+            fbArgs.push('--remote-debugging-port=0');
+          }
+          fb.args = fbArgs;
+          await printeer(url, out, 'png', fb as unknown as Record<string, unknown>);
+        }
+      } finally {
+        if (prevSilent === undefined) delete process.env.PRINTEER_SILENT; else process.env.PRINTEER_SILENT = prevSilent;
+      }
       const ok = fs.existsSync(out) && fs.statSync(out).size > 0;
       if (!ok) throw new Error('PNG file not created or empty');
       return {

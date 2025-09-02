@@ -13,8 +13,10 @@ import { getDefaultBrowserOptions } from './utils';
  * @returns The promise of the report file.
  */
 export default async (url:string, outputFile:string, outputType:string|null=null, browserOptions:any) => {
-
-  getPackageJson();
+  const silent = process.env.PRINTEER_SILENT === '1';
+  if (!silent) {
+    getPackageJson();
+  }
 
   outputFile = normalize(outputFile);
   if (!url.startsWith('http')) {
@@ -48,14 +50,41 @@ export default async (url:string, outputFile:string, outputType:string|null=null
   let page:any = null
   let browser: any = null
 
+  // Prefer not to wait for the initial blank target to avoid policy-related hangs
+  (launchOptions as any).waitForInitialPage = false;
+
   try {
     browser = await puppeteer.launch(launchOptions);
     page    = await browser.newPage();
     res     = await page.goto(url, {waitUntil: 'networkidle0'});
   } catch (err) {
-    console.error("Browser Launch Error:", err)
-    console.error("Browser Launch Options:", launchOptions)
-    throw err;
+    // Fallback: if pipe was requested, retry with websocket + random devtools port
+    const needFallback = (launchOptions as any).pipe === true;
+    if (needFallback) {
+      const fallback:any = { ...launchOptions, pipe: false };
+      const args: string[] = Array.isArray(fallback.args) ? fallback.args.slice() : [];
+      // ensure a random port; remove any fixed port duplicates
+      const filtered = args.filter((a) => !/^--remote-debugging-port(=|$)/.test(a));
+      filtered.push('--remote-debugging-port=0');
+      fallback.args = Array.from(new Set(filtered));
+      try {
+        browser = await puppeteer.launch(fallback);
+        page    = await browser.newPage();
+        res     = await page.goto(url, {waitUntil: 'networkidle0'});
+      } catch (err2) {
+        if (!silent) {
+          console.error("Browser Launch Error:", err2)
+          console.error("Browser Launch Options:", fallback)
+        }
+        throw err2;
+      }
+    } else {
+      if (!silent) {
+        console.error("Browser Launch Error:", err)
+        console.error("Browser Launch Options:", launchOptions)
+      }
+      throw err;
+    }
   }
 
   if (!res) {
