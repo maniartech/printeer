@@ -197,6 +197,11 @@ function printRemediationGuide(results: DiagnosticResult[]) {
   }
 }
 
+function detailsOf(r: DiagnosticResult): Record<string, unknown> {
+  const d = r && typeof r.details === 'object' && r.details ? (r.details as Record<string, unknown>) : {};
+  return d;
+}
+
 function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
   // Symbols chosen to be terminal-friendly (no emoji)
   const sym = {
@@ -209,38 +214,81 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
 
   // Header
   lines.push(color.bold('Doctor summary (run with --verbose for more details):'));
-
   const byComponent = new Map(results.map(r => [r.component, r] as const));
 
-  const renderLine = (key: string, label: string) => {
-    const r = byComponent.get(key);
+  const line = (component: string, label: string, makeMsg?: (r: DiagnosticResult) => string) => {
+    const r = byComponent.get(component);
     if (!r) return;
     const s = r.status === 'pass' ? sym.pass : r.status === 'warn' ? sym.warn : sym.fail;
-    const msg = r.message.replace(/\s+/g, ' ').trim();
+    let msg = '';
+    if (makeMsg) {
+      try { msg = makeMsg(r); } catch { msg = r.message; }
+    } else {
+      // Default to very short status text
+      msg = r.status === 'pass' ? 'OK' : r.message.split('\n')[0];
+    }
     lines.push(`${s} ${label} — ${msg}`);
   };
 
-  renderLine('system-info', 'System');
-  renderLine('platform-compatibility', 'Platform');
-  renderLine('browser-availability', 'Chrome/Chromium');
-  renderLine('browser-version', 'Browser version');
-  renderLine('browser-launch', 'Headless launch');
-  renderLine('browser-sandbox', 'Sandbox');
-  renderLine('display-server', 'Display server');
-  renderLine('font-availability', 'Fonts');
-  renderLine('permissions', 'Permissions');
-  renderLine('resource-availability', 'Resources');
-  renderLine('network-connectivity', 'Network');
+  line('system-info', 'System', (r) => {
+    const d = detailsOf(r);
+    const os = typeof d.os === 'string' ? d.os.split(' ')[0] : 'unknown';
+    const arch = typeof d.arch === 'string' ? d.arch : '';
+    const node = typeof d.nodeVersion === 'string' ? d.nodeVersion.replace(/^v/, 'v') : '';
+    const parts = [os, arch && `(${arch})`, node && `Node ${node}`].filter(Boolean) as string[];
+    return parts.join(', ');
+  });
+
+  // Chrome/Chromium line with version and source; no file paths
+  line('browser-availability', 'Chrome/Chromium', (r) => {
+    const d = detailsOf(r);
+    const rawVer = typeof d.version === 'string' ? d.version : '';
+    const major = rawVer ? rawVer.split('.')[0].replace(/[^0-9]/g, '') : '';
+    const version = major ? `v${major}` : (rawVer ? `v${rawVer}` : 'available');
+    const source = typeof d.source === 'string' ? ` (${d.source})` : '';
+    return `${version}${source}`;
+  });
+
+  // Headless launch status only
+  line('browser-launch', 'Headless launch');
+
+  // Sandbox: succinct message
+  line('browser-sandbox', 'Sandbox', (r) => (r.status === 'pass' ? 'OK' : r.status === 'warn' ? 'Requires --no-sandbox' : 'Failed'));
+
+  // Display server (succinct)
+  line('display-server', 'Display server', (r) => (r.status === 'pass' ? 'available' : r.message.replace(/\s+/g, ' ').trim()));
+
+  // Fonts: show count only
+  line('font-availability', 'Fonts', (r) => {
+    const d = detailsOf(r);
+    return typeof d.totalFonts === 'number' ? `${d.totalFonts} found` : (r.status === 'pass' ? 'OK' : r.message);
+  });
+
+  // Permissions: short
+  line('permissions', 'Permissions', (r) => (r.status === 'pass' ? 'OK' : r.message));
+
+  // Resources: RAM + cores
+  line('resource-availability', 'Resources', (r) => {
+    const d = detailsOf(r);
+    const ramNum = typeof d.totalMemoryGB === 'number' ? Math.round(d.totalMemoryGB) : undefined;
+    const ram = typeof ramNum === 'number' ? `${ramNum}GB RAM` : undefined;
+    const cores = typeof d.cpuCores === 'number' ? `${d.cpuCores} cores` : undefined;
+    const parts = [ram, cores].filter(Boolean) as string[];
+    return parts.length ? parts.join(', ') : (r.status === 'pass' ? 'OK' : r.message);
+  });
+
+  // Network: short
+  line('network-connectivity', 'Network', (r) => (r.status === 'pass' ? 'OK' : r.message));
 
   // Footer with simple result
   const fails = results.filter(r => r.status === 'fail').length;
   const warns = results.filter(r => r.status === 'warn').length;
   if (fails === 0 && warns === 0) {
-    lines.push(color.green('• No issues found!'));
+  lines.push(color.green('• No issues found!'));
   } else if (fails === 0) {
-    lines.push(color.yellow(`• ${warns} warning(s). You can proceed, but review recommendations.`));
+  lines.push(color.yellow(`• ${warns} warning(s). You can proceed, but review recommendations.`));
   } else {
-    lines.push(color.red(`• ${fails} failure(s). Please review remediation below.`));
+  lines.push(color.red(`• ${fails} failure(s). Please review remediation below.`));
   }
 
   return lines.join('\n');
