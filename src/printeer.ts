@@ -46,12 +46,12 @@ export default async (url:string, outputFile:string, outputType:string|null=null
   ].filter(Boolean) as string[];
   launchOptions.args = Array.from(new Set([...baseArgs, ...extraArgs]));
 
-  let res:any = null
-  let page:any = null
-  let browser: any = null
+  let res:any = null;
+  let page:any = null;
+  let browser: any = null;
 
   // Prefer not to wait for the initial blank target to avoid policy-related hangs
-  (launchOptions as any).waitForInitialPage = false;
+  launchOptions.waitForInitialPage = false;
 
   try {
     browser = await puppeteer.launch(launchOptions);
