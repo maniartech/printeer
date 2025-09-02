@@ -5,8 +5,30 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from '../types/diagnostics';
+import { DefaultBrowserFactory } from './browser';
+import type { PuppeteerLaunchOptions } from 'puppeteer';
 
 export class DefaultDoctorModule implements DoctorModule {
+  private browserFactory = new DefaultBrowserFactory();
+
+  // Build launch options using DefaultBrowserFactory, optionally overriding args and executable
+  private buildLaunchOptions(browserInfo?: BrowserInfo, overrideArgs?: string[]): PuppeteerLaunchOptions {
+    const base = this.browserFactory.getOptimalLaunchOptions();
+    const options: PuppeteerLaunchOptions = { ...base };
+
+    if (browserInfo?.path) {
+      options.executablePath = browserInfo.path;
+    }
+
+    if (overrideArgs && overrideArgs.length) {
+      const baseArgs = Array.isArray(base.args) ? base.args : [];
+      // Merge and de-duplicate args while preserving order (base first)
+      const merged = [...baseArgs, ...overrideArgs];
+      options.args = Array.from(new Set(merged));
+    }
+
+    return options;
+  }
   async runFullDiagnostics(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
 
@@ -108,11 +130,11 @@ export class DefaultDoctorModule implements DoctorModule {
       };
     }
 
-    // Test basic browser launch
-    const basicLaunchResult = await this.testBasicBrowserLaunch(browserInfo);
+  // Test basic browser launch
+  const basicLaunchResult = await this.testBasicBrowserLaunch(browserInfo);
 
-    // Test browser launch with fallback configurations
-    const fallbackResults = await this.testFallbackConfigurations(browserInfo);
+  // Test browser launch with fallback configurations
+  const fallbackResults = await this.testFallbackConfigurations(browserInfo);
 
     // Combine basic launch result with fallback results
     const allResults = [basicLaunchResult, ...fallbackResults];
@@ -343,6 +365,17 @@ export class DefaultDoctorModule implements DoctorModule {
   }
 
   private async getBrowserVersion(browserPath: string): Promise<string | null> {
+    // Avoid launching the browser UI on Windows just to get the version.
+    // Prefer querying the Registry instead of executing the binary.
+    if (os.platform() === 'win32') {
+      const regVersion = this.getWindowsBrowserVersionFromRegistry();
+      if (regVersion) return regVersion;
+
+      // As a very last resort on Windows, do not spawn the UI: return null instead of executing the binary.
+      // The actual launch/validation paths use headless Puppeteer and will verify the browser.
+      return null;
+    }
+
     try {
       const result = execSync(`"${browserPath}" --version`, {
         encoding: 'utf8',
@@ -351,6 +384,37 @@ export class DefaultDoctorModule implements DoctorModule {
       });
       return result.trim();
     } catch (error) {
+      return null;
+    }
+  }
+
+  // Windows-only: Query common registry keys for Chrome/Chromium version to avoid launching the UI
+  private getWindowsBrowserVersionFromRegistry(): string | null {
+    const keys = [
+      'HKLM\\Software\\Google\\Chrome\\BLBeacon',
+      'HKLM\\Software\\WOW6432Node\\Google\\Chrome\\BLBeacon',
+      'HKCU\\Software\\Google\\Chrome\\BLBeacon',
+      'HKLM\\Software\\Chromium\\BLBeacon',
+      'HKLM\\Software\\WOW6432Node\\Chromium\\BLBeacon',
+      'HKCU\\Software\\Chromium\\BLBeacon'
+    ];
+
+    for (const key of keys) {
+      const version = this.queryWindowsRegistryVersion(key);
+      if (version) return version;
+    }
+
+    return null;
+  }
+
+  private queryWindowsRegistryVersion(key: string): string | null {
+    try {
+      const cmd = `reg query "${key}" /v version`;
+      const out = execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      // Expected line contains: version    REG_SZ    116.0.x.y
+      const match = out.match(/\bversion\b\s+REG_\w+\s+([^\r\n]+)/i);
+      return match ? match[1].trim() : null;
+    } catch {
       return null;
     }
   }
@@ -495,11 +559,8 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
 
-      const browser = await puppeteer.launch({
-        executablePath: browserInfo.path,
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-      });
+      const launchOptions = this.buildLaunchOptions(browserInfo, ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']);
+      const browser = await puppeteer.launch(launchOptions);
 
       // Test basic page creation
       const page = await browser.newPage();
@@ -566,12 +627,9 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
 
-      const browser = await puppeteer.launch({
-        executablePath: browserInfo.path,
-        headless: true,
-        args: config.args,
-        timeout: 10000
-      });
+      const launchOptions = this.buildLaunchOptions(browserInfo, config.args);
+      launchOptions.timeout = 10000;
+      const browser = await puppeteer.launch(launchOptions);
 
       const page = await browser.newPage();
       await page.goto('data:text/html,<h1>Config Test</h1>', {
@@ -663,12 +721,9 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
 
-      const browser = await puppeteer.launch({
-        executablePath: browserInfo.path,
-        headless: true,
-        args: [], // No --no-sandbox flag
-        timeout: 10000
-      });
+      const launchOptions = this.buildLaunchOptions(browserInfo, []);
+      launchOptions.timeout = 10000;
+      const browser = await puppeteer.launch(launchOptions);
 
       await browser.close();
 
@@ -683,12 +738,9 @@ export class DefaultDoctorModule implements DoctorModule {
       try {
         const puppeteer = await import('puppeteer');
 
-        const browser = await puppeteer.launch({
-          executablePath: browserInfo.path,
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          timeout: 10000
-        });
+        const launchOptions = this.buildLaunchOptions(browserInfo, ['--no-sandbox', '--disable-setuid-sandbox']);
+        launchOptions.timeout = 10000;
+        const browser = await puppeteer.launch(launchOptions);
 
         await browser.close();
 
