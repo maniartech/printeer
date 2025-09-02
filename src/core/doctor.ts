@@ -86,6 +86,17 @@ export class DefaultDoctorModule implements DoctorModule {
   async runFullDiagnostics(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
 
+    // Pre-run cleanup: remove any previous sample artifacts from earlier runs
+    try {
+      const pdf = path.resolve(process.cwd(), 'printeer-doctor-output.pdf');
+      const png = path.resolve(process.cwd(), 'printeer-doctor-output.png');
+      this.removeIfExists(pdf);
+      this.removeIfExists(png);
+      this.vlog('cleanup', 'pre-run-removed-sample-artifacts', { pdf, png });
+    } catch {
+      // ignore cleanup errors
+    }
+
     // Run all diagnostic checks
   this.vlog('phase', 'checkSystemDependencies:start');
     const systemDeps = await this.checkSystemDependencies();
@@ -1299,7 +1310,7 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
-      const out = path.resolve(process.cwd(), 'printeer-doctor-ouptut.png');
+      const out = path.resolve(process.cwd(), 'printeer-doctor-output.png');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       const exe = puppeteer.executablePath();
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
@@ -1352,6 +1363,16 @@ export class DefaultDoctorModule implements DoctorModule {
         remediation: 'Check write permissions and headless Chrome availability',
         details: { url: 'https://example.com' }
       };
+    }
+  }
+
+  private removeIfExists(filePath: string): void {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch {
+      // ignore
     }
   }
 }
