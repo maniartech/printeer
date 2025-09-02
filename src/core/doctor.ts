@@ -96,9 +96,16 @@ export class DefaultDoctorModule implements DoctorModule {
     const envCompatibility = await this.checkEnvironmentCompatibility();
   this.vlog('phase', 'checkEnvironmentCompatibility:done');
 
+  // Output checks: PDF and PNG generation using the library entrypoint
+  this.vlog('phase', 'output-checks:start');
+  const pdfResult = await this.withTimeout(this.testPdfOutput(), 45000, 'doctor-pdf-output');
+  const pngResult = await this.withTimeout(this.testPngOutput(), 45000, 'doctor-png-output');
+  this.vlog('phase', 'output-checks:done');
+
     results.push(...systemDeps);
     results.push(...browserValidation);
-    results.push(...envCompatibility);
+  results.push(...envCompatibility);
+  results.push(pdfResult, pngResult);
 
     return results;
   }
@@ -1216,6 +1223,68 @@ export class DefaultDoctorModule implements DoctorModule {
       return false;
     } catch (error) {
       return false;
+    }
+  }
+
+  // --- Output validation: Ensure PDF and PNG generation works end-to-end ---
+  private async testPdfOutput(): Promise<DiagnosticResult> {
+    try {
+      const { default: printeer } = await import('../printeer');
+      const url = 'https://example.com';
+      const out = path.resolve(process.cwd(), 'printeer-doctor-ouput.pdf');
+      try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
+      // Use conservative, headless-safe options
+      const options = {
+        headless: true,
+        args: ['--headless=new', ...(process.platform === 'win32' ? ['--no-startup-window'] : [])]
+      } as PuppeteerLaunchOptions;
+      await printeer(url, out, 'pdf', options as unknown as Record<string, unknown>);
+      const ok = fs.existsSync(out) && fs.statSync(out).size > 0;
+      if (!ok) throw new Error('PDF file not created or empty');
+      return {
+        status: 'pass',
+        component: 'print-pdf',
+        message: 'PDF generated successfully',
+        details: { file: out, url }
+      };
+    } catch (error) {
+      return {
+        status: 'fail',
+        component: 'print-pdf',
+        message: `PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        remediation: 'Check write permissions and headless Chrome availability',
+        details: { url: 'https://example.com' }
+      };
+    }
+  }
+
+  private async testPngOutput(): Promise<DiagnosticResult> {
+    try {
+      const { default: printeer } = await import('../printeer');
+      const url = 'https://example.com';
+      const out = path.resolve(process.cwd(), 'printeer-doctor-ouput.png');
+      try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
+      const options = {
+        headless: true,
+        args: ['--headless=new', ...(process.platform === 'win32' ? ['--no-startup-window'] : [])]
+      } as PuppeteerLaunchOptions;
+      await printeer(url, out, 'png', options as unknown as Record<string, unknown>);
+      const ok = fs.existsSync(out) && fs.statSync(out).size > 0;
+      if (!ok) throw new Error('PNG file not created or empty');
+      return {
+        status: 'pass',
+        component: 'print-png',
+        message: 'PNG generated successfully',
+        details: { file: out, url }
+      };
+    } catch (error) {
+      return {
+        status: 'fail',
+        component: 'print-png',
+        message: `PNG generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        remediation: 'Check write permissions and headless Chrome availability',
+        details: { url: 'https://example.com' }
+      };
     }
   }
 }

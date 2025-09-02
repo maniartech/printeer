@@ -162,6 +162,10 @@ function printRemediationGuide(results: DiagnosticResult[]) {
       console.log(`  ${color.green('Solution:')} ${r.remediation}`);
     }
 
+    if ((r.component === 'print-pdf' || r.component === 'print-png') && r.status !== 'pass') {
+      console.log(`  ${color.cyan('Tip:')} The doctor writes to current directory. Ensure write permissions and enough disk space.`);
+    }
+
     // Helpful tips for common scenarios
     if (r.component === 'browser-availability' && r.status === 'fail') {
       console.log(`  ${color.cyan('Tip:')} Set a custom Chrome/Chromium path via PUPPETEER_EXECUTABLE_PATH`);
@@ -251,6 +255,10 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
 
   // Headless launch status only
   line('browser-launch', 'Headless launch');
+
+  // PDF/PNG generation
+  line('print-pdf', 'PDF output');
+  line('print-png', 'PNG output');
 
   // Sandbox: succinct message
   line('browser-sandbox', 'Sandbox', (r) => (r.status === 'pass' ? 'OK' : r.status === 'warn' ? 'Requires --no-sandbox' : 'Failed'));
