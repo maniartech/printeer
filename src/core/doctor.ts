@@ -1236,7 +1236,7 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
-      const out = path.resolve(process.cwd(), 'printeer-doctor-ouput.pdf');
+      const out = path.resolve(process.cwd(), 'printeer-doctor-output.pdf');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       // Use conservative, headless-safe options
       const exe = puppeteer.executablePath();
@@ -1299,7 +1299,7 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
-      const out = path.resolve(process.cwd(), 'printeer-doctor-ouput.png');
+      const out = path.resolve(process.cwd(), 'printeer-doctor-ouptut.png');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       const exe = puppeteer.executablePath();
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
