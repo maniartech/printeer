@@ -7,6 +7,7 @@ import { execSync } from 'child_process';
 import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from '../types/diagnostics';
 import { DefaultBrowserFactory } from './browser';
 import type { PuppeteerLaunchOptions } from 'puppeteer';
+type ExtraLaunchOptions = PuppeteerLaunchOptions & { waitForInitialPage?: boolean; dumpio?: boolean };
 
 export class DefaultDoctorModule implements DoctorModule {
   private browserFactory = new DefaultBrowserFactory();
@@ -46,7 +47,9 @@ export class DefaultDoctorModule implements DoctorModule {
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-background-networking',
-      '--disable-extensions'
+  '--disable-extensions',
+  '--disable-gpu',
+  '--disable-software-rasterizer'
     ];
     // Belt-and-suspenders: ensure Chromium headless flags are present
     // Puppeteer headless:true should suffice, but we also pass CLI flags to avoid any UI flashes on some platforms
@@ -63,6 +66,10 @@ export class DefaultDoctorModule implements DoctorModule {
 
     // Always force headless at API level as well
   options.headless = true as unknown as boolean; // keep type compatibility across puppeteer versions
+    // In verbose mode, pipe browser stdio to this process for inspection
+    if (this.verbose) {
+      (options as ExtraLaunchOptions).dumpio = true;
+    }
 
     // Use a unique isolated user-data-dir per launch so Chrome never attaches/locks
     try {
@@ -73,7 +80,7 @@ export class DefaultDoctorModule implements DoctorModule {
       // ignore; Puppeteer will still launch with default temp profile
     }
 
-    return options;
+  return options;
   }
   async runFullDiagnostics(): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
@@ -363,9 +370,10 @@ export class DefaultDoctorModule implements DoctorModule {
   }
 
   private async getBrowserInfo(): Promise<BrowserInfo> {
+    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === '1';
     // Check for custom executable path first
     const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-  if (customPath && fs.existsSync(customPath)) {
+  if (!bundledOnly && customPath && fs.existsSync(customPath)) {
       const version = await this.getBrowserVersion(customPath);
       return {
         available: true,
@@ -376,9 +384,9 @@ export class DefaultDoctorModule implements DoctorModule {
       };
     }
 
-    // Try to find system Chrome/Chromium
+  // Try to find system Chrome/Chromium (skip when bundled-only)
     const browserPaths = this.getSystemBrowserPaths();
-    for (const browserPath of browserPaths) {
+  for (const browserPath of (bundledOnly ? [] : browserPaths)) {
       if (fs.existsSync(browserPath)) {
         const version = await this.getBrowserVersion(browserPath);
         return {
@@ -392,7 +400,7 @@ export class DefaultDoctorModule implements DoctorModule {
     }
 
     // Try PATH/which resolution on Unix-like systems
-    if (os.platform() !== 'win32') {
+  if (!bundledOnly && os.platform() !== 'win32') {
       const candidates = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'chrome'];
       for (const bin of candidates) {
         try {
@@ -413,7 +421,7 @@ export class DefaultDoctorModule implements DoctorModule {
       }
     }
 
-    // Check if Puppeteer's bundled Chromium is available
+  // Check if Puppeteer's bundled Chromium is available
     try {
       const puppeteer = await import('puppeteer');
       const browserPath = puppeteer.executablePath();
@@ -429,6 +437,17 @@ export class DefaultDoctorModule implements DoctorModule {
       }
     } catch (error) {
       // Puppeteer not available or no bundled browser
+    }
+
+    // If bundled-only is set, fail fast with explicit message
+    if (bundledOnly) {
+      return {
+        available: false,
+        path: '',
+        version: '',
+        launchable: false,
+        source: 'bundled'
+      };
     }
 
     return {
@@ -679,19 +698,45 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
 
       const launchOptions = this.buildLaunchOptions(browserInfo, ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']);
-      // Force using Puppeteer's bundled Chromium and pipe mode to avoid port/policy issues
-      try { launchOptions.executablePath = puppeteer.executablePath(); } catch { /* ignore */ }
+      // Prefer Puppeteer's bundled Chromium if available; else keep detected path
+      try {
+        const exe = puppeteer.executablePath();
+        if (exe && fs.existsSync(exe)) {
+          launchOptions.executablePath = exe;
+        }
+      } catch { /* ignore */ }
+      // Use pipe mode to avoid devtools port policies and firewalls
       launchOptions.pipe = true;
-      const baseArgs = Array.isArray(launchOptions.args) ? launchOptions.args : [];
-      if (!baseArgs.some(a => a.startsWith('--remote-debugging-port'))) {
-        launchOptions.args = [...baseArgs, '--remote-debugging-port=0'];
+  // Avoid waiting for the initial blank target which can hang under strict policies
+  // We'll create a page explicitly after connecting.
+  (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
+      // Remove any remote-debugging-port from args when using pipe
+      if (Array.isArray(launchOptions.args)) {
+        launchOptions.args = launchOptions.args.filter(a => !/^--remote-debugging-port(=|$)/.test(a));
       }
-  launchOptions.timeout = 15000;
+      launchOptions.timeout = 25000;
       if (process.env.PRINTEER_DOCTOR_VERBOSE) {
         // Minimal structured trace
         console.log(JSON.stringify({ doctorTrace: true, step: 'launch-basic', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
       }
-      const browser = await puppeteer.launch(launchOptions);
+      let browser;
+      try {
+        browser = await puppeteer.launch(launchOptions);
+      } catch (e) {
+        // Fallback: try without pipe (random devtools port)
+        const fallback: ExtraLaunchOptions = { ...(launchOptions as ExtraLaunchOptions) };
+        fallback.pipe = false;
+        if (Array.isArray(fallback.args)) {
+          // Let Chrome choose a random port
+          if (!fallback.args.some((a: string) => a.startsWith('--remote-debugging-port'))) {
+            fallback.args.push('--remote-debugging-port=0');
+          }
+        }
+        if (process.env.PRINTEER_DOCTOR_VERBOSE) {
+          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-basic-fallback', mode: 'ws', exe: fallback.executablePath, args: fallback.args }));
+        }
+        browser = await puppeteer.launch(fallback);
+      }
 
       // Test basic page creation
       const page = await browser.newPage();
@@ -759,18 +804,38 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
 
       const launchOptions = this.buildLaunchOptions(browserInfo, config.args);
-      // Force bundled Chromium and pipe mode
-      try { launchOptions.executablePath = puppeteer.executablePath(); } catch { /* ignore */ }
+      // Force bundled Chromium if present and pipe mode
+      try {
+        const exe = puppeteer.executablePath();
+        if (exe && fs.existsSync(exe)) {
+          launchOptions.executablePath = exe;
+        }
+      } catch { /* ignore */ }
       launchOptions.pipe = true;
-      const baseArgs = Array.isArray(launchOptions.args) ? launchOptions.args : [];
-      if (!baseArgs.some(a => a.startsWith('--remote-debugging-port'))) {
-        launchOptions.args = [...baseArgs, '--remote-debugging-port=0'];
+  (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
+      if (Array.isArray(launchOptions.args)) {
+        launchOptions.args = launchOptions.args.filter(a => !/^--remote-debugging-port(=|$)/.test(a));
       }
-      launchOptions.timeout = 12000;
+      launchOptions.timeout = 25000;
       if (process.env.PRINTEER_DOCTOR_VERBOSE) {
         console.log(JSON.stringify({ doctorTrace: true, step: 'launch-config', name: config.name, headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
       }
-      const browser = await puppeteer.launch(launchOptions);
+      let browser;
+      try {
+        browser = await puppeteer.launch(launchOptions);
+      } catch (e) {
+        const fallback: ExtraLaunchOptions = { ...(launchOptions as ExtraLaunchOptions) };
+        fallback.pipe = false;
+        if (Array.isArray(fallback.args)) {
+          if (!fallback.args.some((a: string) => a.startsWith('--remote-debugging-port'))) {
+            fallback.args.push('--remote-debugging-port=0');
+          }
+        }
+        if (process.env.PRINTEER_DOCTOR_VERBOSE) {
+          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-config-fallback', name: config.name, mode: 'ws', exe: fallback.executablePath, args: fallback.args }));
+        }
+        browser = await puppeteer.launch(fallback);
+      }
 
       const page = await browser.newPage();
       await page.goto('data:text/html,<h1>Config Test</h1>', {
@@ -865,17 +930,37 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
 
       const launchOptions = this.buildLaunchOptions(browserInfo, []);
-      try { launchOptions.executablePath = puppeteer.executablePath(); } catch { /* ignore */ }
+      try {
+        const exe = puppeteer.executablePath();
+        if (exe && fs.existsSync(exe)) {
+          launchOptions.executablePath = exe;
+        }
+      } catch { /* ignore */ }
       launchOptions.pipe = true;
-      const baseArgs = Array.isArray(launchOptions.args) ? launchOptions.args : [];
-      if (!baseArgs.some(a => a.startsWith('--remote-debugging-port'))) {
-        launchOptions.args = [...baseArgs, '--remote-debugging-port=0'];
+  (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
+      if (Array.isArray(launchOptions.args)) {
+        launchOptions.args = launchOptions.args.filter(a => !/^--remote-debugging-port(=|$)/.test(a));
       }
-      launchOptions.timeout = 12000;
+      launchOptions.timeout = 25000;
       if (process.env.PRINTEER_DOCTOR_VERBOSE) {
         console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox', mode: 'with-sandbox', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
       }
-      const browser = await puppeteer.launch(launchOptions);
+      let browser;
+      try {
+        browser = await puppeteer.launch(launchOptions);
+      } catch (e) {
+        const fallback: ExtraLaunchOptions = { ...(launchOptions as ExtraLaunchOptions) };
+        fallback.pipe = false;
+        if (Array.isArray(fallback.args)) {
+          if (!fallback.args.some((a: string) => a.startsWith('--remote-debugging-port'))) {
+            fallback.args.push('--remote-debugging-port=0');
+          }
+        }
+        if (process.env.PRINTEER_DOCTOR_VERBOSE) {
+          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox-fallback', mode: 'with-sandbox-ws', exe: fallback.executablePath, args: fallback.args }));
+        }
+        browser = await puppeteer.launch(fallback);
+      }
 
       await browser.close();
 
@@ -891,17 +976,37 @@ export class DefaultDoctorModule implements DoctorModule {
         const puppeteer = await import('puppeteer');
 
         const launchOptions = this.buildLaunchOptions(browserInfo, ['--no-sandbox', '--disable-setuid-sandbox']);
-        try { launchOptions.executablePath = puppeteer.executablePath(); } catch { /* ignore */ }
+        try {
+          const exe = puppeteer.executablePath();
+          if (exe && fs.existsSync(exe)) {
+            launchOptions.executablePath = exe;
+          }
+        } catch { /* ignore */ }
         launchOptions.pipe = true;
-        const baseArgs2 = Array.isArray(launchOptions.args) ? launchOptions.args : [];
-        if (!baseArgs2.some(a => a.startsWith('--remote-debugging-port'))) {
-          launchOptions.args = [...baseArgs2, '--remote-debugging-port=0'];
+  (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
+        if (Array.isArray(launchOptions.args)) {
+          launchOptions.args = launchOptions.args.filter(a => !/^--remote-debugging-port(=|$)/.test(a));
         }
-        launchOptions.timeout = 12000;
+        launchOptions.timeout = 25000;
         if (process.env.PRINTEER_DOCTOR_VERBOSE) {
           console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox', mode: 'no-sandbox', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
         }
-        const browser = await puppeteer.launch(launchOptions);
+        let browser;
+        try {
+          browser = await puppeteer.launch(launchOptions);
+        } catch (e) {
+          const fallback: ExtraLaunchOptions = { ...(launchOptions as ExtraLaunchOptions) };
+          fallback.pipe = false;
+          if (Array.isArray(fallback.args)) {
+            if (!fallback.args.some((a: string) => a.startsWith('--remote-debugging-port'))) {
+              fallback.args.push('--remote-debugging-port=0');
+            }
+          }
+          if (process.env.PRINTEER_DOCTOR_VERBOSE) {
+            console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox-fallback', mode: 'no-sandbox-ws', exe: fallback.executablePath, args: fallback.args }));
+          }
+          browser = await puppeteer.launch(fallback);
+        }
 
         await browser.close();
 

@@ -172,6 +172,7 @@ function printRemediationGuide(results: DiagnosticResult[]) {
       console.log(`  ${color.cyan('Tip:')} Set a custom Chrome/Chromium path via PUPPETEER_EXECUTABLE_PATH`);
       console.log(color.dim('    bash:      export PUPPETEER_EXECUTABLE_PATH=/path/to/chrome'));
       console.log(color.dim('    PowerShell: $Env:PUPPETEER_EXECUTABLE_PATH = "C:/Path/To/chrome.exe"'));
+  console.log(color.dim('    To force bundled Chromium only: set PRINTEER_BUNDLED_ONLY=1 (fails fast if missing)'));
     }
 
     if (r.component === 'display-server' && r.status !== 'pass') {
