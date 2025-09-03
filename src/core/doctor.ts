@@ -198,7 +198,7 @@ export class DefaultDoctorModule implements DoctorModule {
     }
 
     // Test browser launch
-    const launchResult = await this.withTimeout(this.testBrowserLaunch(browserInfo), 30000, 'browser-launch');
+    const launchResult = await this.withTimeout(this.testBrowserLaunch(), 30000, 'browser-launch');
     results.push(launchResult);
 
     // Test browser version compatibility
@@ -212,7 +212,8 @@ export class DefaultDoctorModule implements DoctorModule {
     return results;
   }
 
-  async testBrowserLaunch(browserInfo: BrowserInfo): Promise<DiagnosticResult> {
+  async testBrowserLaunch(): Promise<DiagnosticResult> {
+    const browserInfo = await this.getBrowserInfo();
     if (!browserInfo.available) {
       return {
         status: 'fail',
@@ -222,16 +223,16 @@ export class DefaultDoctorModule implements DoctorModule {
       };
     }
 
-  // Test basic browser launch
-  const basicLaunchResult = await this.testBasicBrowserLaunch(browserInfo);
+    // Test basic browser launch
+    const basicLaunchResult = await this.testBasicBrowserLaunch(browserInfo);
 
-  // Test browser launch with fallback configurations
-  let fallbackResults: DiagnosticResult[] = [];
-  if (process.env.PRINTEER_DOCTOR_FAST !== '1') {
-    fallbackResults = await this.testFallbackConfigurations(browserInfo);
-  } else {
-    this.vlog('config', 'fallback-configurations:skipped');
-  }
+    // Test browser launch with fallback configurations
+    let fallbackResults: DiagnosticResult[] = [];
+    if (process.env.PRINTEER_DOCTOR_FAST !== '1') {
+      fallbackResults = await this.testFallbackConfigurations(browserInfo);
+    } else {
+      this.vlog('config', 'fallback-configurations:skipped');
+    }
 
     // Combine basic launch result with fallback results
     const allResults = [basicLaunchResult, ...fallbackResults];
@@ -1235,7 +1236,6 @@ export class DefaultDoctorModule implements DoctorModule {
   // --- Output validation: Ensure PDF and PNG generation works end-to-end ---
   private async testPdfOutput(): Promise<DiagnosticResult> {
     try {
-      const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
       const out = path.resolve(process.cwd(), 'printeer-doctor-output.pdf');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
@@ -1296,7 +1296,6 @@ export class DefaultDoctorModule implements DoctorModule {
 
   private async testPngOutput(): Promise<DiagnosticResult> {
     try {
-      const puppeteer = await import('puppeteer');
       const url = 'https://example.com';
       const out = path.resolve(process.cwd(), 'printeer-doctor-output.png');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }

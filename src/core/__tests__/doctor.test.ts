@@ -448,7 +448,13 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
     it('should detect low memory conditions', async () => {
       mockOs.totalmem.mockReturnValue(512 * 1024 * 1024); // 512MB
       mockOs.freemem.mockReturnValue(128 * 1024 * 1024); // 128MB
-      mockOs.cpus.mockReturnValue([{}]); // 1 core
+      mockOs.cpus.mockReturnValue([
+        {
+          model: 'Mock CPU',
+          speed: 2400,
+          times: { user: 0, nice: 0, sys: 0, idle: 0, irq: 0 }
+        }
+      ]); // 1 core
 
       // Mock DNS to avoid timeout
       const dns = await import('dns');
@@ -694,7 +700,13 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.tmpdir.mockReturnValue('/tmp');
       mockOs.totalmem.mockReturnValue(512 * 1024 * 1024); // Low memory
       mockOs.freemem.mockReturnValue(128 * 1024 * 1024);
-      mockOs.cpus.mockReturnValue([{}]); // Single core
+      mockOs.cpus.mockReturnValue([
+        {
+          model: 'Mock CPU',
+          speed: 2400,
+          times: { user: 0, nice: 0, sys: 0, idle: 0, irq: 0 }
+        }
+      ]); // Single core
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
