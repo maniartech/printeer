@@ -8,7 +8,6 @@ process.env.PRINTEER_BUNDLED_ONLY = '1';
 
 // Set shorter timeouts for faster tests
 const TEST_TIMEOUT = 30000; // 30 seconds
-const BROWSER_LAUNCH_TIMEOUT = 15000; // 15 seconds
 
 describe('DefaultBrowserFactory', () => {
   let browserFactory: DefaultBrowserFactory;
