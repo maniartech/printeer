@@ -39,7 +39,8 @@ export class DefaultDoctorModule implements DoctorModule {
     const base = this.browserFactory.getOptimalLaunchOptions();
     const options: PuppeteerLaunchOptions = { ...base };
 
-    if (browserInfo?.path) {
+    // Only set executablePath if it's a real file path, not the bundled placeholder
+    if (browserInfo?.path && browserInfo.path !== 'bundled-chromium') {
       options.executablePath = browserInfo.path;
     }
 
@@ -446,13 +447,13 @@ export class DefaultDoctorModule implements DoctorModule {
 
   // Check if Puppeteer's bundled Chromium is available
     try {
-      const puppeteer = await import('puppeteer');
-      const browserPath = puppeteer.executablePath();
-    if (fs.existsSync(browserPath)) {
-        const version = await this.getBrowserVersion(browserPath);
+      // Use bundled Chromium without specifying path - let Puppeteer handle it
+      // We'll validate it works by launching instead of checking the path
+      const version = await this.getBrowserVersionFromBundled();
+      if (version) {
         return {
           available: true,
-          path: browserPath,
+          path: 'bundled-chromium',
       version: version || 'unknown',
       launchable: true,
       source: 'bundled'
@@ -537,7 +538,23 @@ export class DefaultDoctorModule implements DoctorModule {
     }
   }
 
-  // Windows-only: Query common registry keys for Chrome/Chromium version to avoid launching the UI
+  // Get version from bundled Chromium by trying to launch it
+  private async getBrowserVersionFromBundled(): Promise<string | null> {
+    try {
+      const puppeteer = await import('puppeteer');
+      // Try to launch bundled browser briefly to verify it works and get version
+      const browser = await puppeteer.launch({
+        headless: true,
+        timeout: 10000,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      const version = await browser.version();
+      await browser.close();
+      return version;
+    } catch (error) {
+      return null;
+    }
+  }  // Windows-only: Query common registry keys for Chrome/Chromium version to avoid launching the UI
   private getWindowsBrowserVersionFromRegistry(): string | null {
     const keys = [
       'HKLM\\Software\\Google\\Chrome\\BLBeacon',
@@ -721,13 +738,8 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
 
       const launchOptions = this.buildLaunchOptions(browserInfo, ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']);
-      // Prefer Puppeteer's bundled Chromium if available; else keep detected path
-      try {
-        const exe = puppeteer.executablePath();
-        if (exe && fs.existsSync(exe)) {
-          launchOptions.executablePath = exe;
-        }
-      } catch { /* ignore */ }
+      // Let Puppeteer use bundled Chromium by default - don't override executablePath
+      // The browserInfo already contains the correct path if a system browser was detected
       // Use pipe mode to avoid devtools port policies and firewalls
       launchOptions.pipe = true;
   // Avoid waiting for the initial blank target which can hang under strict policies
@@ -829,10 +841,8 @@ export class DefaultDoctorModule implements DoctorModule {
       const launchOptions = this.buildLaunchOptions(browserInfo, config.args);
       // Force bundled Chromium if present and pipe mode
       try {
-        const exe = puppeteer.executablePath();
-        if (exe && fs.existsSync(exe)) {
-          launchOptions.executablePath = exe;
-        }
+        // Don't set executablePath for bundled Chromium - let Puppeteer use its default
+        // launchOptions.executablePath will use the system browser if needed
       } catch { /* ignore */ }
       launchOptions.pipe = true;
   (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
@@ -953,12 +963,7 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
 
       const launchOptions = this.buildLaunchOptions(browserInfo, []);
-      try {
-        const exe = puppeteer.executablePath();
-        if (exe && fs.existsSync(exe)) {
-          launchOptions.executablePath = exe;
-        }
-      } catch { /* ignore */ }
+      // Let Puppeteer use bundled Chromium by default
       launchOptions.pipe = true;
   (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
       if (Array.isArray(launchOptions.args)) {
@@ -999,12 +1004,7 @@ export class DefaultDoctorModule implements DoctorModule {
         const puppeteer = await import('puppeteer');
 
         const launchOptions = this.buildLaunchOptions(browserInfo, ['--no-sandbox', '--disable-setuid-sandbox']);
-        try {
-          const exe = puppeteer.executablePath();
-          if (exe && fs.existsSync(exe)) {
-            launchOptions.executablePath = exe;
-          }
-        } catch { /* ignore */ }
+        // Let Puppeteer use bundled Chromium by default
         launchOptions.pipe = true;
   (launchOptions as ExtraLaunchOptions).waitForInitialPage = false;
         if (Array.isArray(launchOptions.args)) {
@@ -1249,12 +1249,10 @@ export class DefaultDoctorModule implements DoctorModule {
       const url = 'https://example.com';
       const out = path.resolve(process.cwd(), 'printeer-doctor-output.pdf');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
-      // Use conservative, headless-safe options
-      const exe = puppeteer.executablePath();
+      // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
         headless: true,
         pipe: true,
-        executablePath: exe,
         timeout: 25000,
         args: [
           '--headless=new',
@@ -1312,11 +1310,10 @@ export class DefaultDoctorModule implements DoctorModule {
       const url = 'https://example.com';
       const out = path.resolve(process.cwd(), 'printeer-doctor-output.png');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
-      const exe = puppeteer.executablePath();
+      // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
         headless: true,
         pipe: true,
-        executablePath: exe,
         timeout: 25000,
         args: [
           '--headless=new',

@@ -523,26 +523,26 @@ export class DefaultBrowserFactory implements BrowserFactory {
     // If bundled-only mode is enabled, force use of bundled Chromium
     const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === '1';
     if (bundledOnly) {
-      try {
-        const bundledPath = puppeteer.executablePath();
-        launchOptions.executablePath = bundledPath;
-      } catch (error) {
-        throw new Error('Bundled Chromium not available and PRINTEER_BUNDLED_ONLY is set');
-      }
+      // Don't set executablePath for bundled Chromium - let Puppeteer use its default
+      // The bundled browser is used by default when no executablePath is specified
+      delete launchOptions.executablePath;
     }
 
     // Try to launch browser with optimal configuration first
     try {
+      console.log('Launching browser with optimal configuration...');
       const browser = await puppeteer.launch(launchOptions);
 
       // Validate the browser is working
       const isValid = await this.validateBrowser(browser);
       if (isValid) {
+        console.log('Browser launched and validated successfully');
         return browser;
       }
 
       // Close invalid browser
       await browser.close();
+      console.warn('Browser launched but failed validation');
     } catch (error) {
       console.warn(`Failed to launch browser with optimal configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -627,6 +627,15 @@ export class DefaultBrowserFactory implements BrowserFactory {
     // Force headless mode in test environment to prevent UI windows
     if (process.env.NODE_ENV === 'test') {
       launchOptions.headless = true;
+      // Use minimal args for tests to avoid launch issues
+      launchOptions.args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--headless=new'
+      ];
+      return launchOptions;
     }
 
     // Check if we should use bundled Chromium only
@@ -643,14 +652,6 @@ export class DefaultBrowserFactory implements BrowserFactory {
       const customPath = process.env.PUPPETEER_EXECUTABLE_PATH;
       if (customPath) {
         launchOptions.executablePath = customPath;
-      }
-    } else {
-      // Force bundled Chromium in bundled-only mode
-      try {
-        // This will be set dynamically during browser launch to use bundled executable
-        // We don't set executablePath here to let Puppeteer use its default bundled browser
-      } catch (error) {
-        // If bundled Chromium is not available, this will fail during launch
       }
     }
 
