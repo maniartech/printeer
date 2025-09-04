@@ -2,7 +2,8 @@
 export * from './conversion';
 export * from './diagnostics';
 export * from './browser';
-export * from './resource';
+// Resource types have been moved to src/resources/types/
+// Import from there: import { ResourceMetrics, ... } from '../resources/types/resource';
 export * from './errors';
 
 // Re-export configuration types from config module

@@ -11,13 +11,13 @@ import {
   DefaultBrowserPoolOptimizer,
   DefaultDiskSpaceManager,
   DefaultNetworkOptimizer
-} from '../resource';
+} from '../../src/resources/resource';
 import {
   ResourceMetrics,
   ResourcePressure,
   ResourceLimits,
   OptimizationRecommendation
-} from '../../types/resource';
+} from '../../src/resources/types/resource';
 
 // Mock the os module
 vi.mock('os', () => ({
@@ -2720,7 +2720,7 @@ describe('DefaultDiskSpaceManager', () => {
           isDirectory: () => false,
           mtime: new Date(),
           size: 1024 // 1KB
-        } as any);
+        } as unknown);
       mockUnlink.mockResolvedValue(undefined);
 
       const cleanedCount = await diskSpaceManager.cleanupLargeTempFiles(50); // 50MB limit

@@ -3,10 +3,10 @@ import {
   DefaultConfigurationManager,
   DefaultBrowserManager,
   DefaultBrowserFactory,
-  DefaultResourceManager,
   DefaultConverter,
   DefaultDoctorModule
 } from '../index';
+import { DefaultResourceManager } from '../../resources';
 
 describe('Core Module Interfaces', () => {
   describe('DefaultConfigurationManager', () => {
@@ -89,15 +89,23 @@ describe('Core Module Interfaces', () => {
       expect(typeof manager.cleanup).toBe('function');
     });
 
-    it('should throw not implemented errors for placeholder methods', async () => {
+    it('should have working implementation methods', async () => {
       const manager = new DefaultResourceManager();
 
-      expect(() => manager.startMonitoring()).toThrow('Not implemented yet');
-      expect(() => manager.stopMonitoring()).toThrow('Not implemented yet');
-      expect(() => manager.getCurrentMetrics()).toThrow('Not implemented yet');
-      expect(() => manager.checkResourcePressure()).toThrow('Not implemented yet');
-      await expect(manager.enforceResourceLimits()).rejects.toThrow('Not implemented yet');
-      await expect(manager.cleanup()).rejects.toThrow('Not implemented yet');
+      // These methods should work without throwing "Not implemented yet"
+      expect(() => manager.startMonitoring()).not.toThrow();
+      expect(() => manager.stopMonitoring()).not.toThrow();
+      
+      // getCurrentMetrics should throw a specific error when no monitoring has started
+      expect(() => manager.getCurrentMetrics()).toThrow('No metrics available. Start monitoring first.');
+      
+      // Start monitoring to get metrics, then test other methods
+      manager.startMonitoring(100);
+      await new Promise(resolve => setTimeout(resolve, 150)); // Wait for initial metrics
+      
+      expect(() => manager.checkResourcePressure()).not.toThrow();
+      await expect(manager.enforceResourceLimits()).resolves.not.toThrow();
+      await expect(manager.cleanup()).resolves.not.toThrow();
     });
   });
 
@@ -113,7 +121,7 @@ describe('Core Module Interfaces', () => {
       const converter = new DefaultConverter();
 
       await expect(converter.convert({} as any)).rejects.toThrow('Not implemented yet');
-      await expect(converter.validateOptions({} as any)).rejects.toThrow('Not implemented yet');
+      await expect(converter.validateOptions({} as unknown)).rejects.toThrow('Not implemented yet');
     });
   });
 

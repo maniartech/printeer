@@ -12,7 +12,7 @@ import {
   DefaultCleanupManager,
   DefaultBrowserPoolOptimizer,
   DefaultNetworkOptimizer
-} from '../resource';
+} from '../../src/resources/resource';
 
 describe('Resource Management Integration Tests', () => {
   let tempTestDir: string;

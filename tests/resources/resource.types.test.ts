@@ -3,7 +3,7 @@ import type {
   ResourceMetrics, 
   ResourcePressure, 
   ResourceThresholds
-} from '../resource';
+} from '../../src/resources/types/resource';
 
 describe('Resource Types', () => {
   describe('ResourceMetrics', () => {

@@ -78,31 +78,8 @@ export class DefaultBrowserFactory {
   }
 }
 
-export class DefaultResourceManager {
-  startMonitoring(): void {
-    throw new Error('Not implemented yet');
-  }
-  
-  stopMonitoring(): void {
-    throw new Error('Not implemented yet');
-  }
-  
-  getCurrentMetrics(): any {
-    throw new Error('Not implemented yet');
-  }
-  
-  checkResourcePressure(): boolean {
-    throw new Error('Not implemented yet');
-  }
-  
-  async enforceResourceLimits(): Promise<void> {
-    throw new Error('Not implemented yet');
-  }
-  
-  async cleanup(): Promise<void> {
-    throw new Error('Not implemented yet');
-  }
-}
+// DefaultResourceManager has been moved to src/resources/
+// Import from there: import { DefaultResourceManager } from '../resources';
 
 export class DefaultConverter {
   async convert(options: any): Promise<any> {

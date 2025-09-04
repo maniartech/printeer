@@ -19,7 +19,7 @@ import {
   DiskSpaceManager,
   CleanupManager,
   NetworkOptimizer
-} from '../types/resource';
+} from './types/resource';
 
 export class DefaultResourceManager implements ResourceManager {
   private monitoringInterval: ReturnType<typeof setInterval> | null = null;
