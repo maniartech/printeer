@@ -4,7 +4,7 @@
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { ResourceLimits } from '../types/configuration';
+import { ResourceLimits } from '../config/types/configuration';
 import {
   ResourceManager,
   ResourceMetrics,

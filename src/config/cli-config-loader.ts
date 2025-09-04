@@ -1,4 +1,4 @@
-import type { Configuration, BrowserConfig, ResourceLimits, LoggingConfig, SecurityConfig, LongRunningConfig } from '../types/configuration.js';
+import type { Configuration, BrowserConfig, ResourceLimits, LoggingConfig, SecurityConfig, LongRunningConfig } from './types/configuration.js';
 
 /**
  * Helper function to merge browser config safely

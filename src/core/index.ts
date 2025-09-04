@@ -1,6 +1,7 @@
-// Core configuration management exports
-export { ConfigurationManager as DefaultConfigurationManagerImpl } from './config-manager.js';
-export { CliConfigLoader } from './cli-config-loader.js';
+// Core configuration management exports - now moved to config module
+// Re-export from new location for compatibility
+export { ConfigurationManager as DefaultConfigurationManagerImpl } from '../config/manager.js';
+export { CliConfigLoader } from '../config/cli-config-loader.js';
 
 // Doctor module exports
 export { DefaultDoctorModule } from './doctor.js';

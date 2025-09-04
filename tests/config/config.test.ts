@@ -6,8 +6,8 @@ import {
   EnvironmentDetector,
   ConfigurationLoader,
   PrinteerConfigurationManager
-} from './config';
-import type { Configuration, Environment } from './types/configuration';
+} from '../../src/config';
+import type { Configuration, Environment } from '../../src/config/types/configuration';
 
 describe('EnvironmentDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ConfigurationManager } from '../config-manager.js';
+import { ConfigurationManager } from '../../src/config/manager.js';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';

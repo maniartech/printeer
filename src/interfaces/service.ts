@@ -2,8 +2,8 @@
 
 import { PrinteerOptions, ConversionResult } from '../types/conversion';
 import { DiagnosticResult } from '../types/diagnostics';
-import { Configuration } from '../types/configuration';
-import { ServiceStatus } from './command-manager';
+import { Configuration } from '../config/types/configuration';
+import { ServiceStatus } from '../config/types/command-manager';
 
 export interface PrinteerService {
   start(): Promise<void>;

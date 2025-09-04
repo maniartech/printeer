@@ -5,7 +5,7 @@ import {
   ConfigurationManager, 
   ValidationResult, 
   Environment 
-} from '../types/configuration';
+} from './types/configuration';
 
 export class DefaultConfigurationManager implements ConfigurationManager {
   private config: Configuration | null = null;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CliConfigLoader } from '../cli-config-loader.js';
+import { CliConfigLoader } from '../../src/config/cli-config-loader.js';
 
 describe('CliConfigLoader', () => {
   describe('parseCliArgs', () => {

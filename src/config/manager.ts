@@ -12,7 +12,7 @@ import type {
   LoggingConfig,
   SecurityConfig,
   LongRunningConfig
-} from '../types/configuration.js';
+} from './types/configuration.js';
 
 /**
  * Helper function to merge browser config safely

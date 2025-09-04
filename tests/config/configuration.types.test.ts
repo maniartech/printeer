@@ -4,7 +4,7 @@ import type {
   BrowserConfig, 
   ResourceLimits, 
   ValidationResult
-} from '../configuration';
+} from '../../src/config/types/configuration';
 
 describe('Configuration Types', () => {
   describe('BrowserConfig', () => {

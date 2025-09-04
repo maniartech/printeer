@@ -3,7 +3,7 @@ import type {
   CommandContext, 
   CommandResult, 
   ServiceStatus 
-} from '../command-manager';
+} from '../../src/config/types/command-manager';
 
 describe('Command Manager Interfaces', () => {
   describe('CommandContext', () => {
