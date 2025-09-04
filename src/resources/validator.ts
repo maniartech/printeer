@@ -3,7 +3,7 @@
 
 import * as os from 'os';
 import { ResourceMetrics } from './types/resource';
-import { DefaultResourceManager } from './resource';
+import { DefaultResourceManager } from './resource-manager';
 
 export interface ValidationResult {
   isValid: boolean;

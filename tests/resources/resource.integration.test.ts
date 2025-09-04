@@ -5,14 +5,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import {
-  DefaultResourceManager,
-  DefaultResourceOptimizer,
-  DefaultDiskSpaceManager,
-  DefaultCleanupManager,
-  DefaultBrowserPoolOptimizer,
-  DefaultNetworkOptimizer
-} from '../../src/resources/resource';
+import { DefaultResourceManager } from '../../src/resources/resource-manager';
+import { DefaultResourceOptimizer } from '../../src/resources/resource-optimizer';
+import { DefaultDiskSpaceManager } from '../../src/resources/disk-space-manager';
+import { DefaultCleanupManager } from '../../src/resources/cleanup-manager';
+import { DefaultBrowserPoolOptimizer } from '../../src/resources/browser-pool-optimizer';
+import { DefaultNetworkOptimizer } from '../../src/resources/network-optimizer';
 
 describe('Resource Management Integration Tests', () => {
   let tempTestDir: string;

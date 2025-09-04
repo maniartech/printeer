@@ -2,16 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import {
-  DefaultResourceManager,
-  DefaultCleanupManager,
-  DefaultResourceLimitEnforcer,
-  DefaultDegradationStrategy,
-  DefaultResourceOptimizer,
-  DefaultBrowserPoolOptimizer,
-  DefaultDiskSpaceManager,
-  DefaultNetworkOptimizer
-} from '../../src/resources/resource';
+import { DefaultResourceManager } from '../../src/resources/resource-manager';
+import { DefaultCleanupManager } from '../../src/resources/cleanup-manager';
+import { DefaultResourceLimitEnforcer } from '../../src/resources/resource-limit-enforcer';
+import { DefaultDegradationStrategy } from '../../src/resources/degradation-strategy';
+import { DefaultResourceOptimizer } from '../../src/resources/resource-optimizer';
+import { DefaultBrowserPoolOptimizer } from '../../src/resources/browser-pool-optimizer';
+import { DefaultDiskSpaceManager } from '../../src/resources/disk-space-manager';
+import { DefaultNetworkOptimizer } from '../../src/resources/network-optimizer';
 import {
   ResourceMetrics,
   ResourcePressure,
@@ -2715,7 +2713,7 @@ describe('DefaultDiskSpaceManager', () => {
           isDirectory: () => false,
           mtime: new Date(),
           size: largeSize
-        } as any)
+        } as unknown)
         .mockResolvedValueOnce({
           isDirectory: () => false,
           mtime: new Date(),
