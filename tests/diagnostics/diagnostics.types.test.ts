@@ -6,7 +6,7 @@ import type {
   BrowserInfo,
   ResourceInfo,
   DependencyInfo
-} from '../diagnostics';
+} from '../../src/diagnostics/types/diagnostics';
 
 describe('Diagnostics Types', () => {
   describe('DiagnosticResult', () => {

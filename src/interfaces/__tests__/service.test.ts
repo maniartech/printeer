@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { PrinteerService } from '../service';
 import type { PrinteerOptions, ConversionResult } from '../../types/conversion';
-import type { DiagnosticResult } from '../../types/diagnostics';
+import type { DiagnosticResult } from '../../diagnostics/types/diagnostics';
 import type { ServiceStatus } from '../command-manager';
 
 describe('Service Interfaces', () => {

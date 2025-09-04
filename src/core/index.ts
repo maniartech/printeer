@@ -4,7 +4,7 @@ export { ConfigurationManager as DefaultConfigurationManagerImpl } from '../conf
 export { CliConfigLoader } from '../config/cli-config-loader.js';
 
 // Doctor module exports
-export { DefaultDoctorModule } from './doctor.js';
+export { DefaultDoctorModule } from '../diagnostics/doctor.js';
 
 // Placeholder exports for other core modules (to be implemented in future tasks)
 // These are placeholder classes that throw "Not implemented yet" errors

@@ -1,7 +1,7 @@
 // Main service interfaces for library usage
 
 import { PrinteerOptions, ConversionResult } from '../types/conversion';
-import { DiagnosticResult } from '../types/diagnostics';
+import { DiagnosticResult } from '../diagnostics/types/diagnostics';
 import { Configuration } from '../config/types/configuration';
 import { ServiceStatus } from '../config/types/command-manager';
 

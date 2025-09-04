@@ -19,7 +19,7 @@ export async function convert(_options: any): Promise<any> {
 
 // Doctor functionality
 export async function doctor(): Promise<any[]> {
-  const { DefaultDoctorModule } = await import('./core/doctor');
+  const { DefaultDoctorModule } = await import('./diagnostics/doctor');
   const doctorModule = new DefaultDoctorModule();
   return await doctorModule.runFullDiagnostics();
 }

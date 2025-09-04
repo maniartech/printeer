@@ -2,8 +2,8 @@
 
 import printeer from "../printeer";
 import printUsage from "./usage";
-import { DefaultDoctorModule } from "../core/doctor";
-import type { DiagnosticResult } from "../types/diagnostics";
+import { DefaultDoctorModule } from "../diagnostics/doctor";
+import type { DiagnosticResult } from "../diagnostics/types/diagnostics";
 
 /**
  * Main entry point of the print-web command!

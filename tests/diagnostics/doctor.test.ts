@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as os from 'os';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { DefaultDoctorModule } from '../doctor';
+import { DefaultDoctorModule } from '../../src/diagnostics/doctor';
 
 // Mock external dependencies
 vi.mock('os');
@@ -25,7 +25,7 @@ vi.mock('puppeteer', () => ({
 }));
 
 // Mock printeer module
-vi.mock('../../printeer', () => ({
+vi.mock('../../src/printeer', () => ({
   default: vi.fn().mockResolvedValue('/mock/output/file.pdf')
 }));
 
