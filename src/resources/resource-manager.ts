@@ -1,5 +1,58 @@
-// Default Resource Manager Implementation
-// Focused on requirements 8.5, 8.6, 8.7
+/**
+ * # Default Resource Manager - Central Resource Orchestrator
+ * 
+ * ## Purpose
+ * The DefaultResourceManager serves as the central orchestrator for all resource management
+ * operations in the PDF generation system. It provides real-time monitoring, intelligent
+ * optimization, and automatic resource pressure handling.
+ * 
+ * ## Key Responsibilities
+ * 1. **Real-time Monitoring**: Continuous tracking of system metrics (CPU, memory, disk)
+ * 2. **Resource Pressure Detection**: Automatic detection and notification of resource constraints
+ * 3. **Optimization Coordination**: Orchestrates various optimization strategies
+ * 4. **Limit Enforcement**: Ensures system operates within defined resource boundaries
+ * 5. **Cleanup Coordination**: Manages temporary file and browser resource cleanup
+ * 
+ * ## Core Workflow
+ * 
+ * ### Initialization
+ * ```typescript
+ * const manager = new DefaultResourceManager({
+ *   memoryWarning: 0.7,    // Alert at 70% memory usage
+ *   cpuWarning: 0.8,       // Alert at 80% CPU usage
+ *   diskWarning: 0.9       // Alert at 90% disk usage
+ * });
+ * ```
+ * 
+ * ### Monitoring Lifecycle
+ * 1. **Start Monitoring**: Begin continuous resource tracking
+ * 2. **Collect Metrics**: Gather CPU, memory, disk, and browser metrics
+ * 3. **Detect Pressure**: Compare metrics against thresholds
+ * 4. **Notify Handlers**: Alert registered callbacks of resource pressure
+ * 5. **Apply Optimizations**: Automatically trigger cleanup and optimization
+ * 
+ * ### Resource Pressure Response
+ * - **Memory Pressure**: Trigger garbage collection and browser pool reduction
+ * - **CPU Pressure**: Recommend request throttling and concurrent operation limits
+ * - **Disk Pressure**: Immediate temporary file cleanup and browser resource cleanup
+ * 
+ * ## Integration Points
+ * - **Browser Pool Management**: Tracks and optimizes browser instance counts
+ * - **Request Tracking**: Monitors active request load for optimization decisions
+ * - **Cleanup Coordination**: Orchestrates various cleanup managers
+ * - **Limit Enforcement**: Works with ResourceLimitEnforcer for quota management
+ * 
+ * ## Production Considerations
+ * - Designed for 24/7 operation in production environments
+ * - Handles resource pressure gracefully without service interruption
+ * - Provides comprehensive metrics history for performance analysis
+ * - Supports custom thresholds for different deployment environments
+ * 
+ * ## Requirements Implementation
+ * - **Requirement 8.5**: Immediate temporary file cleanup when disk space is limited
+ * - **Requirement 8.6**: Network resource optimization and compression coordination
+ * - **Requirement 8.7**: System resource limit enforcement in shared environments
+ */
 
 import * as os from 'os';
 import {

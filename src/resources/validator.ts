@@ -1,5 +1,230 @@
-// Production validation and monitoring for resource optimization
-// This ensures the optimization strategies work correctly in production
+/**
+ * # Resource Validator - Production Health Monitoring and Validation
+ * 
+ * ## Purpose
+ * The ResourceValidator and ProductionMonitor provide comprehensive validation and monitoring
+ * capabilities for resource management systems in production environments, ensuring that
+ * optimization strategies work correctly and system health is maintained.
+ * 
+ * ## Core Objectives
+ * 1. **Production Validation**: Verify resource management functionality in production
+ * 2. **Health Monitoring**: Continuous monitoring of system health and performance
+ * 3. **Issue Detection**: Early detection of resource management problems
+ * 4. **Performance Validation**: Ensure optimization strategies are working effectively
+ * 
+ * ## Validation Components
+ * 
+ * ### Resource Monitoring Validation
+ * 
+ * #### Validation Scope
+ * Validates that the resource monitoring system is functioning correctly and providing
+ * accurate, reliable metrics for decision-making.
+ * 
+ * #### Validation Checks
+ * - **Metrics Collection**: Verifies that metrics are being collected successfully
+ * - **Data Accuracy**: Validates that metrics are within expected ranges
+ * - **Timestamp Validation**: Ensures metrics are current and not stale
+ * - **System Integration**: Confirms integration with system resource APIs
+ * 
+ * #### Validation Criteria
+ * - **Memory Usage**: 0-100% range validation
+ * - **CPU Usage**: 0-100% range validation  
+ * - **Disk Usage**: 0-100% range validation
+ * - **Timestamp Freshness**: Within 1 minute of current time
+ * - **System Memory**: Realistic total memory detection
+ * 
+ * ### Resource Optimization Validation
+ * 
+ * #### Validation Scope
+ * Ensures that resource optimization strategies are functioning correctly and
+ * providing meaningful performance improvements.
+ * 
+ * #### Optimization Checks
+ * - **Browser Pool Optimization**: Validates optimal pool size calculations
+ * - **Recommendation Engine**: Verifies recommendation generation and structure
+ * - **Resource Pressure Detection**: Confirms pressure detection accuracy
+ * - **Optimization Effectiveness**: Measures actual performance improvements
+ * 
+ * #### Validation Process
+ * ```typescript
+ * const validator = new ResourceValidator();
+ * 
+ * // Validate resource monitoring
+ * const monitoringResult = await validator.validateResourceMonitoring();
+ * 
+ * // Validate optimization functionality
+ * const optimizationResult = await validator.validateResourceOptimization();
+ * 
+ * // Validate cleanup operations
+ * const cleanupResult = await validator.validateCleanupOperations();
+ * ```
+ * 
+ * ## Production Health Monitoring
+ * 
+ * ### Comprehensive Health Checks
+ * 
+ * #### Health Check Components
+ * 1. **System Health**: Resource monitoring functionality validation
+ * 2. **Optimization Health**: Resource optimization effectiveness validation
+ * 3. **Performance Analysis**: System performance and efficiency metrics
+ * 4. **Recommendation Generation**: Actionable recommendations for improvements
+ * 
+ * #### Health Check Process
+ * ```typescript
+ * const monitor = new ProductionMonitor();
+ * 
+ * // Start continuous monitoring
+ * monitor.startMonitoring(300000); // Every 5 minutes
+ * 
+ * // Get current health status
+ * const health = await monitor.getCurrentHealth();
+ * 
+ * // Get health history for analysis
+ * const history = monitor.getHealthHistory();
+ * 
+ * // Get health summary statistics
+ * const summary = monitor.getHealthSummary();
+ * ```
+ * 
+ * ### Continuous Monitoring System
+ * 
+ * #### Monitoring Features
+ * - **Automated Health Checks**: Regular automated validation of system health
+ * - **Health History**: Maintains historical health data for trend analysis
+ * - **Alert Generation**: Automatic alerts for critical health issues
+ * - **Performance Tracking**: Continuous tracking of system performance metrics
+ * 
+ * #### Monitoring Intervals
+ * - **Default Interval**: 5 minutes (300,000ms)
+ * - **High-Frequency**: 1 minute for critical systems
+ * - **Low-Frequency**: 15 minutes for stable systems
+ * - **Custom Intervals**: Configurable based on requirements
+ * 
+ * ## Validation Results and Reporting
+ * 
+ * ### Validation Result Structure
+ * ```typescript
+ * interface ValidationResult {
+ *   isValid: boolean;           // Overall validation status
+ *   errors: string[];           // Critical errors found
+ *   warnings: string[];         // Non-critical warnings
+ *   metrics?: ResourceMetrics;  // Associated metrics data
+ * }
+ * ```
+ * 
+ * ### Health Check Reporting
+ * ```typescript
+ * interface ProductionHealthCheck {
+ *   timestamp: Date;                          // Check timestamp
+ *   systemHealth: ValidationResult;           // System health status
+ *   optimizationHealth: ValidationResult;     // Optimization health status
+ *   recommendations: string[];                // Actionable recommendations
+ * }
+ * ```
+ * 
+ * ## Error Detection and Handling
+ * 
+ * ### Error Categories
+ * 
+ * #### Critical Errors
+ * - **Metrics Collection Failure**: Unable to collect system metrics
+ * - **Invalid Metric Values**: Metrics outside expected ranges
+ * - **Optimization Failure**: Resource optimization not functioning
+ * - **System Integration Issues**: Problems with system resource APIs
+ * 
+ * #### Warnings
+ * - **Stale Metrics**: Metrics older than expected
+ * - **Low System Memory**: System memory below recommended levels
+ * - **Performance Degradation**: Declining system performance trends
+ * - **Configuration Issues**: Suboptimal configuration settings
+ * 
+ * ### Error Response Strategy
+ * 1. **Immediate Logging**: Log all errors and warnings for analysis
+ * 2. **Alert Generation**: Generate alerts for critical issues
+ * 3. **Graceful Degradation**: Continue operation where possible
+ * 4. **Recovery Procedures**: Implement automatic recovery where feasible
+ * 
+ * ## Recommendation Engine
+ * 
+ * ### Recommendation Generation
+ * Analyzes system health and performance data to generate actionable recommendations
+ * for system administrators and operations teams.
+ * 
+ * #### Recommendation Categories
+ * - **Resource Optimization**: Suggestions for improving resource utilization
+ * - **Performance Tuning**: Recommendations for performance improvements
+ * - **Capacity Planning**: Guidance for capacity planning and scaling
+ * - **Configuration Optimization**: Suggestions for configuration improvements
+ * 
+ * #### Example Recommendations
+ * - **High Memory Usage**: "Consider reducing browser pool size or restarting service"
+ * - **High CPU Usage**: "Consider throttling requests or scaling horizontally"
+ * - **Critical Disk Usage**: "Immediate cleanup required"
+ * - **High Request Load**: "Consider implementing request queuing"
+ * - **Low System Memory**: "Consider upgrading hardware or reducing resource limits"
+ * 
+ * ## Production Integration
+ * 
+ * ### Monitoring System Integration
+ * - **Metrics Export**: Export health metrics to monitoring systems
+ * - **Alert Integration**: Integration with alerting systems (PagerDuty, Slack, etc.)
+ * - **Dashboard Integration**: Provide data for monitoring dashboards
+ * - **Log Integration**: Structured logging for log aggregation systems
+ * 
+ * ### Deployment Considerations
+ * - **Zero-Downtime Monitoring**: Monitoring that doesn't impact service performance
+ * - **Resource Efficiency**: Minimal resource overhead for monitoring operations
+ * - **Scalability**: Monitoring system scales with service deployment
+ * - **Reliability**: Monitoring system is highly reliable and fault-tolerant
+ * 
+ * ## Performance Analysis
+ * 
+ * ### Health Summary Statistics
+ * ```typescript
+ * interface HealthSummary {
+ *   totalChecks: number;        // Total health checks performed
+ *   successfulChecks: number;   // Successful health checks
+ *   failedChecks: number;       // Failed health checks
+ *   successRate: number;        // Success rate percentage
+ *   commonIssues: string[];     // Most common issues encountered
+ * }
+ * ```
+ * 
+ * ### Trend Analysis
+ * - **Performance Trends**: Analysis of performance trends over time
+ * - **Issue Patterns**: Identification of recurring issues and patterns
+ * - **Optimization Effectiveness**: Measurement of optimization strategy effectiveness
+ * - **Capacity Planning**: Data for capacity planning and resource allocation
+ * 
+ * ## Usage in Production Environments
+ * 
+ * ### High-Availability Deployments
+ * - **Continuous Monitoring**: 24/7 monitoring of system health
+ * - **Proactive Issue Detection**: Early detection of potential issues
+ * - **Performance Optimization**: Continuous optimization based on monitoring data
+ * - **Capacity Management**: Data-driven capacity planning and management
+ * 
+ * ### Multi-Environment Support
+ * - **Development**: Validation during development and testing
+ * - **Staging**: Pre-production validation and performance testing
+ * - **Production**: Continuous production monitoring and validation
+ * - **Disaster Recovery**: Monitoring during disaster recovery scenarios
+ * 
+ * ## Cleanup and Resource Management
+ * 
+ * ### Resource Cleanup
+ * The validator includes cleanup validation to ensure that cleanup operations
+ * are functioning correctly and not causing system issues.
+ * 
+ * ### Memory Management
+ * - **Cleanup Validation**: Validates that cleanup operations complete successfully
+ * - **Resource Leak Detection**: Detects potential resource leaks
+ * - **Performance Impact**: Measures performance impact of cleanup operations
+ * 
+ * This comprehensive validation and monitoring system ensures that resource management
+ * operates reliably in production environments and provides the data needed for
+ * continuous optimization and improvement.
+ */
 
 import * as os from 'os';
 import { ResourceMetrics } from './types/resource';
