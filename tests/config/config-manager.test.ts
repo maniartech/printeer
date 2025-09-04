@@ -36,20 +36,12 @@ describe('ConfigurationManager', () => {
     // Save original environment
     originalEnv = { ...process.env };
 
-    // Clear environment variables
-    delete process.env.NODE_ENV;
-    delete process.env.PRINTEER_ENV;
-    delete process.env.PRINTEER_MODE;
-    delete process.env.PRINTEER_BROWSER_EXECUTABLE;
-    delete process.env.PRINTEER_BROWSER_HEADLESS;
-    delete process.env.PRINTEER_BROWSER_TIMEOUT;
-    delete process.env.PRINTEER_MAX_MEMORY_MB;
-    delete process.env.PRINTEER_MAX_CPU_PERCENT;
-    delete process.env.PRINTEER_MAX_CONCURRENT_REQUESTS;
-    delete process.env.PRINTEER_LOG_LEVEL;
-    delete process.env.PRINTEER_LOG_FORMAT;
-    delete process.env.PRINTEER_ALLOWED_DOMAINS;
-    delete process.env.PRINTEER_BLOCKED_DOMAINS;
+    // Clear environment variables more thoroughly
+    Object.keys(process.env).forEach(key => {
+      if (key.startsWith('PRINTEER_') || key === 'NODE_ENV') {
+        delete process.env[key];
+      }
+    });
 
     configManager = new ConfigurationManager(tempDir);
   });
@@ -403,6 +395,9 @@ describe('ConfigurationManager', () => {
         join(tempDir, 'printeer.config.json'),
         JSON.stringify({ browser: { timeout: 60000 } })
       );
+
+      // Small delay to ensure file is written
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Reload
       await configManager.reload();
