@@ -54,6 +54,20 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
   });
 
   describe('checkSystemDependencies', () => {
+    beforeEach(async () => {
+      // Re-initialize the mocked modules after validateBrowserInstallation unmocks them
+      const os = await import('os');
+      const fs = await import('fs');
+      const childProcess = await import('child_process');
+
+      // Re-mock the modules
+      Object.assign(mockOs, vi.mocked(os));
+      Object.assign(mockFs, vi.mocked(fs));
+      Object.assign(mockExecSync, vi.mocked(childProcess.execSync));
+
+      vi.clearAllMocks();
+    });
+
     it('should return system information successfully', async () => {
       // Mock system info
       mockOs.type.mockReturnValue('Linux');
@@ -294,7 +308,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
     });
   });
 
-  describe.only('validateBrowserInstallation', () => {
+  describe('validateBrowserInstallation', () => {
     beforeEach(() => {
       // Un-mock modules for these integration tests
       vi.unmock('puppeteer');
