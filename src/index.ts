@@ -7,7 +7,7 @@ export * from './interfaces';
 export * from './core';
 
 // Enhanced library interface (will be implemented in task 8)
-export { PrinteerService } from './interfaces/service';
+export { PrinteerService } from './printing/types/service';
 
 // Backward compatible default export
 export default printeer;

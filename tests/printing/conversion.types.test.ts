@@ -6,7 +6,7 @@ import type {
   RenderOptions,
   Viewport,
   Margin
-} from '../conversion';
+} from '../../src/printing/types/conversion';
 
 describe('Conversion Types', () => {
   describe('PrinteerOptions', () => {

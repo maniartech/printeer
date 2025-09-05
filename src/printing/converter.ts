@@ -1,6 +1,6 @@
 // Converter implementation placeholder
 
-import { PrinteerOptions, ConversionResult } from '../types/conversion';
+import { PrinteerOptions, ConversionResult } from './types/conversion';
 
 export class DefaultConverter {
   async convert(_options: PrinteerOptions): Promise<ConversionResult> {

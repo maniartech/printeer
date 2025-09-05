@@ -4,7 +4,7 @@ import type {
   BrowserPoolState, 
   PoolStatus,
   BrowserPoolMetrics
-} from '../browser';
+} from '../../src/printing/types/browser';
 
 describe('Browser Types', () => {
   describe('BrowserInstance', () => {

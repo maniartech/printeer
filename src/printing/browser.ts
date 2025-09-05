@@ -6,7 +6,7 @@ import {
   PoolStatus,
   BrowserFactory,
   BrowserPoolState
-} from '../types/browser';
+} from './types/browser';
 import { Browser, PuppeteerLaunchOptions } from 'puppeteer';
 import * as NodeFS from 'fs';
 import * as NodeOS from 'os';
@@ -664,7 +664,8 @@ export class DefaultBrowserFactory implements BrowserFactory {
     if (this.os.platform() === 'win32') {
       alwaysArgs.push('--no-startup-window');
     }
-    launchOptions.args = [...new Set([...(launchOptions.args || []), ...optimizedArgs, ...alwaysArgs])];
+    const allArgs = (launchOptions.args || []).concat(optimizedArgs).concat(alwaysArgs);
+    launchOptions.args = Array.from(new Set(allArgs));
 
     return launchOptions;
   }

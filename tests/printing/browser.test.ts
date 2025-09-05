@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DefaultBrowserFactory, DefaultBrowserManager } from '../browser';
+import { DefaultBrowserFactory, DefaultBrowserManager } from '../../src/printing/browser';
 import { Browser } from 'puppeteer';
 
 // Force test environment and use real bundled Chromium only

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { PrinteerService } from '../service';
-import type { PrinteerOptions, ConversionResult } from '../../types/conversion';
-import type { DiagnosticResult } from '../../diagnostics/types/diagnostics';
-import type { ServiceStatus } from '../command-manager';
+import type { PrinteerService } from '../../src/printing/types/service';
+import type { PrinteerOptions, ConversionResult } from '../../src/printing/types/conversion';
+import type { DiagnosticResult } from '../../src/diagnostics/types/diagnostics';
+import type { ServiceStatus } from '../../src/config/types/command-manager';
 
 describe('Service Interfaces', () => {
   describe('PrinteerService', () => {

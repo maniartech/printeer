@@ -1,5 +1,5 @@
 // Quick browser test
-import { DefaultBrowserFactory } from './src/core/browser.js';
+import { DefaultBrowserFactory } from './src/printing/browser.js';
 
 async function testMinimal() {
   console.log('Setting up test environment...');
