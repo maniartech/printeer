@@ -139,7 +139,9 @@ function detectOutputType(fname: string, outputType: string | null) {
 
 // Enhanced exports
 export * from '../types';
-export * from '../interfaces';
+// Export interfaces from their domain modules
+export * from '../config/types/command-manager';
+export * from '../printing/types/service';
 
 // Export config types with explicit naming to avoid conflicts
 export * from '../config';
@@ -174,6 +176,6 @@ export async function doctor(): Promise<any[]> {
 }
 
 // Enhanced conversion function (placeholder for future implementation)
-export async function convert(_options: any): Promise<any> {
+export async function convert(_options: any): Promise<unknown> {
   throw new Error('Enhanced convert function not implemented yet - will be implemented in task 8');
 }
