@@ -57,5 +57,3 @@ export interface DoctorModule {
   checkEnvironmentCompatibility(): Promise<DiagnosticResult[]>;
   generateReport(): Promise<string>;
 }
-</content>
-</invoke>

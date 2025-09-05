@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import printeer from "../printeer";
+import printeer from "../api";
 import printUsage from "./usage";
 import { DefaultDoctorModule } from "../diagnostics/doctor";
 import type { DiagnosticResult } from "../diagnostics/types/diagnostics";

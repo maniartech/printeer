@@ -1,5 +1,5 @@
 // Core service interfaces
-export * from './process-manager';
+export * from '../types/process-manager';
 export * from '../printing/types/service';
 
 // Re-export command manager from config module

@@ -635,7 +635,7 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
   private async watchConfigFile(watcher: any, filePath: string): Promise<void> {
     try {
       for await (const event of watcher) {
-        if ((event as unknown).eventType === 'change') {
+        if ((event as any).eventType === 'change') {
           this.debouncedReload();
         }
       }

@@ -6,7 +6,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from './types/diagnostics';
 import { DefaultBrowserFactory } from '../printing/browser';
-import printeer from '../printeer';
+import printeer from '../api';
 import type { PuppeteerLaunchOptions } from 'puppeteer';
 type ExtraLaunchOptions = PuppeteerLaunchOptions & { waitForInitialPage?: boolean; dumpio?: boolean };
 

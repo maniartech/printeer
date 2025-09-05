@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ErrorType } from '../errors';
-import type { PrinteerError, FallbackStrategy } from '../errors';
+import { ErrorType } from '../../src/types/errors';
+import type { PrinteerError, FallbackStrategy } from '../../src/types/errors';
 
 describe('Error Types', () => {
   describe('ErrorType enum', () => {

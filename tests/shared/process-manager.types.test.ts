@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { 
   ProcessState, 
   ShutdownOptions 
-} from '../process-manager';
+} from '../../src/types/process-manager';
 
 describe('Process Manager Interfaces', () => {
   describe('ProcessState', () => {

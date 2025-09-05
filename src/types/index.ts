@@ -1,10 +1,11 @@
 // Core type definitions for printeer
-export * from './conversion';
-export * from './diagnostics';
-export * from './browser';
-// Resource types have been moved to src/resources/types/
-// Import from there: import { ResourceMetrics, ... } from '../resources/types/resource';
-export * from './errors';
+// Domain-specific types have been moved to their respective modules:
+// - Conversion types: import from '../printing/types/conversion'
+// - Diagnostics types: import from '../diagnostics/types/diagnostics'
+// - Browser types: import from '../printing/types/browser'
+// - Resource types: import from '../resources/types/resource'
+// - Configuration types: import from '../config/types/configuration'
 
-// Re-export configuration types from config module
-export * from '../config/types/configuration';
+// Shared cross-domain types remain here
+export * from './errors';
+export * from './process-manager';
