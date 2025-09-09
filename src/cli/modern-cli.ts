@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { intro, outro, text, select, spinner, isCancel, cancel, log } from '@clack/prompts';
+import { intro, outro, text, select, spinner, isCancel, cancel } from '@clack/prompts';
 import printeer from '../api';
 import { DefaultDoctorModule } from '../diagnostics/doctor';
 import type { DiagnosticResult } from '../diagnostics/types/diagnostics';
@@ -117,69 +117,115 @@ async function interactiveDoctor(verbose = false, json = false, quiet = false) {
 }
 
 async function runDiagnosticsWithSteps(doctor: DefaultDoctorModule, verbose = false) {
-  // Run all diagnostics first
-  const s = spinner();
-  s.start('🔍 Running comprehensive system diagnostics...');
+  const allResults: DiagnosticResult[] = [];
 
-  const allResults = await doctor.runFullDiagnostics();
-  s.stop('[ Diagnostics completed');
-
-  // Group results for display
-  const groups = [
+  // Define diagnostic groups with their methods
+  const diagnosticGroups = [
     {
       name: 'System Environment',
       emoji: '🖥️',
+      method: () => doctor.checkSystemDependencies(),
       components: ['system-info', 'platform-compatibility', 'permissions', 'resource-availability']
     },
     {
       name: 'Browser & Runtime',
       emoji: '🌐',
+      method: () => doctor.validateBrowserInstallation(),
       components: ['browser-availability', 'browser-version', 'browser-launch', 'browser-sandbox']
     },
     {
       name: 'Display & Resources',
       emoji: '🎨',
+      method: () => doctor.checkEnvironmentCompatibility(),
       components: ['display-server', 'font-availability', 'network-connectivity']
-    },
-    {
-      name: 'Output Generation',
-      emoji: '🎯',
-      components: ['print-pdf', 'print-png']
     }
   ];
 
-  // Display results by group with steps
-  for (const group of groups) {
-    const groupResults = allResults.filter(r => group.components.includes(r.component));
-    if (groupResults.length === 0) continue;
+  // Run each group sequentially with real-time feedback
+  for (const group of diagnosticGroups) {
+    const s = spinner();
+    s.start(`Checking ${group.name.toLowerCase()}...`);
 
-    const passed = groupResults.filter(r => r.status === 'pass').length;
-    const warnings = groupResults.filter(r => r.status === 'warn').length;
-    const failed = groupResults.filter(r => r.status === 'fail').length;
+    try {
+      const groupResults = await group.method();
+      allResults.push(...groupResults);
 
-    if (failed > 0) {
-      log.error(`${group.emoji}  ${group.name}: ${failed} failed, ${warnings} warnings, ${passed} passed`);
-    } else if (warnings > 0) {
-      log.warning(`${group.emoji}  ${group.name}: ${warnings} warnings, ${passed} passed`);
-    } else {
-      log.success(`${group.emoji}  ${group.name}: All ${passed} checks passed`);
-    }
+      const passed = groupResults.filter(r => r.status === 'pass').length;
+      const warnings = groupResults.filter(r => r.status === 'warn').length;
+      const failed = groupResults.filter(r => r.status === 'fail').length;
 
-    // Always show individual test results, with different detail levels
-    const groupDetails = groupResults.map(result => {
-      const icon = result.status === 'pass' ? '✓' : result.status === 'warn' ? '⚠️' : '❌';
-      let line = `  ${icon} ${result.component} — ${result.message}`;
-
-      // Add remediation only if verbose or there are issues
-      if ((verbose || result.status !== 'pass') && result.remediation) {
-        line += `\n     → ${result.remediation}`;
+      // Stop spinner and show group result
+      if (failed > 0) {
+        s.stop('');
+        console.log(`❌ ${group.emoji}  ${group.name}: ${failed} failed, ${warnings} warnings, ${passed} passed`);
+      } else if (warnings > 0) {
+        s.stop('');
+        console.log(`⚠️ ${group.emoji}  ${group.name}: ${warnings} warnings, ${passed} passed`);
+      } else {
+        s.stop('');
+        console.log(`✓ ${group.emoji}  ${group.name}: All ${passed} checks passed`);
       }
 
-      return line;
-    }).join('\n');
+      // Show individual test results
+      const groupDetails = groupResults.map(result => {
+        const icon = result.status === 'pass' ? '✓' : result.status === 'warn' ? '⚠️' : '❌';
+        let line = `  ${icon} ${result.component} — ${result.message}`;
 
-    // Display all items in the group together
-    console.log(groupDetails);
+        // Add remediation only if verbose or there are issues
+        if ((verbose || result.status !== 'pass') && result.remediation) {
+          line += `\n     → ${result.remediation}`;
+        }
+
+        return line;
+      }).join('\n');
+
+      console.log(groupDetails);
+
+    } catch (error) {
+      s.stop(`❌ ${group.name}: Failed to run diagnostics`);
+      throw error;
+    }
+  }
+
+  // Finally, run output generation tests if browser tests passed
+  const browserLaunch = allResults.find(r => r.component === 'browser-launch');
+  const browserSandbox = allResults.find(r => r.component === 'browser-sandbox');
+
+  if (browserLaunch?.status === 'pass' && browserSandbox?.status !== 'fail') {
+    const outputSpinner = spinner();
+    outputSpinner.start('Testing output generation...');
+
+    try {
+      // We need to call the full diagnostics to get PDF/PNG tests since they're private
+      const fullResults = await doctor.runFullDiagnostics();
+      const outputResults = fullResults.filter(r => ['print-pdf', 'print-png'].includes(r.component));
+
+      if (outputResults.length > 0) {
+        allResults.push(...outputResults);
+
+        const outputPassed = outputResults.filter(r => r.status === 'pass').length;
+        const outputFailed = outputResults.filter(r => r.status === 'fail').length;
+
+        outputSpinner.stop('');
+
+        if (outputFailed > 0) {
+          console.log(`❌ 🎯  Output Generation: ${outputFailed} failed, ${outputPassed} passed`);
+        } else {
+          console.log(`✓ 🎯  Output Generation: All ${outputPassed} checks passed`);
+        }
+
+        // Show output test details
+        const outputDetails = outputResults.map(result => {
+          const icon = result.status === 'pass' ? '✓' : '❌';
+          return `  ${icon} ${result.component} — ${result.message}`;
+        }).join('\n');
+
+        console.log(outputDetails);
+      }
+    } catch (error) {
+      outputSpinner.stop('❌ Output Generation: Tests failed');
+      // Don't throw here - output tests are less critical
+    }
   }
 
   // Final summary
