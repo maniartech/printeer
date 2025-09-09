@@ -240,7 +240,7 @@ export class ConfigurationManager implements IConfigurationManager {
       mode: 'single-shot',
       environment,
       browser: {
-        headless: isProduction ? true : 'auto',
+        headless: isProduction ? "new" : 'auto',
         args: this.getDefaultBrowserArgs(environment),
         timeout: 30000,
         pool: {
@@ -332,7 +332,7 @@ export class ConfigurationManager implements IConfigurationManager {
     if (process.env.PRINTEER_BROWSER_HEADLESS) {
       const headless = process.env.PRINTEER_BROWSER_HEADLESS.toLowerCase();
       config.browser = mergeBrowserConfig(config.browser, {
-        headless: headless === 'auto' ? 'auto' : headless === 'true'
+        headless: headless === 'auto' ? 'auto' : headless === 'new' ? 'new' : headless === 'true'
       });
     }
 
@@ -452,8 +452,8 @@ export class ConfigurationManager implements IConfigurationManager {
 
     // Validate browser configuration
     if (config.browser) {
-      if (typeof config.browser.headless !== 'boolean' && config.browser.headless !== 'auto') {
-        errors.push('browser.headless must be boolean or "auto"');
+      if (typeof config.browser.headless !== 'boolean' && config.browser.headless !== 'auto' && config.browser.headless !== 'new') {
+        errors.push('browser.headless must be boolean, "auto", or "new"');
       }
 
       if (config.browser.timeout <= 0) {

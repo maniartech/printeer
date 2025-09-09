@@ -20,7 +20,7 @@ export interface Margin {
 }
 
 export interface BrowserOptions {
-  headless?: boolean | 'auto';
+  headless?: boolean | 'auto' | 'new';
   executablePath?: string;
   args?: string[];
   timeout?: number;

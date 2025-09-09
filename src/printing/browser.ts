@@ -616,7 +616,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
 
   getOptimalLaunchOptions(): PuppeteerLaunchOptions {
     const baseOptions: PuppeteerLaunchOptions = {
-      headless: true, // Always headless in tests and by default
+      headless: "new", // Use new headless mode (Chrome 112+)
       timeout: 30000,
       args: []
     };
@@ -626,7 +626,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
 
     // Force headless mode in test environment to prevent UI windows
     if (process.env.NODE_ENV === 'test') {
-      launchOptions.headless = true;
+      launchOptions.headless = "new";
       // Use minimal args for tests to avoid launch issues
       launchOptions.args = [
         '--no-sandbox',

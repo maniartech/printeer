@@ -15,8 +15,8 @@
     "esbuild": "esbuild",
     "clean": "rm -rf dist",
     "build:lib": "npm run esbuild -- ./src/index.ts --outfile=./dist/lib/index.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
-    "build:cli": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
-    "build:cli:silent": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap --log-level=error",
+    "build:cli": "npm run esbuild -- ./src/cli/modern-cli.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
+    "build:cli:silent": "npm run esbuild -- ./src/cli/modern-cli.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap --log-level=error",
     "build:types": "tsc --project tsconfig.build.json",
     "build": "npm run clean && npm run build:lib && npm run build:cli && npm run build:types",
     "test": "vitest run",
@@ -29,6 +29,8 @@
     "printeer": "node scripts/run-cli.js"
   },
   "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "commander": "^14.0.0",
     "puppeteer": "^19.5.2"
   },
   "devDependencies": {

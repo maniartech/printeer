@@ -18,7 +18,7 @@ export const isCurrentUserRoot = function():Boolean {
  */
 export const getDefaultBrowserOptions = function():any {
   const launchOptions:any = {
-    headless: true,
+    headless: "new",
     args: ['--no-sandbox', '--disable-setuid-sandbox'] // <- Handle this better, only for root users!
   }
 

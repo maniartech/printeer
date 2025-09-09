@@ -161,7 +161,7 @@ export class ConfigurationLoader {
     }
     if (process.env.PRINTEER_BROWSER_HEADLESS) {
       const headless = process.env.PRINTEER_BROWSER_HEADLESS.toLowerCase();
-      browserConfig.headless = headless === 'auto' ? 'auto' : headless === 'true';
+      browserConfig.headless = headless === 'auto' ? 'auto' : headless === 'new' ? 'new' : headless === 'true';
     }
     if (process.env.PRINTEER_BROWSER_TIMEOUT) {
       browserConfig.timeout = parseInt(process.env.PRINTEER_BROWSER_TIMEOUT, 10);

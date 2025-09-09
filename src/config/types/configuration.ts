@@ -14,7 +14,7 @@ export interface BrowserPoolConfig {
 
 export interface BrowserConfig {
   executablePath?: string;
-  headless: boolean | 'auto';
+  headless: boolean | 'auto' | 'new';
   args: string[];
   timeout: number;
   pool: BrowserPoolConfig;

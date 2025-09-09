@@ -67,7 +67,7 @@ export class DefaultDoctorModule implements DoctorModule {
     options.args = Array.from(new Set(mergedOnce));
 
     // Always force headless at API level as well
-  options.headless = true as unknown as boolean; // keep type compatibility across puppeteer versions
+  options.headless = "new" as unknown as boolean; // keep type compatibility across puppeteer versions
     // In verbose mode, pipe browser stdio to this process for inspection
     if (this.verbose) {
       (options as ExtraLaunchOptions).dumpio = true;
@@ -535,7 +535,7 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
       // Try to launch bundled browser briefly to verify it works and get version
       const browser = await puppeteer.launch({
-        headless: true,
+        headless: "new",
         timeout: 10000,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
@@ -1241,7 +1241,7 @@ export class DefaultDoctorModule implements DoctorModule {
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
-        headless: true,
+        headless: "new",
         pipe: true,
         timeout: 25000,
         args: [
@@ -1301,7 +1301,7 @@ export class DefaultDoctorModule implements DoctorModule {
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
-        headless: true,
+        headless: "new",
         pipe: true,
         timeout: 25000,
         args: [

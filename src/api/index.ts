@@ -40,7 +40,7 @@ export default async (url: string, outputFile: string, outputType: string | null
   }
 
   // Ensure fully headless behavior even if upstream toggles default
-  launchOptions.headless = true;
+  launchOptions.headless = "new";
   const baseArgs: string[] = Array.isArray(launchOptions.args) ? launchOptions.args : [];
   const extraArgs = [
     baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new',

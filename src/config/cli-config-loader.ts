@@ -95,7 +95,7 @@ export class CliConfigLoader {
             i++; // Skip next argument
           } else {
             // Boolean flag
-            config.browser = mergeBrowserConfig(config.browser, { headless: true });
+            config.browser = mergeBrowserConfig(config.browser, { headless: "new" });
           }
           break;
           
