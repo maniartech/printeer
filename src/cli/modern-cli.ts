@@ -244,11 +244,11 @@ program
         } else {
           displaySummaryResults(results);
         }
-        
+
         // Show final status message
         const hasErrors = results.some((r: DiagnosticResult) => r.status === 'fail');
         const hasWarnings = results.some((r: DiagnosticResult) => r.status === 'warn');
-        
+
         if (hasErrors) {
           console.log('\n❌ Some issues found. Run with --verbose for details.');
           process.exit(1);

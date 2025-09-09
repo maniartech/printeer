@@ -109,6 +109,11 @@ export class DefaultDoctorModule implements DoctorModule {
     const envCompatibility = await this.checkEnvironmentCompatibility();
   this.vlog('phase', 'checkEnvironmentCompatibility:done');
 
+    // Add core diagnostic results first
+    results.push(...systemDeps);
+    results.push(...browserValidation);
+  results.push(...envCompatibility);
+
   // Final output checks: run only if core browser tests passed to avoid redundant failures
   const coreLaunch = browserValidation.find(r => r.component === 'browser-launch')?.status === 'pass';
   const sandboxOk = browserValidation.find(r => r.component === 'browser-sandbox')?.status !== 'fail';
@@ -119,10 +124,6 @@ export class DefaultDoctorModule implements DoctorModule {
     this.vlog('phase', 'output-checks:done');
     results.push(pdfResult, pngResult);
   }
-
-    results.push(...systemDeps);
-    results.push(...browserValidation);
-  results.push(...envCompatibility);
 
     return results;
   }
