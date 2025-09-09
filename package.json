@@ -15,8 +15,8 @@
     "esbuild": "esbuild",
     "clean": "rm -rf dist",
     "build:lib": "npm run esbuild -- ./src/index.ts --outfile=./dist/lib/index.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
-  "build:cli": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
-  "build:doctor": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
+    "build:cli": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap",
+    "build:cli:silent": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap --log-level=error",
     "build:types": "tsc --project tsconfig.build.json",
     "build": "npm run clean && npm run build:lib && npm run build:cli && npm run build:types",
     "test": "vitest run",
@@ -25,8 +25,8 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "tsc": "tsc",
-  "doctor": "npm run build:doctor && node dist/bin/cli.js doctor",
-  "printeer": "npm run build:cli && node dist/bin/cli.js"
+    "doctor": "node scripts/run-cli.js doctor",
+    "printeer": "node scripts/run-cli.js"
   },
   "dependencies": {
     "puppeteer": "^19.5.2"
