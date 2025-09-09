@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { intro, outro, text, select, spinner, isCancel, cancel } from '@clack/prompts';
+import { intro, outro, text, select, spinner, isCancel, cancel, log } from '@clack/prompts';
 import printeer from '../api';
 import { DefaultDoctorModule } from '../diagnostics/doctor';
 import type { DiagnosticResult } from '../diagnostics/types/diagnostics';
@@ -76,7 +76,7 @@ async function interactiveConvert() {
 
   try {
     const result = await printeer(url.toString(), output.toString(), null, {});
-    s.stop('✅ Conversion complete!');
+    s.stop('✓ Conversion complete!');
     outro(`📄 Saved to: ${result}`);
   } catch (error) {
     s.stop('❌ Conversion failed');
@@ -90,43 +90,25 @@ async function interactiveDoctor(verbose = false, json = false, quiet = false) {
     intro('🔍 Printeer Doctor - System Diagnostics');
   }
 
-  const s = !json && !quiet ? spinner() : null;
-  s?.start('Running diagnostics...');
-
   try {
     const doctor = new DefaultDoctorModule();
-    const results = await doctor.runFullDiagnostics();
 
-    s?.stop('✅ Diagnostics complete');
+    if (json || quiet) {
+      // Non-interactive modes - run all at once
+      const results = await doctor.runFullDiagnostics();
 
-    if (json) {
-      console.log(JSON.stringify(results, null, 2));
-    } else if (quiet) {
-      // Truly quiet - no output, just exit code
-      const hasErrors = results.some((r: DiagnosticResult) => r.status === 'fail');
-      process.exit(hasErrors ? 1 : 0);
-    } else if (verbose) {
-      // Detailed output
-      displayDetailedResults(results);
-    } else {
-      // Summary output
-      displaySummaryResults(results);
-    }
-
-    if (!json && !quiet) {
-      const hasErrors = results.some((r: DiagnosticResult) => r.status === 'fail');
-      const hasWarnings = results.some((r: DiagnosticResult) => r.status === 'warn');
-
-      if (hasErrors) {
-        outro('❌ Some issues found. Run with --verbose for details.');
-      } else if (hasWarnings) {
-        outro('⚠️  Everything working, but some warnings found.');
-      } else {
-        outro('✅ All checks passed. Your system is ready!');
+      if (json) {
+        console.log(JSON.stringify(results, null, 2));
+      } else if (quiet) {
+        const hasErrors = results.some((r: DiagnosticResult) => r.status === 'fail');
+        process.exit(hasErrors ? 1 : 0);
       }
+    } else {
+      // Interactive mode with live steps
+      await runDiagnosticsWithSteps(doctor, verbose);
     }
+
   } catch (error) {
-    s?.stop('❌ Diagnostics failed');
     if (!json && !quiet) {
       outro(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -134,28 +116,138 @@ async function interactiveDoctor(verbose = false, json = false, quiet = false) {
   }
 }
 
+async function runDiagnosticsWithSteps(doctor: DefaultDoctorModule, verbose = false) {
+  // Run all diagnostics first
+  const s = spinner();
+  s.start('🔍 Running comprehensive system diagnostics...');
+
+  const allResults = await doctor.runFullDiagnostics();
+  s.stop('[ Diagnostics completed');
+
+  // Group results for display
+  const groups = [
+    {
+      name: 'System Environment',
+      emoji: '🖥️',
+      components: ['system-info', 'platform-compatibility', 'permissions', 'resource-availability']
+    },
+    {
+      name: 'Browser & Runtime',
+      emoji: '🌐',
+      components: ['browser-availability', 'browser-version', 'browser-launch', 'browser-sandbox']
+    },
+    {
+      name: 'Display & Resources',
+      emoji: '🎨',
+      components: ['display-server', 'font-availability', 'network-connectivity']
+    },
+    {
+      name: 'Output Generation',
+      emoji: '🎯',
+      components: ['print-pdf', 'print-png']
+    }
+  ];
+
+  // Display results by group with steps
+  for (const group of groups) {
+    const groupResults = allResults.filter(r => group.components.includes(r.component));
+    if (groupResults.length === 0) continue;
+
+    const passed = groupResults.filter(r => r.status === 'pass').length;
+    const warnings = groupResults.filter(r => r.status === 'warn').length;
+    const failed = groupResults.filter(r => r.status === 'fail').length;
+
+    if (failed > 0) {
+      log.error(`${group.emoji}  ${group.name}: ${failed} failed, ${warnings} warnings, ${passed} passed`);
+    } else if (warnings > 0) {
+      log.warning(`${group.emoji}  ${group.name}: ${warnings} warnings, ${passed} passed`);
+    } else {
+      log.success(`${group.emoji}  ${group.name}: All ${passed} checks passed`);
+    }
+
+    // Always show individual test results, with different detail levels
+    const groupDetails = groupResults.map(result => {
+      const icon = result.status === 'pass' ? '✓' : result.status === 'warn' ? '⚠️' : '❌';
+      let line = `  ${icon} ${result.component} — ${result.message}`;
+
+      // Add remediation only if verbose or there are issues
+      if ((verbose || result.status !== 'pass') && result.remediation) {
+        line += `\n     → ${result.remediation}`;
+      }
+
+      return line;
+    }).join('\n');
+
+    // Display all items in the group together
+    console.log(groupDetails);
+  }
+
+  // Final summary
+  const hasErrors = allResults.some(r => r.status === 'fail');
+  const hasWarnings = allResults.some(r => r.status === 'warn');
+
+  if (hasErrors) {
+    outro('❌ Some issues found. Run with --verbose for details.');
+    process.exit(1);
+  } else if (hasWarnings) {
+    outro('⚠️  Everything working, but some warnings found.');
+  } else {
+    outro('✓ All checks passed. Your system is ready!');
+  }
+}
+
 function displaySummaryResults(results: DiagnosticResult[]) {
   console.log('\nDoctor summary:');
-  for (const result of results) {
-    const icon = result.status === 'pass' ? '[✓]' :
-                 result.status === 'warn' ? '[!]' : '[✗]';
-    console.log(`${icon} ${result.component} — ${result.message}`);
+
+  // Group diagnostics by category
+  const groups = {
+    'System Environment': ['system-info', 'platform-compatibility', 'permissions', 'resource-availability'],
+    'Browser & Runtime': ['browser-availability', 'browser-version', 'browser-launch', 'browser-sandbox'],
+    'Display & Resources': ['display-server', 'font-availability', 'network-connectivity'],
+    'Output Generation': ['print-pdf', 'print-png']
+  };
+
+  for (const [groupName, componentNames] of Object.entries(groups)) {
+    const groupResults = results.filter(r => componentNames.includes(r.component));
+    if (groupResults.length === 0) continue;
+
+    console.log(`\n📋 ${groupName}:`);
+    for (const result of groupResults) {
+      const icon = result.status === 'pass' ? '[✓]' :
+                   result.status === 'warn' ? '[!]' : '[✗]';
+      console.log(`  ${icon} ${result.component} — ${result.message}`);
+    }
   }
 }
 
 function displayDetailedResults(results: DiagnosticResult[]) {
   console.log('\nDetailed diagnostics:');
-  for (const result of results) {
-    const icon = result.status === 'pass' ? '✅' :
-                 result.status === 'warn' ? '⚠️' : '❌';
-    console.log(`\n${icon} ${result.component}`);
-    console.log(`   Status: ${result.status.toUpperCase()}`);
-    console.log(`   Message: ${result.message}`);
-    if (result.remediation) {
-      console.log(`   Fix: ${result.remediation}`);
-    }
-    if (result.details) {
-      console.log(`   Details: ${JSON.stringify(result.details, null, 2)}`);
+
+  // Group diagnostics by category
+  const groups = {
+    'System Environment': ['system-info', 'platform-compatibility', 'permissions', 'resource-availability'],
+    'Browser & Runtime': ['browser-availability', 'browser-version', 'browser-launch', 'browser-sandbox'],
+    'Display & Resources': ['display-server', 'font-availability', 'network-connectivity'],
+    'Output Generation': ['print-pdf', 'print-png']
+  };
+
+  for (const [groupName, componentNames] of Object.entries(groups)) {
+    const groupResults = results.filter(r => componentNames.includes(r.component));
+    if (groupResults.length === 0) continue;
+
+    console.log(`\n📋 ${groupName}:`);
+    for (const result of groupResults) {
+      const icon = result.status === 'pass' ? '✓' :
+                   result.status === 'warn' ? '⚠️' : '❌';
+      console.log(`\n  ${icon} ${result.component}`);
+      console.log(`     Status: ${result.status.toUpperCase()}`);
+      console.log(`     Message: ${result.message}`);
+      if (result.remediation) {
+        console.log(`     Fix: ${result.remediation}`);
+      }
+      if (result.details) {
+        console.log(`     Details: ${JSON.stringify(result.details, null, 2)}`);
+      }
     }
   }
 }
@@ -197,7 +289,7 @@ program
         const s = spinner();
         s.start('Converting webpage...');
         const result = await printeer(url, output, null, {});
-        s.stop('✅ Conversion complete!');
+        s.stop('✓ Conversion complete!');
         console.log(`📄 Saved to: ${result}`);
       } else {
         // Silent mode for programmatic use
@@ -255,7 +347,7 @@ program
         } else if (hasWarnings) {
           console.log('\n⚠️  Everything working, but some warnings found.');
         } else {
-          console.log('\n✅ All checks passed. Your system is ready!');
+          console.log('\n✓ All checks passed. Your system is ready!');
         }
       }
     } else {
