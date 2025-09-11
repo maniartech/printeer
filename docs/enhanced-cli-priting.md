@@ -621,29 +621,60 @@ jobs:
     dependencies: ["dynamic-invoice-batch"]
 ```
 
-### Batch Processor Implementation
+### Batch Processor Implementation - Integrated with Browser Pool Optimization
 
 ```typescript
 // src/batch/batch-processor.ts
 import { EventEmitter } from 'events';
-import { WorkerPool } from './worker-pool';
-import { JobQueue } from './job-queue';
-import { ReportGenerator } from './report-generator';
-import { BatchValidator } from './batch-validator';
+import { DefaultResourceManager } from '../resources/resource-manager';
+import { DefaultBrowserManager } from '../printing/browser';
+import { DefaultConverter } from '../printing/converter';
+import { DefaultCleanupManager } from '../resources/cleanup-manager';
+import { DefaultBrowserPoolOptimizer } from '../resources/browser-pool-optimizer';
+import { EnhancedConfigurationManager } from '../config/enhanced-config';
 
 export class BatchProcessor extends EventEmitter {
-  private queue: JobQueue;
-  private workerPool: WorkerPool;
-  private reportGenerator: ReportGenerator;
-  private validator: BatchValidator;
+  private resourceManager: DefaultResourceManager;
+  private browserManager: DefaultBrowserManager;
+  private browserPoolOptimizer: DefaultBrowserPoolOptimizer;
+  private converter: DefaultConverter;
+  private cleanupManager: DefaultCleanupManager;
+  private configManager: EnhancedConfigurationManager;
   private results: Map<string, BatchResult> = new Map();
   private startTime?: Date;
+  private activeJobs = 0;
+  private maxConcurrency: number;
 
-  constructor() {
+  constructor(options: BatchOptions) {
     super();
-    this.queue = new JobQueue();
-    this.validator = new BatchValidator();
-    this.reportGenerator = new ReportGenerator();
+    this.maxConcurrency = options.concurrency;
+
+    // Initialize with existing optimized components
+    this.resourceManager = new DefaultResourceManager({
+      memoryWarning: 0.7,
+      memoryCritical: 0.9,
+      cpuWarning: 0.8,
+      cpuCritical: 0.95,
+      diskWarning: 0.85,
+      diskCritical: 0.95
+    });
+
+    // Use intelligent browser pool sizing
+    this.browserPoolOptimizer = new DefaultBrowserPoolOptimizer();
+
+    this.browserManager = new DefaultBrowserManager(undefined, {
+      minSize: 1,
+      maxSize: Math.min(options.concurrency, 8), // Respect concurrency limits
+      idleTimeout: 30000,
+      cleanupInterval: 60000
+    });
+
+    this.converter = new DefaultConverter();
+    this.cleanupManager = new DefaultCleanupManager();
+    this.configManager = new EnhancedConfigurationManager();
+
+    // Set up intelligent resource monitoring
+    this.setupResourceOptimization();
   }
 
   async processBatchFile(
@@ -651,9 +682,12 @@ export class BatchProcessor extends EventEmitter {
     options: BatchOptions
   ): Promise<BatchReport> {
     try {
+      // Initialize systems with resource optimization
+      await this.initialize();
+
       // Load and validate batch file
       const batchData = await this.loadBatchFile(batchFile);
-      const validation = await this.validator.validate(batchData);
+      const validation = await this.validateBatchData(batchData);
 
       if (!validation.valid) {
         throw new BatchValidationError(
@@ -662,11 +696,13 @@ export class BatchProcessor extends EventEmitter {
         );
       }
 
-      // Process the batch
+      // Process the batch with intelligent resource management
       return await this.processBatch(batchData.jobs, options);
     } catch (error) {
       this.emit('error', error);
       throw error;
+    } finally {
+      await this.cleanup();
     }
   }
 
@@ -675,7 +711,6 @@ export class BatchProcessor extends EventEmitter {
     options: BatchOptions
   ): Promise<BatchReport> {
     this.startTime = new Date();
-    this.workerPool = new WorkerPool(options.concurrency);
 
     try {
       // Validate and prepare jobs
@@ -686,18 +721,432 @@ export class BatchProcessor extends EventEmitter {
         return this.generateDryRunReport(processedJobs, options);
       }
 
-      // Process jobs with dependency resolution
-      await this.processJobsWithDependencies(processedJobs, options);
+      // Process jobs with intelligent resource optimization and browser pool management
+      await this.processJobsWithResourceOptimization(processedJobs, options);
 
-      // Generate final report
-      return await this.reportGenerator.generate(
-        Array.from(this.results.values()),
-        options
-      );
+      // Generate final report with resource metrics
+      return await this.generateBatchReport(options);
     } finally {
       await this.cleanup();
     }
   }
+
+  private async initialize(): Promise<void> {
+    // Start resource monitoring for intelligent optimization
+    this.resourceManager.startMonitoring();
+
+    // Initialize browser pool with optimal sizing
+    await this.browserManager.initialize();
+
+    // Set up resource pressure response system
+    this.resourceManager.onResourcePressure(async (pressure) => {
+      await this.handleResourcePressure(pressure);
+    });
+
+    console.info('Batch processor initialized with browser pool optimization');
+  }
+
+  private setupResourceOptimization(): void {
+    // Dynamic concurrency adjustment based on resource availability
+    this.resourceManager.onResourcePressure(async (pressure) => {
+      if (pressure.memory || pressure.cpu) {
+        // Intelligently reduce concurrency under pressure
+        const currentMetrics = await this.resourceManager.getLatestMetrics();
+        const optimalPoolSize = this.browserPoolOptimizer.calculateOptimalPoolSize(currentMetrics);
+
+        this.maxConcurrency = Math.max(1, Math.min(this.maxConcurrency, optimalPoolSize));
+
+        this.emit('concurrency-adjusted', {
+          reason: 'resource-pressure',
+          newLimit: this.maxConcurrency,
+          resourcePressure: pressure
+        });
+      }
+    });
+  }
+
+  private async processJobsWithResourceOptimization(
+    jobs: BatchJob[],
+    options: BatchOptions
+  ): Promise<void> {
+    // Build dependency graph for intelligent job scheduling
+    const dependencyGraph = this.buildDependencyGraph(jobs);
+
+    // Process jobs with dynamic resource-aware concurrency
+    const processedJobs = new Set<string>();
+    const processingJobs = new Set<string>();
+    const jobQueue: BatchJob[] = [];
+
+    // Initialize queue with jobs that have no dependencies
+    jobs.forEach(job => {
+      if (!job.dependencies || job.dependencies.length === 0) {
+        jobQueue.push(job);
+      }
+    });
+
+    while (jobQueue.length > 0 || processingJobs.size > 0) {
+      // Get current resource metrics for optimization decisions
+      const metrics = await this.resourceManager.getLatestMetrics();
+
+      // Calculate optimal concurrency based on resource availability
+      const optimalConcurrency = this.browserPoolOptimizer.calculateOptimalPoolSize(metrics);
+      const actualConcurrency = Math.min(
+        this.maxConcurrency,
+        Math.min(optimalConcurrency, options.concurrency),
+        this.activeJobs + Math.max(1, jobQueue.length)
+      );
+
+      // Process jobs while respecting intelligent resource limits
+      while (this.activeJobs < actualConcurrency && jobQueue.length > 0) {
+        const job = jobQueue.shift()!;
+
+        if (!processedJobs.has(job.id) && !processingJobs.has(job.id)) {
+          processingJobs.add(job.id);
+          // Process job asynchronously with resource monitoring
+          this.processJobWithBrowserPool(job, options, processedJobs, processingJobs, jobQueue, jobs)
+            .catch(error => {
+              this.emit('job-failed', job, error);
+              if (!options.continueOnError) {
+                throw error;
+              }
+            });
+        }
+      }
+
+      // Brief pause to allow resource metrics to update
+      if (jobQueue.length > 0 || processingJobs.size > 0) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+  }
+
+  private async processJobWithBrowserPool(
+    job: BatchJob,
+    options: BatchOptions,
+    processedJobs: Set<string>,
+    processingJobs: Set<string>,
+    jobQueue: BatchJob[],
+    allJobs: BatchJob[]
+  ): Promise<void> {
+    this.activeJobs++;
+    this.resourceManager.incrementActiveRequests();
+    this.resourceManager.incrementBrowserInstances(); // Track resource usage
+
+    try {
+      const result = await this.executeJobWithOptimizedBrowser(job, options);
+      this.results.set(job.id, result);
+      this.emit('job-completed', job, result);
+
+      // Queue dependent jobs when this job completes
+      allJobs.forEach(candidateJob => {
+        if (candidateJob.dependencies?.includes(job.id) &&
+            !processedJobs.has(candidateJob.id) &&
+            !processingJobs.has(candidateJob.id)) {
+
+          // Check if all dependencies are satisfied
+          const allDepsCompleted = candidateJob.dependencies.every(depId =>
+            processedJobs.has(depId)
+          );
+
+          if (allDepsCompleted) {
+            jobQueue.push(candidateJob);
+          }
+        }
+      });
+
+    } catch (error) {
+      const failureResult: BatchResult = {
+        jobId: job.id,
+        status: 'failed',
+        startTime: new Date(),
+        endTime: new Date(),
+        duration: 0,
+        error: error.message,
+        retryCount: job.retryCount || 0
+      };
+
+      this.results.set(job.id, failureResult);
+      this.emit('job-failed', job, error);
+
+      if (!options.continueOnError) {
+        throw error;
+      }
+    } finally {
+      this.activeJobs--;
+      this.resourceManager.decrementActiveRequests();
+      this.resourceManager.decrementBrowserInstances();
+      processingJobs.delete(job.id);
+      processedJobs.add(job.id);
+    }
+  }
+
+  private async executeJobWithOptimizedBrowser(
+    job: BatchJob,
+    options: BatchOptions
+  ): Promise<BatchResult> {
+    const startTime = new Date();
+
+    try {
+      // Get browser instance from optimized pool
+      const browserInstance = await this.browserManager.getBrowser();
+
+      try {
+        // Apply job configuration with intelligent defaults
+        const config = await this.resolveJobConfiguration(job);
+
+        // Execute conversion with resource monitoring
+        const convertOptions = {
+          url: job.url,
+          output: job.output,
+          browserInstance, // Pass the optimized browser instance
+          ...config
+        };
+
+        const conversionResult = await this.converter.convert(convertOptions);
+
+        const endTime = new Date();
+        const result: BatchResult = {
+          jobId: job.id,
+          status: 'completed',
+          startTime,
+          endTime,
+          duration: endTime.getTime() - startTime.getTime(),
+          outputFile: conversionResult.outputPath,
+          retryCount: job.retryCount || 0,
+          memoryUsed: conversionResult.metrics?.memoryUsed,
+          pageMetrics: {
+            loadTime: conversionResult.metrics?.loadTime || 0,
+            resourceCount: conversionResult.metrics?.resourceCount || 0,
+            totalSize: conversionResult.metrics?.totalSize || 0
+          }
+        };
+
+        return result;
+
+      } finally {
+        // Always release browser back to optimized pool
+        await this.browserManager.releaseBrowser(browserInstance);
+      }
+
+    } catch (error) {
+      throw new Error(`Job execution failed: ${error.message}`);
+    }
+  }
+
+  private async handleResourcePressure(pressure: ResourcePressure): Promise<void> {
+    if (pressure.memory) {
+      // Immediate memory optimization using existing cleanup manager
+      await this.cleanupManager.cleanupMemory();
+      this.emit('resource-pressure', { type: 'memory', action: 'cleanup-performed' });
+    }
+
+    if (pressure.disk) {
+      // Immediate disk cleanup using existing cleanup manager
+      await this.cleanupManager.cleanupTempFiles();
+      this.emit('resource-pressure', { type: 'disk', action: 'temp-files-cleaned' });
+    }
+
+    if (pressure.cpu) {
+      // Reduce concurrency intelligently
+      const currentMetrics = await this.resourceManager.getLatestMetrics();
+      const shouldShrink = this.browserPoolOptimizer.shouldShrinkPool(currentMetrics);
+
+      if (shouldShrink) {
+        this.maxConcurrency = Math.max(1, Math.ceil(this.maxConcurrency * 0.7));
+        this.emit('resource-pressure', { type: 'cpu', action: 'concurrency-reduced' });
+      }
+    }
+  }
+
+  private async cleanup(): Promise<void> {
+    // Stop resource monitoring
+    this.resourceManager.stopMonitoring();
+
+    // Shutdown browser pool gracefully using existing manager
+    await this.browserManager.shutdown();
+
+    // Final cleanup using existing cleanup manager
+    await this.cleanupManager.cleanupTempFiles();
+    await this.cleanupManager.cleanupBrowserResources();
+
+    // Reset state
+    this.results.clear();
+    this.activeJobs = 0;
+
+    console.info('Batch processor cleanup completed with resource optimization');
+  }
+
+  // Helper methods for integration with existing systems
+  private async resolveJobConfiguration(job: BatchJob): Promise<EnhancedPrintConfiguration> {
+    // Load base configuration
+    let config = await this.configManager.loadConfiguration();
+
+    // Apply preset if specified - leveraging existing preset system
+    if (job.preset) {
+      const preset = await this.configManager.getPreset(job.preset);
+      config = merge(config, preset);
+    }
+
+    // Apply job-specific configuration
+    if (job.config) {
+      config = merge(config, job.config);
+    }
+
+    // Apply intelligent resource-based optimizations
+    const currentMetrics = await this.resourceManager.getLatestMetrics();
+    config = this.applyResourceOptimizations(config, currentMetrics);
+
+    return config;
+  }
+
+  private applyResourceOptimizations(
+    config: EnhancedPrintConfiguration,
+    metrics: ResourceMetrics
+  ): EnhancedPrintConfiguration {
+    const optimizedConfig = { ...config };
+
+    // Apply memory-based optimizations
+    if (metrics.memoryUsage > 0.8) {
+      // Reduce quality and disable resource-intensive features under memory pressure
+      if (optimizedConfig.image) {
+        optimizedConfig.image.quality = Math.min(optimizedConfig.image.quality || 90, 70);
+      }
+      if (optimizedConfig.performance) {
+        optimizedConfig.performance.blockResources = [
+          ...(optimizedConfig.performance.blockResources || []),
+          'image', 'font'
+        ];
+      }
+    }
+
+    // Apply CPU-based optimizations
+    if (metrics.cpuUsage > 0.8) {
+      // Disable JavaScript and reduce concurrent operations under CPU pressure
+      if (optimizedConfig.performance) {
+        optimizedConfig.performance.javascriptEnabled = false;
+        optimizedConfig.performance.maxConcurrent = 1;
+      }
+    }
+
+    // Apply disk-based optimizations
+    if (metrics.diskUsage > 0.9) {
+      // Use more aggressive compression and smaller outputs under disk pressure
+      if (optimizedConfig.pdf) {
+        optimizedConfig.pdf.scale = Math.min(optimizedConfig.pdf.scale || 1.0, 0.8);
+      }
+      if (optimizedConfig.image) {
+        optimizedConfig.image.optimizeForSize = true;
+        optimizedConfig.image.quality = Math.min(optimizedConfig.image.quality || 90, 60);
+      }
+    }
+
+    return optimizedConfig;
+  }
+
+  private buildDependencyGraph(jobs: BatchJob[]): Map<string, string[]> {
+    const graph = new Map<string, string[]>();
+
+    for (const job of jobs) {
+      graph.set(job.id, job.dependencies || []);
+    }
+
+    return graph;
+  }
+
+  private async generateBatchReport(options: BatchOptions): Promise<BatchReport> {
+    const results = Array.from(this.results.values());
+    const totalJobs = results.length;
+    const successfulJobs = results.filter(r => r.status === 'completed').length;
+    const failedJobs = results.filter(r => r.status === 'failed').length;
+    const skippedJobs = results.filter(r => r.status === 'skipped').length;
+
+    const totalDuration = this.startTime
+      ? new Date().getTime() - this.startTime.getTime()
+      : 0;
+
+    // Include resource metrics and browser pool status for optimization insights
+    const resourceMetrics = this.resourceManager.getMetricsHistory();
+    const browserPoolStatus = this.browserManager.getPoolStatus();
+
+    const report: BatchReport = {
+      totalJobs,
+      successfulJobs,
+      failedJobs,
+      skippedJobs,
+      totalDuration,
+      startTime: this.startTime || new Date(),
+      endTime: new Date(),
+      results,
+      resourceMetrics, // Include resource usage history
+      browserPoolMetrics: browserPoolStatus, // Include browser pool performance
+      optimizationInsights: {
+        averageMemoryUsage: resourceMetrics.reduce((sum, m) => sum + m.memoryUsage, 0) / resourceMetrics.length,
+        peakMemoryUsage: Math.max(...resourceMetrics.map(m => m.memoryUsage)),
+        averageCpuUsage: resourceMetrics.reduce((sum, m) => sum + m.cpuUsage, 0) / resourceMetrics.length,
+        peakCpuUsage: Math.max(...resourceMetrics.map(m => m.cpuUsage)),
+        browserInstancesCreated: browserPoolStatus.metrics.created,
+        browserInstancesReused: browserPoolStatus.metrics.reused,
+        totalBrowserErrors: browserPoolStatus.metrics.errors
+      }
+    };
+
+    return report;
+  }
+
+  // Additional utility methods for integration
+  private async loadBatchFile(filePath: string): Promise<BatchData> {
+    const ext = path.extname(filePath).toLowerCase();
+    const content = await fs.readFile(filePath, 'utf-8');
+
+    switch (ext) {
+      case '.csv':
+        return this.parseCSVBatch(content);
+      case '.json':
+        return JSON.parse(content);
+      case '.yaml':
+      case '.yml':
+        return yaml.parse(content);
+      default:
+        throw new Error(`Unsupported batch file format: ${ext}`);
+    }
+  }
+
+  private async validateBatchData(batchData: BatchData): Promise<ValidationResult> {
+    // Implement batch data validation logic
+    const errors: string[] = [];
+
+    if (!batchData.jobs || batchData.jobs.length === 0) {
+      errors.push('Batch file must contain at least one job');
+    }
+
+    return { valid: errors.length === 0, errors, formattedErrors: errors };
+  }
+
+  private async prepareJobs(jobs: BatchJob[], options: BatchOptions): Promise<BatchJob[]> {
+    const preparedJobs: BatchJob[] = [];
+
+    for (const job of jobs) {
+      // Expand jobs with variables (e.g., array variables create multiple jobs)
+      const expandedJobs = await this.expandJobVariables(job);
+
+      // Validate each expanded job
+      for (const expandedJob of expandedJobs) {
+        preparedJobs.push(expandedJob);
+      }
+    }
+
+    return preparedJobs;
+  }
+
+  private async expandJobVariables(job: BatchJob): Promise<BatchJob[]> {
+    if (!job.variables) {
+      return [job];
+    }
+
+    // Implementation for expanding variable-based jobs
+    return [job]; // Simplified for now
+  }
+}
 
   private async prepareJobs(
     jobs: BatchJob[],
@@ -1598,6 +2047,53 @@ async function validateConfig(
 }
 ```
 
+## Integration with Existing Systems
+
+### Browser Pool Optimization Integration
+
+The enhanced batch processing system leverages the existing `DefaultBrowserPoolOptimizer` for intelligent resource management:
+
+**Key Integration Points:**
+
+1. **Dynamic Pool Sizing**: Uses `calculateOptimalPoolSize()` to adjust browser instances based on real-time resource metrics
+2. **Resource-Aware Scaling**: Integrates with `shouldExpandPool()` and `shouldShrinkPool()` for intelligent scaling decisions
+3. **Memory Optimization**: Leverages existing memory thresholds (60% optimal, 80% high) for pool management
+4. **Load Factor Adjustment**: Uses existing load balancing algorithms for request distribution
+
+**Resource Manager Integration:**
+
+1. **Real-time Monitoring**: Utilizes `DefaultResourceManager` for continuous resource tracking
+2. **Pressure Detection**: Integrates with existing resource pressure callbacks for automatic optimization
+3. **Cleanup Coordination**: Uses `DefaultCleanupManager` for temporary file and browser resource cleanup
+4. **Limit Enforcement**: Leverages `DefaultResourceLimitEnforcer` for quota management
+
+**Browser Manager Integration:**
+
+1. **Pooled Browser Instances**: Uses `DefaultBrowserManager` for optimized browser lifecycle management
+2. **Health Monitoring**: Integrates with existing browser health checks and validation
+3. **Graceful Degradation**: Utilizes existing fallback configurations for browser launch failures
+4. **Cross-Platform Support**: Leverages existing platform-specific browser optimizations
+
+### Enhanced Batch Processing Features
+
+**Intelligent Concurrency Management:**
+- Dynamic adjustment based on resource availability using existing optimization algorithms
+- Memory-aware scaling using `DefaultBrowserPoolOptimizer.calculateOptimalPoolSize()`
+- CPU pressure handling with existing resource thresholds
+- Disk space management with immediate cleanup using `DefaultCleanupManager`
+
+**Resource Optimization Integration:**
+- Configuration optimization based on resource metrics
+- Quality adjustments under memory pressure
+- JavaScript disabling under CPU pressure
+- Compression optimization under disk pressure
+
+**Browser Pool Efficiency:**
+- Reuse of optimized browser instances from existing pool
+- Health validation using existing browser validation methods
+- Automatic cleanup and recovery using existing cleanup managers
+- Platform-specific optimizations from existing browser factory
+
 ## Implementation Plan
 
 ### Phase 1: Core Configuration System (Week 1-2)
@@ -1613,12 +2109,14 @@ async function validateConfig(
 3. **Variable Substitution** - Support for dynamic content
 4. **Template CLI Commands** - Template management via CLI
 
-### Phase 3: Batch Processing (Week 3-4)
+### Phase 3: Batch Processing with Browser Pool Integration (Week 3-4)
 1. **Batch File Parsers** - Support for CSV, JSON, YAML formats
-2. **Job Queue System** - Dependency resolution and parallel processing
-3. **Worker Pool** - Configurable concurrency with resource management
-4. **Progress Tracking** - Real-time progress updates and reporting
-5. **Error Handling** - Comprehensive error handling and retry logic
+2. **Resource-Aware Job Processing** - Integration with `DefaultResourceManager` and `DefaultBrowserPoolOptimizer`
+3. **Intelligent Browser Pool Management** - Use existing `DefaultBrowserManager` for optimized browser lifecycle
+4. **Dynamic Concurrency Control** - Resource-based scaling using existing optimization algorithms
+5. **Integrated Cleanup Management** - Leverage `DefaultCleanupManager` for automatic resource cleanup
+6. **Progress Tracking with Resource Metrics** - Real-time progress with resource usage insights
+7. **Error Handling with Recovery** - Comprehensive error handling with browser pool recovery
 
 ### Phase 4: Enhanced CLI (Week 4-5)
 1. **Enhanced Convert Command** - All configuration options via CLI
