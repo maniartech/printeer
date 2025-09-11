@@ -1,124 +1,286 @@
 #!/usr/bin/env node
 
-import printeer from "../api";
-import printUsage from "./usage";
-import { DefaultDoctorModule } from "../diagnostics/doctor";
-import type { DiagnosticResult } from "../diagnostics/types/diagnostics";
+import { Command } from 'commander';
+import printeer from '../api';
+import { DefaultDoctorModule } from '../diagnostics/doctor';
+import type { DiagnosticResult } from '../diagnostics/types/diagnostics';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import process from 'process';
 
-/**
- * Main entry point of the print-web command!
- */
-(async function main() {
-  const args = process.argv.slice(2);
+// Runtime environment detection
+const isInteractive = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI;
+const isQuiet = process.argv.includes('--quiet') || process.argv.includes('-q');
 
-  // Handle doctor command
-  if (args[0] === 'doctor') {
-    await handleDoctorCommand(args.slice(1));
-    return;
-  }
-
-  // Handle help command
-  if (args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
-    printUsage();
-    return;
-  }
-
-  // Handle version command
-  if (args[0] === 'version' || args[0] === '--version' || args[0] === '-v') {
-    // Read version from package.json at runtime
-    try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const packagePath = path.join(process.cwd(), 'package.json');
-      const packageContent = fs.readFileSync(packagePath, 'utf8');
-      const packageJson = JSON.parse(packageContent);
-      console.log(`printeer v${packageJson.version}`);
-    } catch (error) {
-      console.log('printeer (version unknown)');
-    }
-    return;
-  }
-
-  // Legacy mode: direct URL and output file
-  const url = args[0];
-  const outputFile = args[1];
-
-  // If url or outputFile is not provided, print usage and exit.
-  if (!url || !outputFile) {
-    printUsage();
-    process.exit(1);
-  }
-
-  // Wait for the printeer to finish.
+// Get package version
+function getVersion(): string {
   try {
-    await printeer(url, outputFile, null, null);
-  } catch (e) {
-    console.error("Error:", e);
+    const packagePath = join(process.cwd(), 'package.json');
+    const packageContent = readFileSync(packagePath, 'utf8');
+    const packageJson = JSON.parse(packageContent);
+    return packageJson.version;
+  } catch {
+    return '1.0.0';
+  }
+}
+
+// Lazy-load interactive UI components only when needed
+async function loadInteractiveUI() {
+  try {
+    const { intro, outro, text, select, spinner, isCancel, cancel } = await import('@clack/prompts');
+    return { intro, outro, text, select, spinner, isCancel, cancel };
+  } catch (error) {
+    throw new Error('Interactive UI dependencies not available. Install @clack/prompts for interactive mode.');
+  }
+}
+
+// Interactive conversion function
+async function runInteractiveConvert() {
+  if (!isInteractive || isQuiet) {
+    console.error('Interactive mode requires a TTY and cannot be used with --quiet');
     process.exit(1);
   }
-})();
 
-async function handleDoctorCommand(args: string[]) {
-  const json = args.includes('--json');
-  const markdown = args.includes('--markdown');
-  const help = args.includes('--help') || args.includes('-h');
-  const verbose = args.includes('--verbose') || args.includes('-v') || args.includes('--trace');
+  const ui = await loadInteractiveUI();
 
-  if (help) {
-    printDoctorUsage();
-    return;
+  ui.intro('🎯 Printeer - Web to PDF/PNG Converter');
+
+  const url = await ui.text({
+    message: 'What URL would you like to convert?',
+    placeholder: 'https://example.com',
+    validate: (value) => {
+      if (!value) return 'URL is required';
+      if (!value.startsWith('http')) return 'URL must start with http or https';
+    }
+  });
+
+  if (ui.isCancel(url)) {
+    ui.cancel('Operation cancelled.');
+    process.exit(0);
   }
+
+  const output = await ui.text({
+    message: 'Where should we save the output?',
+    placeholder: 'output.pdf',
+    validate: (value) => {
+      if (!value) return 'Output filename is required';
+    }
+  });
+
+  if (ui.isCancel(output)) {
+    ui.cancel('Operation cancelled.');
+    process.exit(0);
+  }
+
+  const format = output.toString().split('.').pop()?.toLowerCase();
+  if (!['pdf', 'png'].includes(format || '')) {
+    const selectedFormat = await ui.select({
+      message: 'What format would you like?',
+      options: [
+        { value: 'pdf', label: 'PDF Document' },
+        { value: 'png', label: 'PNG Image' }
+      ]
+    });
+
+    if (ui.isCancel(selectedFormat)) {
+      ui.cancel('Operation cancelled.');
+      process.exit(0);
+    }
+  }
+
+  const s = ui.spinner();
+  s.start('Converting webpage...');
+
+  try {
+    const result = await printeer(url.toString(), output.toString(), null, {});
+    s.stop('✓ Conversion complete!');
+    ui.outro(`📄 Saved to: ${result}`);
+  } catch (error) {
+    s.stop('❌ Conversion failed');
+    ui.outro(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+// Interactive doctor function with live diagnostics
+async function runInteractiveDoctor(verbose = false) {
+  if (!isInteractive || isQuiet) {
+    // Fall back to non-interactive mode
+    return runStandardDoctor(verbose, false, isQuiet);
+  }
+
+  const ui = await loadInteractiveUI();
+  ui.intro('🔍 Printeer Doctor - System Diagnostics');
+
+  const doctor = new DefaultDoctorModule();
+  const allResults: DiagnosticResult[] = [];
+
+  // Define diagnostic groups with their methods
+  const diagnosticGroups = [
+    {
+      name: 'System Environment',
+      emoji: '🖥️',
+      method: () => doctor.checkSystemDependencies(),
+      components: ['system-info', 'platform-compatibility', 'permissions', 'resource-availability']
+    },
+    {
+      name: 'Browser & Runtime',
+      emoji: '🌐',
+      method: () => doctor.validateBrowserInstallation(),
+      components: ['browser-availability', 'browser-version', 'browser-launch', 'browser-sandbox']
+    },
+    {
+      name: 'Display & Resources',
+      emoji: '🎨',
+      method: () => doctor.checkEnvironmentCompatibility(),
+      components: ['display-server', 'font-availability', 'network-connectivity']
+    }
+  ];
+
+  // Run each group sequentially with real-time feedback
+  for (const group of diagnosticGroups) {
+    const s = ui.spinner();
+    s.start(`Checking ${group.name.toLowerCase()}...`);
+
+    try {
+      const groupResults = await group.method();
+      allResults.push(...groupResults);
+
+      const passed = groupResults.filter(r => r.status === 'pass').length;
+      const warnings = groupResults.filter(r => r.status === 'warn').length;
+      const failed = groupResults.filter(r => r.status === 'fail').length;
+
+      // Stop spinner and show group result
+      if (failed > 0) {
+        s.stop('');
+        console.log(`❌ ${group.emoji}  ${group.name}: ${failed} failed, ${warnings} warnings, ${passed} passed`);
+      } else if (warnings > 0) {
+        s.stop('');
+        console.log(`⚠️ ${group.emoji}  ${group.name}: ${warnings} warnings, ${passed} passed`);
+      } else {
+        s.stop('');
+        console.log(`✓ ${group.emoji}  ${group.name}: All ${passed} checks passed`);
+      }
+
+      // Show individual test results
+      const groupDetails = groupResults.map(result => {
+        const icon = result.status === 'pass' ? '✓' : result.status === 'warn' ? '⚠️' : '❌';
+        let line = `  ${icon} ${result.component} — ${result.message}`;
+
+        // Add remediation only if verbose or there are issues
+        if ((verbose || result.status !== 'pass') && result.remediation) {
+          line += `\n     → ${result.remediation}`;
+        }
+
+        return line;
+      }).join('\n');
+
+      console.log(groupDetails);
+
+    } catch (error) {
+      s.stop(`❌ ${group.name}: Failed to run diagnostics`);
+      throw error;
+    }
+  }
+
+  // Finally, test output generation if browser tests passed
+  const browserLaunch = allResults.find(r => r.component === 'browser-launch');
+  if (browserLaunch?.status === 'pass') {
+    const outputSpinner = ui.spinner();
+    outputSpinner.start('Testing output generation...');
+
+    try {
+      const fullResults = await doctor.runFullDiagnostics();
+      const outputResults = fullResults.filter(r => ['print-pdf', 'print-png'].includes(r.component));
+
+      if (outputResults.length > 0) {
+        allResults.push(...outputResults);
+
+        const outputPassed = outputResults.filter(r => r.status === 'pass').length;
+        const outputFailed = outputResults.filter(r => r.status === 'fail').length;
+
+        outputSpinner.stop('');
+
+        if (outputFailed > 0) {
+          console.log(`❌ 🎯  Output Generation: ${outputFailed} failed, ${outputPassed} passed`);
+        } else {
+          console.log(`✓ 🎯  Output Generation: All ${outputPassed} checks passed`);
+        }
+
+        const outputDetails = outputResults.map(result => {
+          const icon = result.status === 'pass' ? '✓' : '❌';
+          return `  ${icon} ${result.component} — ${result.message}`;
+        }).join('\n');
+
+        console.log(outputDetails);
+      }
+    } catch (error) {
+      outputSpinner.stop('❌ Output Generation: Tests failed');
+    }
+  }
+
+  // Final summary
+  const hasErrors = allResults.some(r => r.status === 'fail');
+  const hasWarnings = allResults.some(r => r.status === 'warn');
+
+  if (hasErrors) {
+    ui.outro('❌ Some issues found. Run with --verbose for details.');
+    process.exit(1);
+  } else if (hasWarnings) {
+    ui.outro('⚠️  Everything working, but some warnings found.');
+  } else {
+    ui.outro('✓ All checks passed. Your system is ready!');
+  }
+}
+
+// Standard (non-interactive) doctor function
+async function runStandardDoctor(verbose = false, json = false, quiet = false) {
+  const doctor = new DefaultDoctorModule();
 
   try {
     if (verbose) {
       process.env.PRINTEER_DOCTOR_VERBOSE = '1';
     }
-    const doctorModule = new DefaultDoctorModule();
-    const results = await doctorModule.runFullDiagnostics();
+
+    const results = await doctor.runFullDiagnostics();
 
     if (json) {
-      const jsonReport = doctorModule.formatDiagnosticReportJson(results);
+      const jsonReport = doctor.formatDiagnosticReportJson(results);
       console.log(jsonReport);
-    } else if (markdown) {
-      const report = doctorModule.formatDiagnosticReport(results);
-      console.log(report);
+    } else if (quiet) {
+      // Just exit with appropriate code - no output at all
+      const hasErrors = results.some((r: DiagnosticResult) => r.status === 'fail');
+      process.exit(hasErrors ? 1 : 0);
     } else {
-  // Default: Flutter-like summary (core checks only)
+      // Use the existing formatter from legacy CLI
       console.log(formatDoctorStyleSummary(results));
 
-      // If print checks are present, show them in a dedicated section after the core summary
+      // Show print results if available
       const byComponent = new Map(results.map(r => [r.component, r] as const));
       const printPdf = byComponent.get('print-pdf');
       const printPng = byComponent.get('print-png');
+
       if (printPdf || printPng) {
         console.log("\nEverything seems to be okay, now lets try to print PDF and PNG output.\n");
 
+        const colorsEnabled = process.env.NO_COLOR ? false : Boolean(process.stdout && process.stdout.isTTY);
         const sym = {
           pass: colorsEnabled ? '\u001b[32m[\u2713]\u001b[0m' : '[✓]',
           warn: colorsEnabled ? '\u001b[33m[!]\u001b[0m' : '[!]',
           fail: colorsEnabled ? '\u001b[31m[\u2717]\u001b[0m' : '[x]'
         };
+
         const line = (label: string, r?: DiagnosticResult) => {
           if (!r) return;
           const s = r.status === 'pass' ? sym.pass : r.status === 'warn' ? sym.warn : sym.fail;
           const msg = r.status === 'pass' ? 'OK' : r.message.split('\n')[0];
           console.log(`${s} ${label} — ${msg}`);
         };
+
         line('PDF output', printPdf);
         line('PNG output', printPng);
-
-        const failsPrint = [printPdf, printPng].filter(r => r && r.status === 'fail').length;
-        const warnsPrint = [printPdf, printPng].filter(r => r && r.status === 'warn').length;
-        if (failsPrint === 0 && warnsPrint === 0) {
-          console.log(color.green('\n• No issues found!'));
-        } else if (failsPrint === 0) {
-          console.log(color.yellow(`\n• ${warnsPrint} warning(s). You can proceed, but review recommendations.`));
-        } else {
-          console.log(color.red(`\n• ${failsPrint} failure(s). Please review remediation below.`));
-        }
       }
 
-      // Finally, remediation guide after all sections
       printRemediationGuide(results);
     }
 
@@ -127,47 +289,25 @@ async function handleDoctorCommand(args: string[]) {
     const hasWarnings = results.some(r => r.status === 'warn');
 
     if (hasFailures) {
-      console.error('\nFailures found. Please address the items above.');
+      if (!quiet) console.error('\nFailures found. Please address the items above.');
       process.exit(1);
     } else if (hasWarnings) {
-      console.warn('\nSome warnings detected. Consider addressing them for best results.');
+      if (!quiet) console.warn('\nSome warnings detected. Consider addressing them for best results.');
       process.exit(0);
     } else {
-      console.log('\nAll checks passed. Your system is ready.');
+      if (!quiet) console.log('\nAll checks passed. Your system is ready.');
       process.exit(0);
     }
 
   } catch (error) {
-    console.error('Error running diagnostics:', error instanceof Error ? error.message : 'Unknown error');
+    if (!quiet) {
+      console.error('Error running diagnostics:', error instanceof Error ? error.message : 'Unknown error');
+    }
     process.exit(1);
   }
 }
 
-function printDoctorUsage() {
-  console.log(`
-printeer doctor - System diagnostics and health checks
-
-USAGE:
-  printeer doctor [OPTIONS]
-
-OPTIONS:
-  --verbose, -v    Show detailed diagnostic information
-  --json           Output results in JSON format
-  --markdown       Output full Markdown report
-  --help, -h       Show this help message
-
-NOTES:
-  - Uses simple terminal-friendly symbols: [\u2713] pass, [!] warning, [\u2717] fail
-  - Set NO_COLOR=1 to disable colors
-
-EXAMPLES:
-  printeer doctor                    # Summary with colors
-  printeer doctor --markdown         # Full Markdown report
-  printeer doctor --json             # JSON output
-`);
-}
-
-// Simple ANSI color helpers (no external deps) with enable/disable logic
+// Utility functions from legacy CLI
 const colorsEnabled = process.env.NO_COLOR ? false : Boolean(process.stdout && process.stdout.isTTY);
 const color = {
   bold: (s: string) => colorsEnabled ? `\x1b[1m${s}\x1b[0m` : s,
@@ -191,45 +331,11 @@ function printRemediationGuide(results: DiagnosticResult[]) {
 
     if (r.remediation) {
       console.log(`  ${color.green('Solution:')} ${r.remediation}`);
-    } else if ((r.component === 'print-pdf' || r.component === 'print-png') && r.status === 'fail') {
-      console.log(`  ${color.green('Solution:')} Check write permissions and headless Chrome availability`);
     }
 
-    if ((r.component === 'print-pdf' || r.component === 'print-png') && r.status !== 'pass') {
-      console.log(`  ${color.cyan('Tip:')} The doctor writes to current directory. Ensure write permissions and enough disk space.`);
-    }
-
-    // Helpful tips for common scenarios
+    // Add helpful tips for common scenarios
     if (r.component === 'browser-availability' && r.status === 'fail') {
       console.log(`  ${color.cyan('Tip:')} Set a custom Chrome/Chromium path via PUPPETEER_EXECUTABLE_PATH`);
-      console.log(color.dim('    bash:      export PUPPETEER_EXECUTABLE_PATH=/path/to/chrome'));
-      console.log(color.dim('    PowerShell: $Env:PUPPETEER_EXECUTABLE_PATH = "C:/Path/To/chrome.exe"'));
-      console.log(color.dim('    To force bundled Chromium only: set PRINTEER_BUNDLED_ONLY=1 (fails fast if missing)'));
-    }
-
-    if (r.component === 'display-server' && r.status !== 'pass') {
-      console.log(`  ${color.cyan('Tip:')} On Linux, you can use Xvfb for headless GUIs:`);
-      console.log(color.dim('    sudo apt-get install -y xvfb'));
-      console.log(color.dim('    Xvfb :99 -screen 0 1280x800x24 & export DISPLAY=:99'));
-    }
-
-    if (r.component === 'browser-sandbox' && r.status === 'warn') {
-      console.log(`  ${color.cyan('Tip:')} In containers/root, launch with --no-sandbox --disable-setuid-sandbox.`);
-    }
-
-    // Optional compact details for quick context
-    if (r.details) {
-      const path = (r.details as Record<string, unknown>).path || (r.details as Record<string, unknown>).browserPath;
-      const source = (r.details as Record<string, unknown>).source;
-      const version = (r.details as Record<string, unknown>).version;
-      const ctxParts = [
-        path ? `path=${String(path)}` : null,
-        version ? `version=${String(version)}` : null,
-        source ? `source=${String(source)}` : null,
-      ].filter(Boolean);
-      if (ctxParts.length) {
-        console.log(color.dim('  context: ' + ctxParts.join('  ')));
-      }
     }
   }
 }
@@ -240,7 +346,6 @@ function detailsOf(r: DiagnosticResult): Record<string, unknown> {
 }
 
 function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
-  // Symbols chosen to be terminal-friendly (no emoji)
   const sym = {
     pass: colorsEnabled ? '\u001b[32m[\u2713]\u001b[0m' : '[✓]',
     warn: colorsEnabled ? '\u001b[33m[!]\u001b[0m' : '[!]',
@@ -248,9 +353,8 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
   };
 
   const lines: string[] = [];
-
-  // Header
   lines.push(color.bold('Doctor summary (run with --verbose for more details):'));
+
   const byComponent = new Map(results.map(r => [r.component, r] as const));
 
   const line = (component: string, label: string, makeMsg?: (r: DiagnosticResult) => string) => {
@@ -261,7 +365,6 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
     if (makeMsg) {
       try { msg = makeMsg(r); } catch { msg = r.message; }
     } else {
-      // Default to very short status text
       msg = r.status === 'pass' ? 'OK' : r.message.split('\n')[0];
     }
     lines.push(`${s} ${label} — ${msg}`);
@@ -276,7 +379,6 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
     return parts.join(', ');
   });
 
-  // Chrome/Chromium line with version and source; no file paths
   line('browser-availability', 'Chrome/Chromium', (r) => {
     const d = detailsOf(r);
     const rawVer = typeof d.version === 'string' ? d.version : '';
@@ -286,27 +388,14 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
     return `${version}${source}`;
   });
 
-  // Headless launch status only
   line('browser-launch', 'Headless launch');
-
-  // PDF/PNG generation are shown later as a dedicated section, not in the core summary
-
-  // Sandbox: succinct message
   line('browser-sandbox', 'Sandbox', (r) => (r.status === 'pass' ? 'OK' : r.status === 'warn' ? 'Requires --no-sandbox' : 'Failed'));
-
-  // Display server (succinct)
   line('display-server', 'Display server', (r) => (r.status === 'pass' ? 'available' : r.message.replace(/\s+/g, ' ').trim()));
-
-  // Fonts: show count only
   line('font-availability', 'Fonts', (r) => {
     const d = detailsOf(r);
     return typeof d.totalFonts === 'number' ? `${d.totalFonts} found` : (r.status === 'pass' ? 'OK' : r.message);
   });
-
-  // Permissions: short
   line('permissions', 'Permissions', (r) => (r.status === 'pass' ? 'OK' : r.message));
-
-  // Resources: RAM + cores
   line('resource-availability', 'Resources', (r) => {
     const d = detailsOf(r);
     const ramNum = typeof d.totalMemoryGB === 'number' ? Math.round(d.totalMemoryGB) : undefined;
@@ -315,20 +404,175 @@ function formatDoctorStyleSummary(results: DiagnosticResult[]): string {
     const parts = [ram, cores].filter(Boolean) as string[];
     return parts.length ? parts.join(', ') : (r.status === 'pass' ? 'OK' : r.message);
   });
-
-  // Network: short
   line('network-connectivity', 'Network', (r) => (r.status === 'pass' ? 'OK' : r.message));
 
-  // Footer with simple result
   const fails = results.filter(r => r.status === 'fail').length;
   const warns = results.filter(r => r.status === 'warn').length;
   if (fails === 0 && warns === 0) {
-  lines.push(color.green('• No issues found!'));
+    lines.push(color.green('• No issues found!'));
   } else if (fails === 0) {
-  lines.push(color.yellow(`• ${warns} warning(s). You can proceed, but review recommendations.`));
+    lines.push(color.yellow(`• ${warns} warning(s). You can proceed, but review recommendations.`));
   } else {
-  lines.push(color.red(`• ${fails} failure(s). Please review remediation below.`));
+    lines.push(color.red(`• ${fails} failure(s). Please review remediation below.`));
   }
 
   return lines.join('\n');
+}
+
+// CLI Program setup
+const program = new Command();
+
+program
+  .name('printeer')
+  .description('🎯 Web-to-PDF/PNG conversion utility')
+  .version(getVersion(), '-v, --version', 'Display version number');
+
+// Global quiet option
+program.option('-q, --quiet', 'Suppress output (stdio mode)');
+
+// Convert command (default)
+program
+  .argument('[url]', 'URL to convert')
+  .argument('[output]', 'Output file path')
+  .option('-f, --format <type>', 'Output format (pdf|png)', 'pdf')
+  .action(async (url, output, _options) => {
+    const { quiet } = program.opts(); // Get global quiet option
+
+    // If no arguments provided and interactive mode is available, show interactive mode
+    if (!url && !output && isInteractive && !quiet) {
+      try {
+        await runInteractiveConvert();
+        return;
+      } catch (error) {
+        // Fall back to showing help if interactive mode fails
+        console.error('Interactive mode not available. Use: printeer <url> <output>');
+        program.help();
+      }
+    }
+
+    // Validate required arguments for non-interactive mode
+    if (!url || !output) {
+      if (quiet) {
+        process.exit(1); // Silent failure for stdio mode
+      }
+      console.error('Error: URL and output file are required');
+      program.help();
+    }
+
+    try {
+      if (!quiet && isInteractive) {
+        // Try to show progress if interactive UI is available
+        try {
+          const ui = await loadInteractiveUI();
+          const s = ui.spinner();
+          s.start('Converting webpage...');
+          const result = await printeer(url, output, null, {});
+          s.stop('✓ Conversion complete!');
+          console.log(`📄 Saved to: ${result}`);
+        } catch {
+          // Fall back to simple output
+          const result = await printeer(url, output, null, {});
+          console.log(`Saved to: ${result}`);
+        }
+      } else {
+        // Silent mode or non-interactive
+        const result = await printeer(url, output, null, {});
+        if (!quiet) {
+          console.log(result); // Just output the file path
+        }
+      }
+    } catch (error) {
+      if (quiet) {
+        process.exit(1);
+      }
+      console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      process.exit(1);
+    }
+  });
+
+// Doctor command
+program
+  .command('doctor')
+  .description('🔍 Run system diagnostics and health checks')
+  .option('-v, --verbose', 'Show detailed diagnostic information')
+  .option('--json', 'Output results in JSON format')
+  .option('--markdown', 'Output full Markdown report (legacy)')
+  .action(async (options) => {
+    const { verbose, json, markdown } = options;
+    const { quiet } = program.opts(); // Get global quiet option
+
+    // Handle legacy markdown option
+    if (markdown) {
+      const doctor = new DefaultDoctorModule();
+      const results = await doctor.runFullDiagnostics();
+      const report = doctor.formatDiagnosticReport(results);
+      console.log(report);
+      return;
+    }
+
+    // Choose appropriate doctor mode
+    if (json || quiet || !isInteractive) {
+      await runStandardDoctor(verbose, json, quiet);
+    } else {
+      try {
+        await runInteractiveDoctor(verbose);
+      } catch (error) {
+        // Fall back to standard mode if interactive fails
+        await runStandardDoctor(verbose, json, quiet);
+      }
+    }
+  });
+
+// Interactive mode command (explicit)
+program
+  .command('interactive')
+  .alias('i')
+  .description('🎨 Start interactive mode')
+  .action(async () => {
+    const { quiet } = program.opts();
+    if (quiet) {
+      console.error('Interactive mode cannot be used with --quiet');
+      process.exit(1);
+    }
+    await runInteractiveConvert();
+  });
+
+// Error handling
+program.configureHelp({
+  sortSubcommands: true,
+  subcommandTerm: (cmd) => `${cmd.name()} ${cmd.usage()}`
+});
+
+// Custom help formatting
+program.configureOutput({
+  writeOut: (str) => process.stdout.write(str),
+  writeErr: (str) => process.stderr.write(str),
+  outputError: (str, write) => {
+    if (isInteractive && !isQuiet) {
+      write(`❌ ${str}`);
+    } else {
+      write(str);
+    }
+  }
+});
+
+// Parse and execute
+export async function runCLI() {
+  try {
+    await program.parseAsync();
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Unexpected error:', error);
+      process.exit(1);
+    }
+    throw error;
+  }
+}
+
+// Only run if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}` || import.meta.url.includes('cli.js')) {
+  runCLI().catch((error) => {
+    console.error('CLI Error:', error);
+    process.exit(1);
+  });
 }
