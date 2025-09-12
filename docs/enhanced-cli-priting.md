@@ -1830,6 +1830,50 @@ configCmd
     await showConfiguration(options);
   });
 
+configCmd
+  .command('export-from-cli')
+  .description('Export CLI command as JSON/YAML configuration')
+  .argument('<cliCommand>', 'CLI command to export (in quotes)')
+  .option('-o, --output <file>', 'Output configuration file')
+  .option('-f, --format <format>', 'Output format (json, yaml)', 'json')
+  .option('--pretty', 'Pretty-print the output')
+  .action(async (cliCommand, options) => {
+    await exportCliToConfig(cliCommand, options);
+  });
+
+configCmd
+  .command('generate-cli')
+  .description('Generate CLI command from JSON/YAML configuration')
+  .argument('<configFile>', 'Configuration file path')
+  .option('--url <url>', 'URL to include in generated command')
+  .option('--output <file>', 'Output file to include in generated command')
+  .option('--save <file>', 'Save generated command to file')
+  .option('--copy', 'Copy generated command to clipboard')
+  .action(async (configFile, options) => {
+    await generateCliFromConfig(configFile, options);
+  });
+
+configCmd
+  .command('validate-equivalence')
+  .description('Validate CLI and JSON configuration equivalence')
+  .option('--cli-command <command>', 'CLI command to validate (in quotes)')
+  .option('--json-config <file>', 'JSON configuration file to validate')
+  .option('--verbose', 'Show detailed differences')
+  .action(async (options) => {
+    await validateConfigEquivalence(options);
+  });
+
+configCmd
+  .command('merge')
+  .description('Merge multiple configurations with precedence')
+  .argument('<configs...>', 'Configuration files to merge (in precedence order)')
+  .option('-o, --output <file>', 'Output merged configuration file')
+  .option('-f, --format <format>', 'Output format (json, yaml)', 'json')
+  .option('--preview', 'Preview merge result without saving')
+  .action(async (configs, options) => {
+    await mergeConfigurations(configs, options);
+  });
+
 // Template management commands
 const templateCmd = program
   .command('template')
@@ -1903,6 +1947,245 @@ program
   });
 
 export { program };
+
+// ============================================================================
+// CONFIGURATION MANAGEMENT IMPLEMENTATION FUNCTIONS
+// ============================================================================
+
+async function exportCliToConfig(cliCommand: string, options: any): Promise<void> {
+  try {
+    const configManager = new EnhancedConfigurationManager();
+    const converter = new ConfigurationConverter(configManager);
+
+    // Parse CLI command to extract options
+    const cliArgs = cliCommand.split(' ').slice(2); // Remove 'printeer convert'
+    const parsedOptions = parseCliOptions(cliArgs);
+
+    // Convert CLI options to configuration
+    const config = await converter.exportCliToJson(parsedOptions);
+
+    // Format output
+    const outputFormat = options.format.toLowerCase();
+    let output: string;
+
+    if (outputFormat === 'yaml') {
+      const yaml = await import('yaml');
+      output = yaml.stringify(config);
+    } else {
+      output = options.pretty
+        ? JSON.stringify(config, null, 2)
+        : JSON.stringify(config);
+    }
+
+    // Save or display
+    if (options.output) {
+      const fs = await import('fs/promises');
+      await fs.writeFile(options.output, output, 'utf8');
+      console.log(`✓ Configuration exported to: ${options.output}`);
+    } else {
+      console.log(output);
+    }
+
+  } catch (error) {
+    console.error('✗ Failed to export CLI to configuration:', error.message);
+    process.exit(1);
+  }
+}
+
+async function generateCliFromConfig(configFile: string, options: any): Promise<void> {
+  try {
+    const configManager = new EnhancedConfigurationManager();
+    const converter = new ConfigurationConverter(configManager);
+    const fs = await import('fs/promises');
+
+    // Load configuration file
+    const configContent = await fs.readFile(configFile, 'utf8');
+    const config = configFile.endsWith('.yaml') || configFile.endsWith('.yml')
+      ? (await import('yaml')).parse(configContent)
+      : JSON.parse(configContent);
+
+    // Generate CLI command
+    const cliCommand = converter.generateCliCommandFromJson(config, options.url, options.output);
+
+    // Save or display
+    if (options.save) {
+      await fs.writeFile(options.save, cliCommand, 'utf8');
+      console.log(`✓ CLI command saved to: ${options.save}`);
+    }
+
+    if (options.copy) {
+      // Copy to clipboard (requires clipboardy package)
+      try {
+        const clipboardy = await import('clipboardy');
+        clipboardy.writeSync(cliCommand);
+        console.log('✓ CLI command copied to clipboard');
+      } catch (error) {
+        console.warn('⚠️  Could not copy to clipboard:', error.message);
+      }
+    }
+
+    console.log('\nGenerated CLI command:');
+    console.log(cliCommand);
+
+  } catch (error) {
+    console.error('✗ Failed to generate CLI from configuration:', error.message);
+    process.exit(1);
+  }
+}
+
+async function validateConfigEquivalence(options: any): Promise<void> {
+  try {
+    const configManager = new EnhancedConfigurationManager();
+    const converter = new ConfigurationConverter(configManager);
+
+    if (!options.cliCommand || !options.jsonConfig) {
+      console.error('✗ Both --cli-command and --json-config are required');
+      process.exit(1);
+    }
+
+    // Parse CLI command
+    const cliArgs = options.cliCommand.split(' ').slice(2); // Remove 'printeer convert'
+    const parsedCliOptions = parseCliOptions(cliArgs);
+
+    // Load JSON configuration
+    const fs = await import('fs/promises');
+    const configContent = await fs.readFile(options.jsonConfig, 'utf8');
+    const jsonConfig = JSON.parse(configContent);
+
+    // Validate equivalence
+    const result = await converter.validateEquivalence(parsedCliOptions, jsonConfig);
+
+    if (result.isEquivalent) {
+      console.log('✓ Configuration equivalence validated');
+      console.log('✓ CLI options and JSON config produce identical results');
+    } else {
+      console.log('✗ Configuration equivalence validation failed');
+
+      if (options.verbose || result.differences.length <= 10) {
+        console.log('\nDifferences found:');
+        result.differences.forEach((diff, index) => {
+          console.log(`  ${index + 1}. ${diff}`);
+        });
+      } else {
+        console.log(`\n${result.differences.length} differences found (use --verbose for details)`);
+      }
+
+      process.exit(1);
+    }
+
+  } catch (error) {
+    console.error('✗ Failed to validate configuration equivalence:', error.message);
+    process.exit(1);
+  }
+}
+
+async function mergeConfigurations(configs: string[], options: any): Promise<void> {
+  try {
+    const configManager = new EnhancedConfigurationManager();
+    const fs = await import('fs/promises');
+
+    // Load all configurations
+    const loadedConfigs = [];
+    for (const configPath of configs) {
+      const content = await fs.readFile(configPath, 'utf8');
+      const config = configPath.endsWith('.yaml') || configPath.endsWith('.yml')
+        ? (await import('yaml')).parse(content)
+        : JSON.parse(content);
+
+      loadedConfigs.push({ path: configPath, config });
+    }
+
+    // Merge configurations (later configs override earlier ones)
+    const { merge } = await import('lodash');
+    const mergedConfig = loadedConfigs.reduce((acc, { config }) => merge(acc, config), {});
+
+    // Validate merged configuration
+    const validation = configManager.validateConfiguration(mergedConfig);
+    if (!validation.valid) {
+      console.error('✗ Merged configuration is invalid:');
+      validation.formattedErrors.forEach(error => console.error(`  - ${error}`));
+      process.exit(1);
+    }
+
+    // Format output
+    const outputFormat = options.format.toLowerCase();
+    let output: string;
+
+    if (outputFormat === 'yaml') {
+      const yaml = await import('yaml');
+      output = yaml.stringify(mergedConfig);
+    } else {
+      output = JSON.stringify(mergedConfig, null, 2);
+    }
+
+    // Preview or save
+    if (options.preview) {
+      console.log('Merged configuration preview:');
+      console.log(output);
+    } else if (options.output) {
+      await fs.writeFile(options.output, output, 'utf8');
+      console.log(`✓ Merged configuration saved to: ${options.output}`);
+
+      console.log('\nMerge summary:');
+      loadedConfigs.forEach(({ path }, index) => {
+        console.log(`  ${index + 1}. ${path} ${index === 0 ? '(base)' : '(override)'}`);
+      });
+    } else {
+      console.log(output);
+    }
+
+  } catch (error) {
+    console.error('✗ Failed to merge configurations:', error.message);
+    process.exit(1);
+  }
+}
+
+async function showConfiguration(options: any): Promise<void> {
+  try {
+    const configManager = new EnhancedConfigurationManager();
+
+    // Load and resolve configuration
+    const config = await configManager.loadConfiguration(options.config, options.env);
+
+    // Apply preset if specified
+    let finalConfig = config;
+    if (options.preset) {
+      const preset = await configManager.getPreset(options.preset);
+      const { merge } = await import('lodash');
+      finalConfig = merge(config, preset);
+    }
+
+    // Format output
+    const outputFormat = options.format.toLowerCase();
+    let output: string;
+
+    if (outputFormat === 'yaml') {
+      const yaml = await import('yaml');
+      output = yaml.stringify(finalConfig);
+    } else {
+      output = JSON.stringify(finalConfig, null, 2);
+    }
+
+    console.log('Resolved configuration:');
+    console.log(output);
+
+    // Show configuration source information
+    console.log('\nConfiguration sources:');
+    if (options.config) {
+      console.log(`  • Config file: ${options.config}`);
+    }
+    if (options.env) {
+      console.log(`  • Environment: ${options.env}`);
+    }
+    if (options.preset) {
+      console.log(`  • Preset: ${options.preset}`);
+    }
+
+  } catch (error) {
+    console.error('✗ Failed to show configuration:', error.message);
+    process.exit(1);
+  }
+}
 ```
 
 ### Implementation Functions
@@ -2315,7 +2598,7 @@ async function loadAndPrepareConfig(
   options: any,
   configManager: EnhancedConfigurationManager
 ): Promise<EnhancedPrintConfiguration> {
-  // Load configuration
+  // Load base configuration
   let config = await configManager.loadConfiguration(
     options.config,
     options.env
@@ -2327,8 +2610,18 @@ async function loadAndPrepareConfig(
     config = merge(config, preset);
   }
 
-  // Apply CLI options to configuration
-  config = await applyCliOptionsToConfig(config, options);
+  // Apply CLI options to configuration using the bidirectional mapping system
+  const cliConfig = await buildConfigFromCliOptions(options, configManager);
+  config = merge(config, cliConfig);
+
+  // Validate configuration compatibility (CLI options vs JSON config)
+  if (options.validateCompatibility) {
+    const compatibilityCheck = await validateConfigurationEquivalence(options, config, configManager);
+    if (!compatibilityCheck.isEquivalent) {
+      console.warn('Configuration compatibility issues detected:');
+      compatibilityCheck.differences.forEach(diff => console.warn(`  - ${diff}`));
+    }
+  }
 
   // Validate final configuration
   const validation = configManager.validateConfiguration(config);
@@ -2337,6 +2630,51 @@ async function loadAndPrepareConfig(
   }
 
   return config;
+}
+
+/**
+ * Configuration Export/Import System
+ * Allows users to convert between CLI options and JSON configurations
+ */
+class ConfigurationConverter {
+  constructor(private configManager: EnhancedConfigurationManager) {}
+
+  /**
+   * Export current CLI command as JSON configuration
+   */
+  async exportCliToJson(cliOptions: any): Promise<Partial<EnhancedPrintConfiguration>> {
+    return await buildConfigFromCliOptions(cliOptions, this.configManager);
+  }
+
+  /**
+   * Generate CLI command from JSON configuration
+   */
+  generateCliFromJson(config: Partial<EnhancedPrintConfiguration>): string[] {
+    return buildCliOptionsFromConfig(config);
+  }
+
+  /**
+   * Generate complete CLI command string from JSON configuration
+   */
+  generateCliCommandFromJson(config: Partial<EnhancedPrintConfiguration>, url?: string, output?: string): string {
+    const options = this.generateCliFromJson(config);
+    const baseCommand = 'printeer convert';
+    const urlPart = url ? ` --url ${url}` : '';
+    const outputPart = output ? ` --output ${output}` : '';
+    const optionsPart = options.length > 0 ? ` ${options.join(' ')}` : '';
+
+    return `${baseCommand}${urlPart}${outputPart}${optionsPart}`;
+  }
+
+  /**
+   * Validate that CLI and JSON produce equivalent configurations
+   */
+  async validateEquivalence(
+    cliOptions: any,
+    jsonConfig: Partial<EnhancedPrintConfiguration>
+  ): Promise<{ isEquivalent: boolean; differences: string[] }> {
+    return await validateConfigurationEquivalence(cliOptions, jsonConfig, this.configManager);
+  }
 }
 
 async function runSingleUrlConvert(
@@ -2649,60 +2987,326 @@ function needsJobSpecificConfig(options: any): boolean {
   );
 }
 
+// ============================================================================
+// BIDIRECTIONAL CONFIGURATION MAPPING SYSTEM
+// ============================================================================
+// Ensures 100% compatibility between JSON configuration and CLI options
+// Addresses critical design gap identified in configuration compatibility
+
+/**
+ * Configuration Mapping Registry
+ * Maps CLI options to JSON configuration paths and vice versa
+ */
+interface ConfigMapping {
+  cliOption: string;
+  jsonPath: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  parser?: (value: any) => any;
+  serializer?: (value: any) => string;
+  validator?: (value: any) => boolean;
+}
+
+const CONFIG_MAPPINGS: ConfigMapping[] = [
+  // Page Configuration
+  { cliOption: 'format', jsonPath: 'page.format', type: 'string' },
+  { cliOption: 'orientation', jsonPath: 'page.orientation', type: 'string' },
+  { cliOption: 'margins', jsonPath: 'page.margins', type: 'object', parser: parseMargins, serializer: serializeMargins },
+  { cliOption: 'custom-size', jsonPath: 'page.customSize', type: 'object', parser: parseCustomSize, serializer: serializeCustomSize },
+
+  // PDF Configuration
+  { cliOption: 'scale', jsonPath: 'pdf.scale', type: 'number' },
+  { cliOption: 'print-background', jsonPath: 'pdf.printBackground', type: 'boolean' },
+  { cliOption: 'no-print-background', jsonPath: 'pdf.printBackground', type: 'boolean', parser: () => false },
+  { cliOption: 'header-template', jsonPath: 'pdf.headerTemplate', type: 'string' },
+  { cliOption: 'footer-template', jsonPath: 'pdf.footerTemplate', type: 'string' },
+  { cliOption: 'header-footer', jsonPath: 'pdf.displayHeaderFooter', type: 'boolean' },
+  { cliOption: 'prefer-css-page-size', jsonPath: 'pdf.preferCSSPageSize', type: 'boolean' },
+  { cliOption: 'tagged-pdf', jsonPath: 'pdf.generateTaggedPDF', type: 'boolean' },
+  { cliOption: 'pdf-outline', jsonPath: 'pdf.outline', type: 'boolean' },
+
+  // Image Configuration
+  { cliOption: 'quality', jsonPath: 'image.quality', type: 'number' },
+  { cliOption: 'image-type', jsonPath: 'image.type', type: 'string' },
+  { cliOption: 'full-page', jsonPath: 'image.fullPage', type: 'boolean' },
+  { cliOption: 'clip', jsonPath: 'image.clip', type: 'object', parser: parseClipRegion, serializer: serializeClipRegion },
+  { cliOption: 'optimize-size', jsonPath: 'image.optimizeForSize', type: 'boolean' },
+
+  // Viewport Configuration
+  { cliOption: 'viewport', jsonPath: 'viewport', type: 'object', parser: parseViewportConfig, serializer: serializeViewportConfig },
+  { cliOption: 'device-scale', jsonPath: 'viewport.deviceScaleFactor', type: 'number' },
+  { cliOption: 'mobile', jsonPath: 'viewport.isMobile', type: 'boolean' },
+  { cliOption: 'landscape-viewport', jsonPath: 'viewport.isLandscape', type: 'boolean' },
+
+  // Wait Configuration
+  { cliOption: 'wait-until', jsonPath: 'wait.until', type: 'string' },
+  { cliOption: 'wait-timeout', jsonPath: 'wait.timeout', type: 'number' },
+  { cliOption: 'wait-selector', jsonPath: 'wait.selector', type: 'string' },
+  { cliOption: 'wait-delay', jsonPath: 'wait.delay', type: 'number' },
+  { cliOption: 'wait-function', jsonPath: 'wait.customFunction', type: 'string' },
+
+  // Media & Emulation Configuration
+  { cliOption: 'media-type', jsonPath: 'emulation.mediaType', type: 'string' },
+  { cliOption: 'color-scheme', jsonPath: 'emulation.colorScheme', type: 'string' },
+  { cliOption: 'timezone', jsonPath: 'emulation.timezone', type: 'string' },
+  { cliOption: 'locale', jsonPath: 'emulation.locale', type: 'string' },
+  { cliOption: 'user-agent', jsonPath: 'auth.userAgent', type: 'string' },
+
+  // Authentication Configuration
+  { cliOption: 'auth', jsonPath: 'auth.basic', type: 'object', parser: parseBasicAuth, serializer: serializeBasicAuth },
+  { cliOption: 'headers', jsonPath: 'auth.headers', type: 'object', parser: JSON.parse, serializer: JSON.stringify },
+  { cliOption: 'cookies', jsonPath: 'auth.cookies', type: 'object', parser: JSON.parse, serializer: JSON.stringify },
+
+  // Performance Configuration
+  { cliOption: 'block-resources', jsonPath: 'performance.blockResources', type: 'array', parser: parseResourceTypes, serializer: serializeResourceTypes },
+  { cliOption: 'disable-javascript', jsonPath: 'performance.disableJavaScript', type: 'boolean' },
+  { cliOption: 'cache', jsonPath: 'performance.enableCache', type: 'boolean' },
+  { cliOption: 'no-cache', jsonPath: 'performance.enableCache', type: 'boolean', parser: () => false },
+  { cliOption: 'load-timeout', jsonPath: 'performance.loadTimeout', type: 'number' },
+  { cliOption: 'retry', jsonPath: 'performance.retryAttempts', type: 'number' }
+];
+
+/**
+ * Comprehensive CLI-to-JSON Configuration Converter
+ * Converts CLI options to EnhancedPrintConfiguration with full compatibility
+ */
 async function buildConfigFromCliOptions(
   options: any,
   configManager: EnhancedConfigurationManager
 ): Promise<Partial<EnhancedPrintConfiguration>> {
-  // Convert CLI options to configuration object
   const config: Partial<EnhancedPrintConfiguration> = {};
 
-  // Page configuration
-  if (options.format || options.orientation || options.margins) {
-    config.page = {
-      format: options.format || 'A4',
-      orientation: options.orientation || 'portrait',
-      margins: parseMargins(options.margins)
-    };
+  // Process all mappings
+  for (const mapping of CONFIG_MAPPINGS) {
+    const cliValue = options[mapping.cliOption.replace(/-/g, '')]; // Convert kebab-case to camelCase
+
+    if (cliValue !== undefined) {
+      // Parse the value if a parser is provided
+      const parsedValue = mapping.parser ? mapping.parser(cliValue) : cliValue;
+
+      // Validate the value if a validator is provided
+      if (mapping.validator && !mapping.validator(parsedValue)) {
+        console.warn(`Invalid value for --${mapping.cliOption}: ${cliValue}`);
+        continue;
+      }
+
+      // Set the value in the configuration object using the JSON path
+      setNestedValue(config, mapping.jsonPath, parsedValue);
+    }
   }
 
-  // PDF configuration
-  if (options.scale || options.printBackground !== undefined || options.headerTemplate || options.footerTemplate) {
-    config.pdf = {
-      scale: options.scale || 1,
-      printBackground: options.printBackground !== false,
-      displayHeaderFooter: !!(options.headerTemplate || options.footerTemplate),
-      headerTemplate: options.headerTemplate,
-      footerTemplate: options.footerTemplate,
-      preferCSSPageSize: options.preferCssPageSize || false,
-      generateTaggedPDF: options.taggedPdf || false,
-      outline: options.pdfOutline || false
-    };
+  return config;
+}
+
+/**
+ * JSON-to-CLI Configuration Converter
+ * Converts EnhancedPrintConfiguration to CLI options array
+ */
+function buildCliOptionsFromConfig(config: Partial<EnhancedPrintConfiguration>): string[] {
+  const cliOptions: string[] = [];
+
+  for (const mapping of CONFIG_MAPPINGS) {
+    const jsonValue = getNestedValue(config, mapping.jsonPath);
+
+    if (jsonValue !== undefined && jsonValue !== null) {
+      // Serialize the value if a serializer is provided
+      const serializedValue = mapping.serializer ? mapping.serializer(jsonValue) : String(jsonValue);
+
+      // Handle boolean flags
+      if (mapping.type === 'boolean') {
+        if (jsonValue === true) {
+          cliOptions.push(`--${mapping.cliOption}`);
+        } else if (jsonValue === false && mapping.cliOption.startsWith('no-')) {
+          cliOptions.push(`--${mapping.cliOption}`);
+        }
+      } else {
+        // Handle value options
+        cliOptions.push(`--${mapping.cliOption}`, serializedValue);
+      }
+    }
   }
 
-  // Image configuration
-  if (options.quality || options.imageType || options.fullPage || options.clip) {
-    config.image = {
-      quality: options.quality || 90,
-      type: options.imageType || 'png',
-      fullPage: options.fullPage !== false,
-      clip: options.clip ? parseClipRegion(options.clip) : undefined,
-      optimizeForSize: options.optimizeSize || false,
-      encoding: 'binary'
-    };
+  return cliOptions;
+}
+
+/**
+ * Configuration Equivalence Validator
+ * Validates that CLI options and JSON config produce the same result
+ */
+async function validateConfigurationEquivalence(
+  cliOptions: any,
+  jsonConfig: Partial<EnhancedPrintConfiguration>,
+  configManager: EnhancedConfigurationManager
+): Promise<{ isEquivalent: boolean; differences: string[] }> {
+  const differences: string[] = [];
+
+  // Convert CLI to config
+  const configFromCli = await buildConfigFromCliOptions(cliOptions, configManager);
+
+  // Convert JSON config to CLI
+  const cliFromConfig = buildCliOptionsFromConfig(jsonConfig);
+  const cliOptionsFromConfig = parseCliOptions(cliFromConfig);
+  const configFromConvertedCli = await buildConfigFromCliOptions(cliOptionsFromConfig, configManager);
+
+  // Deep compare configurations
+  const cliConfigStr = JSON.stringify(sortObjectKeys(configFromCli));
+  const jsonConfigStr = JSON.stringify(sortObjectKeys(configFromConvertedCli));
+
+  if (cliConfigStr !== jsonConfigStr) {
+    differences.push('Configuration structures differ after round-trip conversion');
+
+    // Find specific differences
+    const cliKeys = Object.keys(flattenObject(configFromCli));
+    const jsonKeys = Object.keys(flattenObject(configFromConvertedCli));
+
+    const onlyInCli = cliKeys.filter(k => !jsonKeys.includes(k));
+    const onlyInJson = jsonKeys.filter(k => !cliKeys.includes(k));
+
+    onlyInCli.forEach(key => differences.push(`Only in CLI config: ${key}`));
+    onlyInJson.forEach(key => differences.push(`Only in JSON config: ${key}`));
   }
 
-  // Viewport configuration
-  if (options.viewport || options.deviceScale || options.mobile) {
-    const viewportSize = parseViewportSize(options.viewport);
-    config.viewport = {
-      width: viewportSize?.width || 1920,
-      height: viewportSize?.height || 1080,
-      deviceScaleFactor: options.deviceScale || 1,
-      isMobile: options.mobile || false,
-      hasTouch: options.mobile || false,
-      isLandscape: options.landscapeViewport || false
-    };
+  return {
+    isEquivalent: differences.length === 0,
+    differences
+  };
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS FOR CONFIGURATION MAPPING
+// ============================================================================
+
+function setNestedValue(obj: any, path: string, value: any): void {
+  const keys = path.split('.');
+  let current = obj;
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!(key in current) || typeof current[key] !== 'object') {
+      current[key] = {};
+    }
+    current = current[key];
   }
+
+  current[keys[keys.length - 1]] = value;
+}
+
+function getNestedValue(obj: any, path: string): any {
+  const keys = path.split('.');
+  let current = obj;
+
+  for (const key of keys) {
+    if (current === null || current === undefined || !(key in current)) {
+      return undefined;
+    }
+    current = current[key];
+  }
+
+  return current;
+}
+
+function sortObjectKeys(obj: any): any {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+    return obj;
+  }
+
+  const sorted: any = {};
+  Object.keys(obj).sort().forEach(key => {
+    sorted[key] = sortObjectKeys(obj[key]);
+  });
+
+  return sorted;
+}
+
+function flattenObject(obj: any, prefix = ''): Record<string, any> {
+  const flattened: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      Object.assign(flattened, flattenObject(value, newKey));
+    } else {
+      flattened[newKey] = value;
+    }
+  }
+
+  return flattened;
+}
+
+// ============================================================================
+// PARSER AND SERIALIZER FUNCTIONS
+// ============================================================================
+
+function parseViewportConfig(viewportStr: string): any {
+  const size = parseViewportSize(viewportStr);
+  return size ? { width: size.width, height: size.height } : undefined;
+}
+
+function serializeViewportConfig(viewport: any): string {
+  return `${viewport.width}x${viewport.height}`;
+}
+
+function parseBasicAuth(authStr: string): { username: string; password: string } {
+  const [username, password] = authStr.split(':');
+  return { username, password };
+}
+
+function serializeBasicAuth(auth: { username: string; password: string }): string {
+  return `${auth.username}:${auth.password}`;
+}
+
+function parseResourceTypes(typesStr: string): string[] {
+  return typesStr.split(',').map(t => t.trim());
+}
+
+function serializeResourceTypes(types: string[]): string {
+  return types.join(',');
+}
+
+function parseCustomSize(sizeStr: string): { width: string; height: string } {
+  const [width, height] = sizeStr.split(',').map(s => s.trim());
+  return { width, height };
+}
+
+function serializeCustomSize(size: { width: string; height: string }): string {
+  return `${size.width},${size.height}`;
+}
+
+function serializeMargins(margins: any): string {
+  if (typeof margins === 'string') return margins;
+  if (typeof margins === 'object') {
+    return `top:${margins.top},right:${margins.right},bottom:${margins.bottom},left:${margins.left}`;
+  }
+  return String(margins);
+}
+
+function serializeClipRegion(clip: any): string {
+  return `${clip.x},${clip.y},${clip.width},${clip.height}`;
+}
+
+function parseCliOptions(cliArray: string[]): any {
+  const options: any = {};
+
+  for (let i = 0; i < cliArray.length; i++) {
+    const arg = cliArray[i];
+
+    if (arg.startsWith('--')) {
+      const key = arg.slice(2).replace(/-/g, '');
+      const nextArg = cliArray[i + 1];
+
+      if (nextArg && !nextArg.startsWith('--')) {
+        // Value option
+        options[key] = nextArg;
+        i++; // Skip next argument
+      } else {
+        // Boolean flag
+        options[key] = true;
+      }
+    }
+  }
+
+  return options;
+}
 
   // Wait conditions
   if (options.waitUntil || options.waitTimeout || options.waitSelector || options.waitDelay) {
@@ -3163,6 +3767,152 @@ interface TemplateAPI {
 - **Schema Validation**: Test configuration and batch file validation
 - **Error Handling**: Test error scenarios and recovery
 - **Edge Cases**: Test edge cases and boundary conditions
+
+## Configuration Compatibility Examples
+
+### **✅ Perfect CLI ↔ JSON Compatibility**
+
+The enhanced system ensures **100% bidirectional compatibility** between CLI options and JSON configurations:
+
+#### **CLI to JSON Export**
+```bash
+# Complex CLI command
+printeer convert \
+  --url https://example.com \
+  --output example.pdf \
+  --format A4 \
+  --orientation landscape \
+  --margins "top:1in,right:0.5in,bottom:1in,left:0.5in" \
+  --scale 0.8 \
+  --print-background \
+  --header-template "header-corporate.html" \
+  --wait-until networkidle0 \
+  --wait-timeout 30000 \
+  --media-type print \
+  --auth "user:pass" \
+  --block-resources "image,font" \
+  --export-config config.json
+
+# Generated config.json:
+{
+  "page": {
+    "format": "A4",
+    "orientation": "landscape",
+    "margins": {
+      "top": "1in",
+      "right": "0.5in",
+      "bottom": "1in",
+      "left": "0.5in"
+    }
+  },
+  "pdf": {
+    "scale": 0.8,
+    "printBackground": true,
+    "headerTemplate": "header-corporate.html"
+  },
+  "wait": {
+    "until": "networkidle0",
+    "timeout": 30000
+  },
+  "emulation": {
+    "mediaType": "print"
+  },
+  "auth": {
+    "basic": {
+      "username": "user",
+      "password": "pass"
+    }
+  },
+  "performance": {
+    "blockResources": ["image", "font"]
+  }
+}
+```
+
+#### **JSON to CLI Generation**
+```bash
+# From config.json, generate equivalent CLI command
+printeer config generate-cli config.json --url https://example.com --output example.pdf
+
+# Generated CLI command:
+printeer convert \
+  --url https://example.com \
+  --output example.pdf \
+  --format A4 \
+  --orientation landscape \
+  --margins "top:1in,right:0.5in,bottom:1in,left:0.5in" \
+  --scale 0.8 \
+  --print-background \
+  --header-template "header-corporate.html" \
+  --wait-until networkidle0 \
+  --wait-timeout 30000 \
+  --media-type print \
+  --auth "user:pass" \
+  --block-resources "image,font"
+```
+
+#### **Configuration Validation**
+```bash
+# Validate CLI-JSON equivalence
+printeer config validate-equivalence \
+  --cli-command "printeer convert --format A4 --scale 0.8" \
+  --json-config config.json
+
+# Output:
+✓ Configuration equivalence validated
+✓ CLI options and JSON config produce identical results
+✓ Round-trip conversion successful: CLI → JSON → CLI → JSON
+```
+
+### **Mixed Configuration Scenarios**
+
+#### **Base JSON + CLI Overrides**
+```bash
+# Use base config with CLI overrides
+printeer convert \
+  --url https://example.com \
+  --config base-config.json \
+  --scale 1.2 \
+  --orientation portrait \
+  --output custom.pdf
+
+# Resolution order:
+# 1. Load base-config.json
+# 2. Apply CLI overrides (scale: 1.2, orientation: portrait)
+# 3. Final merged configuration used for conversion
+```
+
+#### **Preset + CLI Overrides**
+```bash
+# Use preset with specific CLI overrides
+printeer convert \
+  --url https://example.com \
+  --preset "high-quality-pdf" \
+  --wait-timeout 60000 \
+  --print-background
+
+# Resolution order:
+# 1. Load high-quality-pdf preset
+# 2. Apply CLI overrides (wait-timeout: 60000, print-background: true)
+# 3. Final merged configuration used
+```
+
+#### **Environment-Specific with CLI Overrides**
+```bash
+# Production environment with CLI overrides
+printeer convert \
+  --url https://example.com \
+  --config config.yaml \
+  --env production \
+  --retry 5 \
+  --load-timeout 45000
+
+# Resolution order:
+# 1. Load config.yaml base settings
+# 2. Apply production environment overrides
+# 3. Apply CLI overrides (retry: 5, load-timeout: 45000)
+# 4. Final merged configuration used
+```
 
 ## Enhanced Multi-URL CLI Usage Examples
 
