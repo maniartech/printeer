@@ -1652,13 +1652,23 @@ import { EnhancedPrintController } from '../printing/enhanced-controller';
 
 const program = new Command();
 
-// Enhanced convert command
+// Utility function to collect multiple option values
+function collect(value: string, previous: string[] = []): string[] {
+  return previous.concat([value]);
+}
+
+// Enhanced convert command with flexible URL-output pairing
 program
   .command('convert')
   .alias('c')
-  .description('Convert web page to PDF/PNG with comprehensive options')
-  .argument('<url>', 'URL to convert')
-  .argument('[output]', 'Output file path')
+  .description('Convert web page(s) to PDF/PNG with flexible URL-output pairing')
+  .option('-u, --url <url>', 'URL to convert (can be used multiple times)', collect, [])
+  .option('-o, --output <filename>', 'Output filename for preceding --url (optional)', collect, [])
+  .option('--output-dir <dir>', 'Output directory for generated filenames')
+  .option('--output-pattern <pattern>', 'Filename pattern for auto-generated names (e.g., "{title}.pdf", "{domain}_{timestamp}.png")')
+  .option('--output-conflict <strategy>', 'Conflict resolution: "override", "copy", "skip", "prompt"', 'copy')
+  .option('--title-fallback', 'Use webpage title for filename when --output not specified (default behavior)')
+  .option('--url-fallback', 'Use URL-based algorithm when title unavailable')
   .option('-c, --config <path>', 'Configuration file path')
   .option('-p, --preset <name>', 'Use configuration preset')
   .option('-e, --env <environment>', 'Environment (development, production)')
@@ -1726,9 +1736,19 @@ program
   .option('--dry-run', 'Validate configuration without converting')
   .option('--output-metadata', 'Include metadata in output')
 
-  .action(async (url, output, options) => {
+  .action(async (options) => {
     try {
-      await runEnhancedConvert(url, output, options);
+      // Validate URL-output pairing
+      if (!options.url || options.url.length === 0) {
+        throw new Error('At least one --url must be specified');
+      }
+
+      // Ensure output array doesn't exceed url array
+      if (options.output && options.output.length > options.url.length) {
+        throw new Error('Number of --output options cannot exceed number of --url options');
+      }
+
+      await runEnhancedConvertWithPairing(options);
     } catch (error) {
       console.error('Conversion failed:', error.message);
       process.exit(1);
@@ -1889,12 +1909,441 @@ export { program };
 
 ```typescript
 // Implementation functions for CLI commands
-async function runEnhancedConvert(
-  url: string,
-  output: string,
-  options: any
-): Promise<void> {
+async function runEnhancedConvertWithPairing(options: any): Promise<void> {
   const configManager = new EnhancedConfigurationManager();
+  const urls = options.url;
+  const outputs = options.output || [];
+
+  // Create URL-output pairs
+  const urlOutputPairs = await createUrlOutputPairs(urls, outputs, options);
+
+  if (urlOutputPairs.length === 1) {
+    // Single URL conversion
+    return await runSingleUrlConversion(urlOutputPairs[0], options, configManager);
+  } else {
+    // Multiple URL batch processing
+    return await runMultiUrlConversion(urlOutputPairs, options, configManager);
+  }
+}
+
+interface UrlOutputPair {
+  url: string;
+  output?: string;
+  index: number;
+}
+
+async function createUrlOutputPairs(
+  urls: string[],
+  outputs: string[],
+  options: any
+): Promise<UrlOutputPair[]> {
+  const pairs: UrlOutputPair[] = [];
+
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    const explicitOutput = outputs[i]; // May be undefined
+
+    pairs.push({
+      url,
+      output: explicitOutput,
+      index: i
+    });
+  }
+
+  return pairs;
+}
+
+async function runSingleUrlConversion(
+  pair: UrlOutputPair,
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<void> {
+  const controller = new EnhancedPrintController();
+
+  // Load and prepare configuration
+  let config = await loadAndPrepareConfig(options, configManager);
+
+  // Determine final output filename
+  const outputFilename = await determineOutputFilename(pair, options);
+
+  // Handle conflicts
+  const finalOutput = await handleOutputConflicts(outputFilename, options);
+
+  // Dry run check
+  if (options.dryRun) {
+    console.log('Configuration validation successful');
+    console.log(`Would convert: ${pair.url} -> ${finalOutput}`);
+    console.log(JSON.stringify(config, null, 2));
+    return;
+  }
+
+  // Execute conversion
+  const result = await controller.convert(pair.url, finalOutput, config);
+
+  if (!options.quiet) {
+    console.log(`✓ Conversion complete: ${result.outputFile}`);
+    if (options.outputMetadata) {
+      console.log('Metadata:', JSON.stringify(result.metadata, null, 2));
+    }
+  }
+}
+
+async function runMultiUrlConversion(
+  pairs: UrlOutputPair[],
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<void> {
+  // Create batch jobs from URL-output pairs
+  const batchJobs = await createBatchJobsFromPairs(pairs, options, configManager);
+
+  // Use the batch processor for multiple URLs
+  const batchProcessor = new BatchProcessor({
+    concurrency: options.concurrency || Math.min(3, pairs.length),
+    retryAttempts: options.retry || 2,
+    continueOnError: options.continueOnError || true,
+    outputDirectory: options.outputDir || process.cwd(),
+    reportFormat: 'json',
+    progressTracking: !options.quiet,
+    dryRun: options.dryRun || false,
+    cleanup: options.cleanup !== false
+  });
+
+  // Set up progress tracking
+  if (!options.quiet) {
+    batchProcessor.on('job-completed', (job, result) => {
+      console.log(`✓ Completed: ${job.url} -> ${result.outputFile} (${result.duration}ms)`);
+    });
+
+    batchProcessor.on('job-failed', (job, error) => {
+      console.error(`✗ Failed: ${job.url} - ${error.message}`);
+    });
+  }
+
+  try {
+    const report = await batchProcessor.processBatch(batchJobs, batchProcessor.options);
+
+    if (!options.quiet) {
+      console.log(`\nMulti-URL conversion complete:`);
+      console.log(`  Total URLs: ${report.totalJobs}`);
+      console.log(`  Successful: ${report.successfulJobs}`);
+      console.log(`  Failed: ${report.failedJobs}`);
+      console.log(`  Duration: ${report.totalDuration}ms`);
+
+      if (options.outputMetadata && report.optimizationInsights) {
+        console.log('\nResource Usage:');
+        console.log(`  Peak Memory: ${(report.optimizationInsights.peakMemoryUsage * 100).toFixed(1)}%`);
+        console.log(`  Browser Instances Created: ${report.optimizationInsights.browserInstancesCreated}`);
+        console.log(`  Browser Instances Reused: ${report.optimizationInsights.browserInstancesReused}`);
+      }
+    }
+  } catch (error) {
+    throw new Error(`Multi-URL conversion failed: ${error.message}`);
+  }
+}
+
+async function createBatchJobsFromPairs(
+  pairs: UrlOutputPair[],
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<BatchJob[]> {
+  const jobs: BatchJob[] = [];
+  const existingFilenames = new Set<string>();
+
+  for (const pair of pairs) {
+    try {
+      // Determine output filename
+      const outputFilename = await determineOutputFilename(pair, options);
+
+      // Handle conflicts
+      const finalOutput = await handleOutputConflicts(outputFilename, options, existingFilenames);
+
+      // Track filename to prevent batch-level conflicts
+      existingFilenames.add(path.basename(finalOutput));
+
+      const job: BatchJob = {
+        id: `url-${pair.index + 1}`,
+        url: pair.url,
+        output: finalOutput,
+        metadata: {
+          index: pair.index + 1,
+          totalUrls: pairs.length,
+          originalUrl: pair.url,
+          explicitOutput: !!pair.output,
+          generatedFilename: path.basename(finalOutput)
+        }
+      };
+
+      // Apply preset if specified
+      if (options.preset) {
+        job.preset = options.preset;
+      }
+
+      // Apply job-specific configuration
+      if (needsJobSpecificConfig(options)) {
+        job.config = await buildConfigFromCliOptions(options, configManager);
+      }
+
+      jobs.push(job);
+
+    } catch (error) {
+      if (error instanceof SkipFileError) {
+        if (!options.quiet) {
+          console.log(`⏭️  Skipping URL due to existing file: ${pair.url}`);
+        }
+        continue; // Skip this URL
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  if (jobs.length === 0) {
+    throw new Error('No URLs to process - all were skipped due to existing files');
+  }
+
+  return jobs;
+}
+
+async function determineOutputFilename(
+  pair: UrlOutputPair,
+  options: any
+): Promise<string> {
+  // If explicit output provided, use it
+  if (pair.output) {
+    return options.outputDir
+      ? path.join(options.outputDir, pair.output)
+      : pair.output;
+  }
+
+  // Generate filename automatically
+  let filename: string;
+
+  if (options.outputPattern) {
+    // Use custom pattern
+    filename = await generateFilenameFromPattern(pair, options);
+  } else if (options.titleFallback !== false) {
+    // Default: try to get webpage title first
+    filename = await generateFilenameFromTitle(pair.url, options);
+  } else {
+    // Use URL-based algorithm
+    filename = generateFilenameFromUrl(pair.url, options);
+  }
+
+  return options.outputDir
+    ? path.join(options.outputDir, filename)
+    : filename;
+}
+
+async function generateFilenameFromTitle(
+  url: string,
+  options: any
+): Promise<string> {
+  try {
+    // Attempt to fetch webpage title
+    const title = await fetchWebpageTitle(url, options);
+
+    if (title && title.trim()) {
+      // Clean title for filename use
+      const cleanTitle = sanitizeFilename(title.trim());
+      const extension = detectOutputExtension(options);
+      return `${cleanTitle}.${extension}`;
+    }
+  } catch (error) {
+    if (!options.quiet) {
+      console.log(`⚠️  Could not fetch title for ${url}, using URL-based filename`);
+    }
+  }
+
+  // Fallback to URL-based generation
+  return generateFilenameFromUrl(url, options);
+}
+
+async function fetchWebpageTitle(
+  url: string,
+  options: any,
+  timeout: number = 10000
+): Promise<string | null> {
+  const puppeteer = require('puppeteer');
+  let browser = null;
+
+  try {
+    // Launch minimal browser for title extraction
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    });
+
+    const page = await browser.newPage();
+
+    // Set timeout and basic headers
+    await page.setDefaultTimeout(timeout);
+    await page.setUserAgent(options.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+
+    // Navigate and extract title
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout
+    });
+
+    const title = await page.title();
+    return title;
+
+  } catch (error) {
+    // Silent fail - will use URL fallback
+    return null;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
+function generateFilenameFromUrl(url: string, options: any): string {
+  const urlObj = new URL(url);
+  const domain = urlObj.hostname.replace(/^www\./, '');
+  const pathname = urlObj.pathname === '/' ? 'index' : urlObj.pathname.replace(/[^\w-]/g, '_');
+
+  const extension = detectOutputExtension(options);
+  const baseName = `${domain}${pathname}`;
+
+  return `${baseName}.${extension}`;
+}
+
+async function generateFilenameFromPattern(
+  pair: UrlOutputPair,
+  options: any
+): Promise<string> {
+  const urlObj = new URL(pair.url);
+  const domain = urlObj.hostname.replace(/^www\./, '');
+  const pathname = urlObj.pathname === '/' ? 'index' : urlObj.pathname.replace(/[^\w-]/g, '_');
+  const extension = detectOutputExtension(options);
+
+  // Try to get title for pattern
+  let title = 'untitled';
+  try {
+    const pageTitle = await fetchWebpageTitle(pair.url, options, 5000);
+    if (pageTitle && pageTitle.trim()) {
+      title = sanitizeFilename(pageTitle.trim());
+    }
+  } catch (error) {
+    // Use URL-based fallback
+    title = `${domain}${pathname}`;
+  }
+
+  return options.outputPattern
+    .replace('{domain}', domain)
+    .replace('{path}', pathname)
+    .replace('{name}', `${domain}${pathname}`)
+    .replace('{title}', title)
+    .replace('{index}', String(pair.index + 1))
+    .replace('{timestamp}', new Date().toISOString().replace(/[:.]/g, '-'))
+    .replace('{format}', extension);
+}
+
+function detectOutputExtension(options: any): string {
+  // Check explicit image type first
+  if (options.imageType) {
+    return options.imageType;
+  }
+
+  // Check format option
+  if (options.format && ['png', 'jpg', 'jpeg', 'webp'].includes(options.format.toLowerCase())) {
+    return options.format.toLowerCase();
+  }
+
+  // Default to PDF
+  return 'pdf';
+}
+
+function sanitizeFilename(filename: string): string {
+  return filename
+    .replace(/[<>:"/\\|?*]/g, '-') // Replace invalid chars
+    .replace(/\s+/g, '_')          // Replace spaces with underscores
+    .replace(/-+/g, '-')           // Collapse multiple dashes
+    .replace(/_+/g, '_')           // Collapse multiple underscores
+    .replace(/^[-_]+|[-_]+$/g, '') // Remove leading/trailing dashes and underscores
+    .substring(0, 100);            // Limit length
+}
+
+async function handleOutputConflicts(
+  filename: string,
+  options: any,
+  existingFilenames?: Set<string>
+): Promise<string> {
+  const parsedPath = path.parse(filename);
+
+  // Check for conflicts in current batch
+  if (existingFilenames?.has(path.basename(filename))) {
+    return await findUniqueFilename(parsedPath, path.dirname(filename), options, existingFilenames);
+  }
+
+  // Check for existing files on disk
+  const fileExists = await fs.pathExists(filename);
+
+  if (!fileExists) {
+    return filename;
+  }
+
+  // Handle existing file based on conflict strategy
+  switch (options.outputConflict) {
+    case 'override':
+      if (!options.quiet) {
+        console.log(`⚠️  Overriding existing file: ${filename}`);
+      }
+      return filename;
+
+    case 'skip':
+      console.log(`⏭️  Skipping existing file: ${filename}`);
+      throw new SkipFileError(`File already exists: ${filename}`);
+
+    case 'prompt':
+      // Interactive prompt (would need readline implementation)
+      // For now, fallback to copy behavior
+      console.log(`📝 File exists, generating unique name: ${filename}`);
+      return await findUniqueFilename(parsedPath, path.dirname(filename), options, existingFilenames);
+
+    case 'copy':
+    default:
+      if (!options.quiet) {
+        console.log(`📝 File exists, generating unique name: ${filename}`);
+      }
+      return await findUniqueFilename(parsedPath, path.dirname(filename), options, existingFilenames);
+  }
+}
+
+async function loadAndPrepareConfig(
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<EnhancedPrintConfiguration> {
+  // Load configuration
+  let config = await configManager.loadConfiguration(
+    options.config,
+    options.env
+  );
+
+  // Apply preset if specified
+  if (options.preset) {
+    const preset = await configManager.getPreset(options.preset);
+    config = merge(config, preset);
+  }
+
+  // Apply CLI options to configuration
+  config = await applyCliOptionsToConfig(config, options);
+
+  // Validate final configuration
+  const validation = configManager.validateConfiguration(config);
+  if (!validation.valid) {
+    throw new Error(`Invalid configuration: ${validation.formattedErrors.join(', ')}`);
+  }
+
+  return config;
+}
+
+async function runSingleUrlConvert(
+  url: string,
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<void> {
   const controller = new EnhancedPrintController();
 
   // Load configuration
@@ -1918,9 +2367,15 @@ async function runEnhancedConvert(
     throw new Error(`Invalid configuration: ${validation.formattedErrors.join(', ')}`);
   }
 
+  // Determine output filename
+  const output = options.output?.length > 0
+    ? options.output[0]
+    : generateOutputFilename(url, options);
+
   // Dry run check
   if (options.dryRun) {
     console.log('Configuration validation successful');
+    console.log(`Would convert: ${url} -> ${output}`);
     console.log(JSON.stringify(config, null, 2));
     return;
   }
@@ -1934,6 +2389,408 @@ async function runEnhancedConvert(
       console.log('Metadata:', JSON.stringify(result.metadata, null, 2));
     }
   }
+}
+
+async function runMultiUrlConvert(
+  urls: string[],
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<void> {
+  // Create batch jobs from multiple URLs
+  const batchJobs = await createBatchJobsFromUrls(urls, options, configManager);
+
+  // Use the batch processor for multiple URLs
+  const batchProcessor = new BatchProcessor({
+    concurrency: options.concurrency || Math.min(3, urls.length),
+    retryAttempts: options.retry || 2,
+    continueOnError: options.continueOnError || true,
+    outputDirectory: options.outputDir || process.cwd(),
+    reportFormat: 'json',
+    progressTracking: !options.quiet,
+    dryRun: options.dryRun || false,
+    cleanup: options.cleanup !== false
+  });
+
+  // Set up progress tracking for multiple URLs
+  if (!options.quiet) {
+    batchProcessor.on('job-completed', (job, result) => {
+      console.log(`✓ Completed: ${job.url} -> ${result.outputFile} (${result.duration}ms)`);
+    });
+
+    batchProcessor.on('job-failed', (job, error) => {
+      console.error(`✗ Failed: ${job.url} - ${error.message}`);
+    });
+  }
+
+  try {
+    const report = await batchProcessor.processBatch(batchJobs, batchProcessor.options);
+
+    if (!options.quiet) {
+      console.log(`\nMulti-URL conversion complete:`);
+      console.log(`  Total URLs: ${report.totalJobs}`);
+      console.log(`  Successful: ${report.successfulJobs}`);
+      console.log(`  Failed: ${report.failedJobs}`);
+      console.log(`  Duration: ${report.totalDuration}ms`);
+
+      if (options.outputMetadata && report.optimizationInsights) {
+        console.log('\nResource Usage:');
+        console.log(`  Peak Memory: ${(report.optimizationInsights.peakMemoryUsage * 100).toFixed(1)}%`);
+        console.log(`  Browser Instances Created: ${report.optimizationInsights.browserInstancesCreated}`);
+        console.log(`  Browser Instances Reused: ${report.optimizationInsights.browserInstancesReused}`);
+      }
+    }
+  } catch (error) {
+    throw new Error(`Multi-URL conversion failed: ${error.message}`);
+  }
+}
+
+async function createBatchJobsFromUrls(
+  urls: string[],
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<BatchJob[]> {
+  const jobs: BatchJob[] = [];
+  const existingFilenames = new Set<string>();
+
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    let output: string;
+
+    try {
+      // Determine output filename
+      if (options.output && options.output[i]) {
+        // Explicit output provided - still check for conflicts
+        const explicitOutput = options.output[i];
+        output = await resolveFilenameConflicts(explicitOutput, undefined, options, existingFilenames);
+        existingFilenames.add(path.basename(output));
+      } else if (options.outputDir) {
+        // Generate filename in specified directory
+        const filename = await generateOutputFilename(url, options, i, options.outputDir, existingFilenames);
+        output = path.join(options.outputDir, filename);
+      } else {
+        // Generate filename in current directory
+        output = await generateOutputFilename(url, options, i, undefined, existingFilenames);
+      }
+
+      const job: BatchJob = {
+        id: `url-${i + 1}`,
+        url,
+        output,
+        metadata: {
+          index: i + 1,
+          totalUrls: urls.length,
+          originalUrl: url,
+          generatedFilename: path.basename(output)
+        }
+      };
+
+      // Apply preset if specified
+      if (options.preset) {
+        job.preset = options.preset;
+      }
+
+      // Apply any job-specific configuration from CLI options
+      if (needsJobSpecificConfig(options)) {
+        job.config = await buildConfigFromCliOptions(options, configManager);
+      }
+
+      jobs.push(job);
+
+    } catch (error) {
+      if (error instanceof SkipFileError) {
+        if (!options.quiet) {
+          console.log(`⏭️  Skipping URL due to existing file: ${url}`);
+        }
+        continue; // Skip this URL
+      } else {
+        throw error; // Re-throw other errors
+      }
+    }
+  }
+
+  if (jobs.length === 0) {
+    throw new Error('No URLs to process - all were skipped due to existing files');
+  }
+
+  return jobs;
+}async function generateOutputFilename(
+  url: string,
+  options: any,
+  index?: number,
+  outputDir?: string,
+  existingFilenames?: Set<string>
+): Promise<string> {
+  const urlObj = new URL(url);
+  const domain = urlObj.hostname.replace(/^www\./, '');
+  const pathname = urlObj.pathname === '/' ? 'index' : urlObj.pathname.replace(/[^\w-]/g, '_');
+
+  // Default format detection
+  const format = options.format || (options.imageType ? options.imageType : 'pdf');
+  const extension = format === 'pdf' ? 'pdf' : (options.imageType || 'png');
+
+  let filename: string;
+
+  if (options.outputPattern) {
+    // Use custom pattern
+    filename = options.outputPattern
+      .replace('{domain}', domain)
+      .replace('{path}', pathname)
+      .replace('{name}', `${domain}${pathname}`)
+      .replace('{index}', String((index ?? 0) + 1))
+      .replace('{timestamp}', new Date().toISOString().replace(/[:.]/g, '-'))
+      .replace('{format}', extension);
+  } else {
+    // Default naming pattern
+    const baseName = index !== undefined ? `${index + 1}-${domain}${pathname}` : `${domain}${pathname}`;
+    filename = `${baseName}.${extension}`;
+  }
+
+  // Handle filename conflicts
+  filename = await resolveFilenameConflicts(filename, outputDir, options, existingFilenames);
+
+  // Track this filename to prevent duplicates in the same batch
+  if (existingFilenames) {
+    existingFilenames.add(filename);
+  }
+
+  return filename;
+}
+
+async function resolveFilenameConflicts(
+  filename: string,
+  outputDir?: string,
+  options?: any,
+  existingFilenames?: Set<string>
+): Promise<string> {
+  const fullPath = outputDir ? path.join(outputDir, filename) : filename;
+  const parsedPath = path.parse(filename);
+
+  // Check for conflicts in current batch
+  if (existingFilenames?.has(filename)) {
+    return await findUniqueFilename(parsedPath, outputDir, options, existingFilenames);
+  }
+
+  // Check for existing files on disk
+  const fileExists = await fs.pathExists(fullPath);
+
+  if (!fileExists) {
+    return filename;
+  }
+
+  // Handle existing file based on options
+  if (options?.overwrite) {
+    console.log(`⚠️  Overwriting existing file: ${filename}`);
+    return filename;
+  }
+
+  if (options?.skip) {
+    console.log(`⏭️  Skipping existing file: ${filename}`);
+    throw new SkipFileError(`File already exists: ${filename}`);
+  }
+
+  // Default behavior: generate unique filename
+  if (!options?.quiet) {
+    console.log(`📝 File exists, generating unique name: ${filename}`);
+  }
+
+  return await findUniqueFilename(parsedPath, outputDir, options, existingFilenames);
+}
+
+async function findUniqueFilename(
+  parsedPath: path.ParsedPath,
+  outputDir?: string,
+  options?: any,
+  existingFilenames?: Set<string>
+): Promise<string> {
+  let counter = 1;
+  let uniqueFilename: string;
+
+  do {
+    const suffix = options?.conflictSuffix === 'timestamp'
+      ? `_${new Date().toISOString().replace(/[:.]/g, '-')}`
+      : `_${counter}`;
+
+    uniqueFilename = `${parsedPath.name}${suffix}${parsedPath.ext}`;
+    const fullPath = outputDir ? path.join(outputDir, uniqueFilename) : uniqueFilename;
+
+    // Check both in-memory tracking and disk
+    const inMemoryConflict = existingFilenames?.has(uniqueFilename);
+    const diskConflict = await fs.pathExists(fullPath);
+
+    if (!inMemoryConflict && !diskConflict) {
+      break;
+    }
+
+    counter++;
+
+    // Prevent infinite loops
+    if (counter > 1000) {
+      throw new Error(`Unable to generate unique filename after 1000 attempts for: ${parsedPath.name}`);
+    }
+
+  } while (true);
+
+  return uniqueFilename;
+}
+
+class SkipFileError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SkipFileError';
+  }
+}
+
+function needsJobSpecificConfig(options: any): boolean {
+  // Check if any CLI options require job-specific configuration
+  return !!(
+    options.viewport || options.margins || options.scale ||
+    options.quality || options.mediaType || options.colorScheme ||
+    options.waitUntil || options.waitTimeout || options.printBackground
+  );
+}
+
+async function buildConfigFromCliOptions(
+  options: any,
+  configManager: EnhancedConfigurationManager
+): Promise<Partial<EnhancedPrintConfiguration>> {
+  // Convert CLI options to configuration object
+  const config: Partial<EnhancedPrintConfiguration> = {};
+
+  // Page configuration
+  if (options.format || options.orientation || options.margins) {
+    config.page = {
+      format: options.format || 'A4',
+      orientation: options.orientation || 'portrait',
+      margins: parseMargins(options.margins)
+    };
+  }
+
+  // PDF configuration
+  if (options.scale || options.printBackground !== undefined || options.headerTemplate || options.footerTemplate) {
+    config.pdf = {
+      scale: options.scale || 1,
+      printBackground: options.printBackground !== false,
+      displayHeaderFooter: !!(options.headerTemplate || options.footerTemplate),
+      headerTemplate: options.headerTemplate,
+      footerTemplate: options.footerTemplate,
+      preferCSSPageSize: options.preferCssPageSize || false,
+      generateTaggedPDF: options.taggedPdf || false,
+      outline: options.pdfOutline || false
+    };
+  }
+
+  // Image configuration
+  if (options.quality || options.imageType || options.fullPage || options.clip) {
+    config.image = {
+      quality: options.quality || 90,
+      type: options.imageType || 'png',
+      fullPage: options.fullPage !== false,
+      clip: options.clip ? parseClipRegion(options.clip) : undefined,
+      optimizeForSize: options.optimizeSize || false,
+      encoding: 'binary'
+    };
+  }
+
+  // Viewport configuration
+  if (options.viewport || options.deviceScale || options.mobile) {
+    const viewportSize = parseViewportSize(options.viewport);
+    config.viewport = {
+      width: viewportSize?.width || 1920,
+      height: viewportSize?.height || 1080,
+      deviceScaleFactor: options.deviceScale || 1,
+      isMobile: options.mobile || false,
+      hasTouch: options.mobile || false,
+      isLandscape: options.landscapeViewport || false
+    };
+  }
+
+  // Wait conditions
+  if (options.waitUntil || options.waitTimeout || options.waitSelector || options.waitDelay) {
+    config.wait = {
+      until: options.waitUntil || 'networkidle0',
+      timeout: options.waitTimeout || 30000,
+      selector: options.waitSelector,
+      delay: options.waitDelay,
+      customFunction: options.waitFunction
+    };
+  }
+
+  // Authentication
+  if (options.auth || options.headers || options.cookies) {
+    config.auth = {};
+
+    if (options.auth) {
+      const [username, password] = options.auth.split(':');
+      config.auth.basic = { username, password };
+    }
+
+    if (options.headers) {
+      config.auth.headers = JSON.parse(options.headers);
+    }
+
+    if (options.cookies) {
+      config.auth.cookies = JSON.parse(options.cookies);
+    }
+
+    if (options.userAgent) {
+      config.auth.userAgent = options.userAgent;
+    }
+  }
+
+  // Media emulation
+  if (options.mediaType || options.colorScheme || options.timezone || options.locale) {
+    config.emulation = {
+      mediaType: options.mediaType || 'screen',
+      colorScheme: options.colorScheme || 'no-preference',
+      reducedMotion: 'no-preference',
+      timezone: options.timezone,
+      locale: options.locale
+    };
+  }
+
+  // Performance options
+  if (options.blockResources || options.disableJavascript || options.cache !== undefined || options.loadTimeout) {
+    config.performance = {
+      blockResources: options.blockResources ? options.blockResources.split(',') : [],
+      maxConcurrent: 3,
+      retryAttempts: options.retry || 2,
+      cacheEnabled: options.cache !== false,
+      javascriptEnabled: !options.disableJavascript,
+      loadTimeout: options.loadTimeout || 30000
+    };
+  }
+
+  return config;
+}
+
+// Utility functions
+function parseMargins(marginStr?: string): any {
+  if (!marginStr) return { top: '1in', right: '1in', bottom: '1in', left: '1in' };
+
+  if (marginStr.includes(',')) {
+    // Parse individual margins: "top:1in,right:0.5in,bottom:1in,left:0.5in"
+    const margins: any = {};
+    marginStr.split(',').forEach(part => {
+      const [side, value] = part.split(':');
+      margins[side.trim()] = value.trim();
+    });
+    return margins;
+  } else {
+    // Uniform margins: "1in"
+    return { top: marginStr, right: marginStr, bottom: marginStr, left: marginStr };
+  }
+}
+
+function parseViewportSize(viewportStr?: string): { width: number; height: number } | null {
+  if (!viewportStr) return null;
+
+  const [width, height] = viewportStr.split('x').map(s => parseInt(s.trim(), 10));
+  return { width, height };
+}
+
+function parseClipRegion(clipStr: string): { x: number; y: number; width: number; height: number } {
+  const [x, y, width, height] = clipStr.split(',').map(s => parseInt(s.trim(), 10));
+  return { x, y, width, height };
 }
 
 async function runBatchProcess(
@@ -2307,4 +3164,305 @@ interface TemplateAPI {
 - **Error Handling**: Test error scenarios and recovery
 - **Edge Cases**: Test edge cases and boundary conditions
 
-This comprehensive design document provides a roadmap for implementing professional-grade web-to-print capabilities in the Printeer CLI system, following industry best practices and maintaining backward compatibility with the existing adaptive CLI architecture.
+## Enhanced Multi-URL CLI Usage Examples
+
+The enhanced CLI supports flexible URL-output pairing with intelligent filename generation:
+
+### Multiple URLs with Automatic Title-Based Names
+
+```bash
+# Convert multiple URLs with auto-generated names from webpage titles
+printeer convert \
+  --url https://example.com \
+  --url https://github.com \
+  --url https://stackoverflow.com
+
+# Output files (based on webpage titles):
+# Welcome_to_Example_Domain.pdf
+# GitHub_The_world_s_leading_AI-powered_developer_platform.pdf
+# Stack_Overflow_Where_Developers_Learn_Share_Build_Careers.pdf
+```
+
+### Mixed Explicit and Automatic Output Names
+
+```bash
+# Mix explicit filenames with automatic generation
+printeer convert \
+  --url https://example.com --output custom-name.pdf \
+  --url https://github.com \
+  --url https://stackoverflow.com --output stack-overflow-page.png
+
+# Output files:
+# custom-name.pdf (explicit)
+# GitHub_The_world_s_leading_AI-powered_developer_platform.pdf (from title)
+# stack-overflow-page.png (explicit)
+```
+
+### Multiple URLs with Different Formats
+
+```bash
+# Each URL can have different output format
+printeer convert \
+  --url https://example.com --output site.pdf \
+  --url https://github.com --output github-screenshot.png \
+  --url https://stackoverflow.com --output stack.webp
+```
+
+### URLs with Output Directory
+
+```bash
+# Convert multiple URLs to a specific directory with title-based names
+printeer convert \
+  --url https://example.com \
+  --url https://github.com \
+  --output-dir ./converted-sites
+
+# Output files in ./converted-sites/:
+# Welcome_to_Example_Domain.pdf (from webpage title)
+# GitHub_The_world_s_leading_AI-powered_developer_platform.pdf (from webpage title)
+```
+
+### Custom Naming Pattern with Titles
+
+```bash
+# Use custom naming pattern that includes webpage titles
+printeer convert \
+  --url https://example.com/page1 \
+  --url https://github.com/user/repo \
+  --output-pattern "{index}_{title}_{timestamp}.pdf" \
+  --output-dir ./reports
+
+# Output files:
+# 1_Example_Domain_Page_1_2025-09-12T14-30-45Z.pdf
+# 2_GitHub_user_repo_Repository_2025-09-12T14-30-47Z.pdf
+```
+
+### Title-Based Filename Generation
+
+```bash
+# Single URL with automatic title-based filename
+printeer convert --url https://example.com
+
+# Output: Welcome_to_Example_Domain.pdf (from webpage title)
+
+# Single URL with explicit output
+printeer convert --url https://example.com --output my-page.pdf
+
+# Single URL with directory output and title-based name
+printeer convert --url https://example.com --output-dir ./downloads
+# Output: ./downloads/Welcome_to_Example_Domain.pdf
+```
+
+### Advanced Batch Processing with Your Example
+
+```bash
+# Your exact example - multiple URLs with advanced processing options
+printeer convert \
+  --url https://example.com --output example.png \
+  --url https://github.com --output github.pdf \
+  --url https://stackoverflow.com --output stackoverflow.png \
+  --output-dir ./ \
+  --output-conflict copy \
+  --concurrency 2 \
+  --retry 3 \
+  --format A4 \
+  --orientation landscape \
+  --preset "high-quality" \
+  --continue-on-error \
+  --output-metadata
+
+# Processing output:
+# ✓ Completed: https://example.com -> ./example.png (1247ms)
+# ✓ Completed: https://github.com -> ./github.pdf (2156ms)
+# ✓ Completed: https://stackoverflow.com -> ./stackoverflow.png (1834ms)
+#
+# Multi-URL conversion complete:
+#   Total URLs: 3
+#   Successful: 3
+#   Failed: 0
+#   Duration: 3891ms
+#
+# Resource Usage:
+#   Peak Memory: 45.2%
+#   Browser Instances Created: 1
+#   Browser Instances Reused: 2
+```
+
+### Advanced Processing with Mixed Approaches
+
+```bash
+# Mix explicit outputs with automatic title-based generation
+printeer convert \
+  --url https://example.com --output example.png \
+  --url https://github.com \
+  --url https://stackoverflow.com --output stackoverflow.png \
+  --output-dir batch-output \
+  --concurrency 2 \
+  --retry 3 \
+  --preset "high-quality" \
+  --continue-on-error
+
+# Processing output:
+# ✓ Completed: https://example.com -> batch-output/example.png (1247ms)
+# ✓ Completed: https://github.com -> batch-output/GitHub_The_world_s_leading_AI-powered_developer_platform.pdf (2156ms)
+# ✓ Completed: https://stackoverflow.com -> batch-output/stackoverflow.png (1834ms)
+```
+
+### Single URL Examples
+
+```bash
+# Single URL with automatic output
+printeer convert https://example.com
+
+# Single URL with specific output
+printeer convert https://example.com --output my-page.pdf
+
+# Single URL with directory output
+printeer convert https://example.com --output-dir ./downloads
+```
+
+### Intelligent Filename Generation Hierarchy
+
+When `--output` is not specified, the system uses this fallback hierarchy:
+
+1. **Webpage Title** (default): Extracts `<title>` tag from the webpage
+2. **URL Algorithm**: Falls back to domain + path if title unavailable
+3. **Pattern System**: Uses `--output-pattern` if specified
+
+```bash
+# Title extraction with fallbacks
+printeer convert --url https://example.com/blog/post-1
+
+# Attempts:
+# 1. Extract title: "My Blog Post - Example Site" → My_Blog_Post_Example_Site.pdf
+# 2. If title fails: "example.com/blog/post-1" → example_com_blog_post-1.pdf
+# 3. If pattern specified: uses pattern with available data
+```
+
+### Pattern Variables
+
+Available variables for `--output-pattern`:
+
+- `{domain}` - Domain name (e.g., "example.com")
+- `{path}` - URL path (e.g., "blog_post-1" for "/blog/post-1")
+- `{title}` - Webpage title (e.g., "My_Blog_Post_Example_Site")
+- `{name}` - Combined domain and path (e.g., "example.com_blog_post-1")
+- `{index}` - URL index in the list (1, 2, 3, ...)
+- `{timestamp}` - ISO timestamp (e.g., "2025-09-12T14-30-45Z")
+- `{format}` - Output format extension (e.g., "pdf", "png")
+
+### Title Extraction Control
+
+```bash
+# Force URL-based naming (skip title extraction)
+printeer convert --url https://example.com --url-fallback
+
+# Ensure title extraction (default behavior)
+printeer convert --url https://example.com --title-fallback
+```
+
+### Configuration with Multiple URLs
+
+```bash
+# Use configuration file with multiple URLs
+printeer convert \
+  https://example.com \
+  https://github.com \
+  --config ./config/batch-config.json \
+  --env production \
+  --output-dir production-snapshots
+
+# Apply preset to all URLs
+printeer convert \
+  https://example.com \
+  https://github.com \
+  https://stackoverflow.com \
+  --preset "mobile-responsive" \
+  --output-pattern "mobile_{domain}_{timestamp}.png" \
+  --image-type png
+```
+
+### Enhanced Conflict Resolution
+
+```bash
+# Override existing files (replace without prompt)
+printeer convert \
+  --url https://example.com --output report.pdf \
+  --output-conflict override
+
+# Copy behavior - create unique names for conflicts (default)
+printeer convert \
+  --url https://example.com --output report.pdf \
+  --output-conflict copy
+# Output: report_1.pdf (if report.pdf exists)
+
+# Skip existing files
+printeer convert \
+  --url https://example.com --output report.pdf \
+  --url https://github.com --output github.pdf \
+  --output-conflict skip
+# Output: ⏭️ Skipping URL due to existing file: https://example.com
+
+# Automatic title-based names with conflict resolution
+printeer convert \
+  --url https://example.com \
+  --url https://example.com/about \
+  --output-conflict copy
+
+# Output files:
+# Welcome_to_Example_Domain.pdf (first URL from title)
+# About_Us_Example_Domain.pdf (second URL from title - different titles = no conflict)
+
+# If same titles, auto-increment:
+# Welcome_to_Example_Domain.pdf
+# Welcome_to_Example_Domain_1.pdf (duplicate title)
+```
+
+### Error Handling and Debugging
+
+```bash
+# Dry-run to test configuration with multiple URLs
+printeer convert \
+  https://example.com \
+  https://badurl.invalid \
+  https://github.com \
+  --dry-run \
+  --continue-on-error
+
+# Output:
+# Configuration validation successful
+# Would convert: https://example.com -> example_com.pdf
+# Would convert: https://badurl.invalid -> badurl_invalid.pdf
+# Would convert: https://github.com -> github_com.pdf
+
+# Real conversion with error handling
+printeer convert \
+  https://example.com \
+  https://badurl.invalid \
+  https://github.com \
+  --continue-on-error \
+  --retry 2
+
+# Output:
+# ✓ Completed: https://example.com -> example_com.pdf (1247ms)
+# ✗ Failed: https://badurl.invalid - DNS resolution failed
+# ✓ Completed: https://github.com -> github_com.pdf (2156ms)
+```## Summary
+
+The enhanced CLI printing system provides:
+
+1. **Comprehensive Configuration Support**: JSON/YAML configuration files, environment-specific overrides, preset management, and CLI option integration
+
+2. **Professional Batch Processing**: Support for CSV, JSON, YAML batch files with intelligent resource management using existing browser pool optimization
+
+3. **Enhanced URL-Output Pairing**: Flexible `--url <url> --output <file>` pairing system with intelligent title-based filename generation and comprehensive conflict resolution
+
+4. **Template System**: HTML template management with variable substitution and custom styling
+
+5. **Advanced CLI Interface**: Complete command-line control over all printing parameters with validation and error handling
+
+6. **Resource Optimization**: Integration with existing DefaultBrowserPoolOptimizer, DefaultResourceManager, and DefaultCleanupManager for optimal performance
+
+7. **Enterprise Features**: Progress tracking, detailed reporting, retry mechanisms, dry-run capabilities, and comprehensive error handling
+
+This comprehensive design document provides a roadmap for implementing professional-grade web-to-print capabilities in the Printeer CLI system, following industry best practices and maintaining backward compatibility with the existing adaptive CLI architecture. The CLI now supports both traditional batch file processing and direct multi-URL processing for maximum flexibility.
