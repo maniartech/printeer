@@ -1,0 +1,5 @@
+id,url,output,preset,priority,variables
+invoice-001,https://example.com/invoice/1,invoices/invoice-001.pdf,invoice,1,"{""invoiceId"":""001""}"
+invoice-002,https://example.com/invoice/2,invoices/invoice-002.pdf,invoice,1,"{""invoiceId"":""002""}"
+screenshot-home,https://example.com,screenshots/homepage.png,screenshot,2,"{""page"":""home""}"
+report-monthly,https://example.com/reports/monthly,reports/monthly.pdf,,3,"{""month"":""January""}"

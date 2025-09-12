@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import printeer from '../api';
 import { DefaultDoctorModule } from '../diagnostics/doctor';
 import type { DiagnosticResult } from '../diagnostics/types/diagnostics';
+import { program as enhancedProgram } from './enhanced-cli';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import process from 'process';
@@ -559,7 +560,18 @@ program.configureOutput({
 // Parse and execute
 export async function runCLI() {
   try {
-    await program.parseAsync();
+    // Check if enhanced CLI commands are being used
+    const args = process.argv.slice(2);
+    const enhancedCommands = ['convert', 'c', 'batch', 'b', 'config', 'template', 'tpl'];
+    const isEnhancedCommand = args.length > 0 && enhancedCommands.includes(args[0]);
+
+    if (isEnhancedCommand) {
+      // Use enhanced CLI for new commands
+      await enhancedProgram.parseAsync();
+    } else {
+      // Use legacy CLI for backward compatibility (doctor, interactive, direct conversion)
+      await program.parseAsync();
+    }
   } catch (error) {
     if (process.env.NODE_ENV !== 'test') {
       console.error('Unexpected error:', error);

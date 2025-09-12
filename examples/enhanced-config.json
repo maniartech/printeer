@@ -1,0 +1,87 @@
+{
+  "$schema": "./node_modules/printeer/schemas/config.schema.json",
+  "defaults": {
+    "page": {
+      "format": "A4",
+      "orientation": "portrait",
+      "margins": {
+        "top": "1in",
+        "right": "1in",
+        "bottom": "1in",
+        "left": "1in"
+      }
+    },
+    "pdf": {
+      "printBackground": true,
+      "scale": 0.8,
+      "displayHeaderFooter": false
+    },
+    "wait": {
+      "until": "networkidle0",
+      "timeout": 30000
+    },
+    "emulation": {
+      "mediaType": "screen",
+      "colorScheme": "light"
+    }
+  },
+  "environments": {
+    "development": {
+      "wait": {
+        "timeout": 10000
+      },
+      "performance": {
+        "cacheEnabled": false,
+        "javascriptEnabled": true
+      }
+    },
+    "production": {
+      "pdf": {
+        "scale": 0.9,
+        "generateTaggedPDF": true
+      },
+      "performance": {
+        "retryAttempts": 3,
+        "blockResources": ["image", "font"]
+      }
+    }
+  },
+  "presets": {
+    "invoice": {
+      "name": "invoice",
+      "description": "Professional invoice generation",
+      "config": {
+        "page": {
+          "format": "A4"
+        },
+        "pdf": {
+          "headerTemplate": "invoice-header",
+          "footerTemplate": "simple-footer",
+          "displayHeaderFooter": true,
+          "scale": 0.95
+        },
+        "emulation": {
+          "mediaType": "print"
+        }
+      }
+    },
+    "screenshot": {
+      "name": "screenshot",
+      "description": "High-quality screenshot capture",
+      "config": {
+        "image": {
+          "fullPage": true,
+          "quality": 90,
+          "type": "png"
+        },
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "emulation": {
+          "mediaType": "screen"
+        }
+      }
+    }
+  }
+}

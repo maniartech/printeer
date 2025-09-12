@@ -1,0 +1,48 @@
+metadata:
+  name: "Comprehensive Website Conversion"
+  version: "1.0"
+  created: "2025-09-12T10:00:00Z"
+  description: "Convert multiple website pages with different configurations"
+
+defaults:
+  preset: "web-article"
+  outputDirectory: "./batch-output"
+  timeout: 30000
+  retryAttempts: 2
+
+variables:
+  baseUrl: "https://example.com"
+  outputPath: "./reports"
+  companyName: "Acme Corporation"
+
+jobs:
+  - id: "homepage"
+    url: "{{baseUrl}}"
+    output: "{{outputPath}}/homepage.pdf"
+    preset: "web-article"
+    priority: 1
+    variables:
+      title: "{{companyName}} Homepage"
+      section: "main"
+    config:
+      pdf:
+        headerTemplate: "corporate-header"
+        footerTemplate: "simple-footer"
+        displayHeaderFooter: true
+
+  - id: "about-page"
+    url: "{{baseUrl}}/about"
+    output: "{{outputPath}}/about.pdf"
+    dependencies: ["homepage"]
+    variables:
+      title: "About {{companyName}}"
+      section: "about"
+
+  - id: "mobile-screenshot"
+    url: "{{baseUrl}}"
+    output: "{{outputPath}}/homepage-mobile.png"
+    preset: "mobile-responsive"
+    config:
+      image:
+        type: "png"
+        quality: 95
