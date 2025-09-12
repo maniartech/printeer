@@ -25,6 +25,24 @@ import * as yaml from 'yaml';
 
 const program = new Command();
 
+// Get package version
+function getVersion(): string {
+  try {
+    const packagePath = path.join(process.cwd(), 'package.json');
+    const packageContent = require('fs').readFileSync(packagePath, 'utf8');
+    const packageJson = JSON.parse(packageContent);
+    return packageJson.version;
+  } catch {
+    return '1.0.0';
+  }
+}
+
+// Setup enhanced CLI program
+program
+  .name('printeer')
+  .description('🎯 Enhanced Web-to-PDF/PNG conversion utility with comprehensive configuration, batch processing, and template management')
+  .version(getVersion(), '-v, --version', 'Display version number');
+
 // Utility function to collect multiple option values
 function collect(value: string, previous: string[] = []): string[] {
   return previous.concat([value]);
@@ -855,7 +873,7 @@ async function listTemplates(options: any): Promise<void> {
 /**
  * Show template content
  */
-async function showTemplate(name: string, options: any): Promise<void> {
+async function showTemplate(name: string, options: unknown): Promise<void> {
   const templateManager = new TemplateManager();
 
   try {

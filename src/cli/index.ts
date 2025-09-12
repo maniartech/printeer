@@ -560,17 +560,24 @@ program.configureOutput({
 // Parse and execute
 export async function runCLI() {
   try {
-    // Check if enhanced CLI commands are being used
+    // Check if legacy CLI commands are being used
     const args = process.argv.slice(2);
-    const enhancedCommands = ['convert', 'c', 'batch', 'b', 'config', 'template', 'tpl'];
-    const isEnhancedCommand = args.length > 0 && enhancedCommands.includes(args[0]);
+    const legacyCommands = ['doctor', 'interactive', 'i'];
+    const isLegacyCommand = args.length > 0 && legacyCommands.includes(args[0]);
+    
+    // Check if it's a direct conversion (two arguments without commands)
+    const isDirectConversion = args.length >= 2 && 
+      !args[0].startsWith('-') && 
+      !args[1].startsWith('-') && 
+      !legacyCommands.includes(args[0]) &&
+      !['convert', 'c', 'batch', 'b', 'config', 'template', 'tpl'].includes(args[0]);
 
-    if (isEnhancedCommand) {
-      // Use enhanced CLI for new commands
-      await enhancedProgram.parseAsync();
-    } else {
+    if (isLegacyCommand || isDirectConversion) {
       // Use legacy CLI for backward compatibility (doctor, interactive, direct conversion)
       await program.parseAsync();
+    } else {
+      // Use enhanced CLI as the primary interface (including help, version, and all new commands)
+      await enhancedProgram.parseAsync();
     }
   } catch (error) {
     if (process.env.NODE_ENV !== 'test') {

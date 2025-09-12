@@ -313,27 +313,18 @@ function testErrorHandling() {
   log('\n🚨 Testing Error Handling and Edge Cases', 'warning');
 
   runTest('Error: Multiple outputs without multiple URLs', () => {
-    try {
-      runCommand('node ../dist/bin/cli.js convert --url https://example.com --output file1.pdf --output file2.pdf', true);
-    } catch (error) {
-      // Expected to fail
-    }
+    // This should fail because we have 2 outputs but only 1 URL
+    runCommand('node ../dist/bin/cli.js convert --url https://example.com --output file1.pdf --output file2.pdf', true);
   });
 
   runTest('Error: Invalid batch file', () => {
-    try {
-      runCommand('node ../dist/bin/cli.js batch nonexistent.csv', true);
-    } catch (error) {
-      // Expected to fail
-    }
+    // This should fail because the file doesn't exist
+    runCommand('node ../dist/bin/cli.js batch nonexistent.csv', true);
   });
 
   runTest('Error: Invalid preset name', () => {
-    try {
-      runCommand('node ../dist/bin/cli.js convert --url https://example.com --preset nonexistent-preset --dry-run', true);
-    } catch (error) {
-      // Expected to fail
-    }
+    // This should fail because the preset doesn't exist
+    runCommand('node ../dist/bin/cli.js convert --url https://example.com --preset nonexistent-preset --dry-run', true);
   });
 }
 
