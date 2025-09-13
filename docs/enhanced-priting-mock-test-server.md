@@ -345,6 +345,51 @@ packages/<group>/
 
 - Routes should render these templates and pass values from query parameters for quick variation (`?ms=2000`, `?pages=5`, etc.).
 
+### Strict rule: No HTML embedded in JS (invalid pattern)
+
+Do NOT return HTML via string literals inside route handlers or utility functions. The following style is expressly forbidden in this project (shown here to make the rule explicit):
+
+```js
+// INVALID: HTML embedded directly in JS (do not do this)
+function renderPlaceholderHTML(baseUrl, pathname, entries, req) {
+	/* returns a large HTML string */
+}
+```
+
+Instead, use file-based templates:
+
+1) Place a template file under the appropriate templates directory (per-group or a shared templates folder).
+2) Render it with a template engine, passing only the minimal data needed.
+
+Recommended template locations:
+- Per-group: `mock-server/packages/<group>/templates/*.html` (or `.ejs`/`.njk`)
+- Shared (for generic placeholders): `mock-server/templates/placeholder.html`
+
+Example (conceptual):
+
+```txt
+mock-server/
+	templates/
+		placeholder.ejs        # generic placeholder for catalog-listed yet-to-implement routes
+	packages/
+		print/
+			templates/
+				margins.ejs
+				scale-markers.ejs
+```
+
+Example (Express with EJS, conceptual):
+
+```js
+// app.set('views', path.join(__dirname, 'templates'));
+// app.set('view engine', 'ejs');
+// ...
+res.render('placeholder', { baseUrl, pathname, entries, method: req.method, query: req.query });
+```
+
+Compliance note:
+- If any existing code currently embeds HTML in JS (e.g., a temporary placeholder), treat it as a short-lived stopgap. Replace it with a file-based template in the next change while migrating groups into sub-packages.
+
 ## Mapping endpoints to CLI options
 
 Below are representative CLI invocations (adjust paths/flags to your environment). Use `npm run printeer --` to pass args to your existing dev runner, or `node scripts/run-cli.js` directly.
