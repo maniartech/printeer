@@ -28,11 +28,9 @@ mock-server/
 	README.md            # Quick usage
 	packages/            # (Recommended) one subpackage per feature group
 		basic/
-			package.json
 			routes.js        # exports an Express.Router and group metadata
 			templates/       # .html (and optional .css/.js) used by routes
 		print/
-			package.json
 			routes.js
 			templates/
 		dynamic/
@@ -61,9 +59,6 @@ This package is not published and is intended for local development/testing only
 
 ```bash
 cd mock-server
-npm install
-npm start
-# Server runs at http://localhost:4000 (override with PORT)
 ```
 
 Optional root convenience (no changes made by default):
@@ -74,13 +69,12 @@ Optional root convenience (no changes made by default):
 	"scripts": {
 		"mock:server": "npm --prefix ./mock-server start"
 	}
-}
 ```
 
 ## Launcher & catalog
 
 - Homepage: `GET /` — Groups all endpoints by feature area with clickable links.
-- Catalog: `GET /__catalog.json` — Returns `{ port, groups: [...] }` where each group contains `title` and `routes` (path, title, optional method). Use this in automated suites to iterate scenarios.
+- Catalog: `GET /__catalog.json` — Returns `{ port, baseUrl, groups: [...] }` where each group contains `title` and `routes` (path, title, optional method). Use this in automated suites to iterate scenarios.
 
 ### Launcher UI (beautiful, searchable homepage)
 
@@ -92,10 +86,7 @@ The mock server includes a polished launcher you can open in a browser to manual
 
 Key features:
 - Instant search by route name, path, or group
- Catalog: `GET /__catalog.json` — Returns `{ port, baseUrl, groups: [...] }` where each group contains `title` and `routes` (path, title, optional method). Use this in automated suites to iterate scenarios.
 - Per-route method badges and direct links (open in new tab)
-- Quick links to Catalog JSON and Health endpoint
-
 How it works:
 1) The server serves `/__catalog.json`, derived from `mock-server/catalog.json`, enriched with `port` and `baseUrl`.
 2) The launcher fetches `/__catalog.json` and renders groups and routes.
@@ -120,11 +111,56 @@ Adding a route to the launcher:
 Environment variables:
 - `PORT` — port to bind (default `4000`)
 - `MOCK_BASE_URL` — override base URL in catalog (useful if reverse-proxying the server)
-
 Optional enhancements (future):
 - “Copy printeer command” button next to each route to prefill CLI examples
-- Filters for method (GET/POST) or tag-based filtering per route
 - Collapsible groups with remembered state
+
+### Support endpoints
+
+- Health: `GET /__health` — Returns a simple JSON object for readiness checks.
+	- Example: `{ "ok": true, "uptime": 123.45, "timestamp": "2025-09-13T10:00:00.000Z" }`
+- Catalog: `GET /__catalog.json` — Machine-readable index the launcher and tests consume.
+
+### Catalog JSON contract
+
+The catalog is the single source of truth for the launcher and route placeholders.
+
+- Root shape:
+	- `port: number` — The active port.
+	- `baseUrl: string` — The base URL for links (e.g., `http://localhost:4000`). If `MOCK_BASE_URL` is set, it will be used.
+	- `groups: Group[]` — Grouped routes, one group per feature area.
+
+- Group:
+	- `id: string` — Stable identifier, kebab-case.
+	- `title: string` — Human-friendly name.
+	- `routes: RouteEntry[]` — The entries shown in the launcher.
+
+- RouteEntry:
+	- `path: string` — Path (may include query), e.g., `/print/margins?top=1in&left=1in`.
+	- `title: string` — Display name.
+	- `method?: "GET"|"POST"` — Defaults to `GET`.
+	- `tags?: string[]` — Optional tags (e.g., `dynamic`, `auth`, `print`).
+	- `notes?: string` — Optional short hint shown in tooltips.
+	- `implemented?: boolean` — Optional flag; when false or absent and route is not implemented, the server renders a placeholder instead of 404.
+
+Example `__catalog.json`:
+
+```json
+{
+	"port": 4000,
+	"baseUrl": "http://localhost:4000",
+	"groups": [
+		{
+			"id": "print",
+			"title": "Print CSS & Page Formatting",
+			"routes": [
+				{ "path": "/print/scale-markers", "title": "Scale markers" },
+				{ "path": "/print/margins?top=1in&right=1in&bottom=1in&left=1in", "title": "Margins" }
+			]
+		}
+	]
+}
+```
 
 ### Auto-discovery (recommended)
 
