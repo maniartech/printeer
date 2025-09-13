@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .header-table th,
+        .header-table td {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        
+        .header-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            width: 200px;
+        }
+        
+        .header-table td {
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #ffc107;
+            margin: 1rem 0;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 1rem;
+            }
+            
+            .info-section {
+                background: #f5f5f5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <div class="highlight">
+            <strong>Purpose:</strong> Debug user agent, device info, and request headers for testing device emulation and custom headers.
+        </div>
+    </header>
+
+    <main>
+        <section class="info-section">
+            <h2>Primary Headers</h2>
+            <p><strong>User Agent:</strong> <%= userAgent %></p>
+            <p><strong>Accept Language:</strong> <%= acceptLanguage %></p>
+            <p><strong>Accept Encoding:</strong> <%= acceptEncoding %></p>
+        </section>
+
+        <section>
+            <h2>All Request Headers</h2>
+            <table class="header-table">
+                <thead>
+                    <tr>
+                        <th>Header Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% Object.entries(headers).forEach(([key, value]) => { %>
+                    <tr>
+                        <td><%= key %></td>
+                        <td><%= value %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="info-section">
+            <h2>Testing Scenarios</h2>
+            <ul>
+                <li><strong>Custom User Agent:</strong> <code>--user-agent "Custom Agent"</code></li>
+                <li><strong>Mobile Emulation:</strong> <code>--mobile</code></li>
+                <li><strong>Custom Headers:</strong> <code>--header "X-Custom: value"</code></li>
+                <li><strong>Device Scale Factor:</strong> <code>--device-scale 2</code></li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

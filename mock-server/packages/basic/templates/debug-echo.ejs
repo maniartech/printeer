@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #27ae60;
+            padding-bottom: 0.5rem;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .method-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        
+        .method-get { background: #d4edda; color: #155724; }
+        .method-post { background: #cce5ff; color: #004085; }
+        .method-put { background: #fff3cd; color: #856404; }
+        .method-delete { background: #f8d7da; color: #721c24; }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            width: 150px;
+        }
+        
+        .data-table td {
+            word-break: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .json-display {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            margin: 1rem 0;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 1rem;
+            }
+            
+            .info-card {
+                background: #f5f5f5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <div class="method-badge method-<%= method.toLowerCase() %>"><%= method %></div>
+        <div class="highlight">
+            <strong>Purpose:</strong> Echo all request details for debugging POST data, headers, and query parameters.
+        </div>
+    </header>
+
+    <main>
+        <section class="info-card">
+            <h2>Request Overview</h2>
+            <table class="data-table">
+                <tr>
+                    <th>Method</th>
+                    <td><%= method %></td>
+                </tr>
+                <tr>
+                    <th>URL</th>
+                    <td><%= url %></td>
+                </tr>
+                <tr>
+                    <th>Timestamp</th>
+                    <td><%= timestamp %></td>
+                </tr>
+            </table>
+        </section>
+
+        <% if (Object.keys(query).length > 0) { %>
+        <section class="info-card">
+            <h2>Query Parameters</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% Object.entries(query).forEach(([key, value]) => { %>
+                    <tr>
+                        <td><%= key %></td>
+                        <td><%= Array.isArray(value) ? value.join(', ') : value %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </section>
+        <% } %>
+
+        <section class="info-card">
+            <h2>Request Headers</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Header</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% Object.entries(headers).forEach(([key, value]) => { %>
+                    <tr>
+                        <td><%= key %></td>
+                        <td><%= value %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </section>
+
+        <% if (body && Object.keys(body).length > 0) { %>
+        <section class="info-card">
+            <h2>Request Body</h2>
+            <div class="json-display"><%= JSON.stringify(body, null, 2) %></div>
+        </section>
+        <% } %>
+
+        <section class="info-card">
+            <h2>Testing Scenarios</h2>
+            <h3>GET Request Testing</h3>
+            <ul>
+                <li><code>GET /debug/echo?param1=value1&param2=value2</code></li>
+                <li><code>--header "X-Custom-Header: test-value"</code></li>
+                <li><code>--user-agent "Custom Test Agent"</code></li>
+            </ul>
+            
+            <h3>POST Request Testing</h3>
+            <ul>
+                <li><code>POST /debug/echo</code> with form data</li>
+                <li><code>--method POST --post-data "key=value"</code></li>
+                <li><code>--header "Content-Type: application/json"</code></li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>

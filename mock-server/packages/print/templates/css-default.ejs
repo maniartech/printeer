@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+            background: #fff;
+        }
+        
+        h1 {
+            color: #e74c3c;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 0.5rem;
+        }
+        
+        .screen-only {
+            background: #3498db;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .print-only {
+            display: none;
+            background: #2ecc71;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .different-colors {
+            background: #f39c12;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .box-shadow-test {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            background: #ecf0f1;
+        }
+        
+        .border-test {
+            border: 3px solid #9b59b6;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            body {
+                margin: 0;
+                padding: 1rem;
+                background: white;
+                color: black;
+            }
+            
+            h1 {
+                color: #000;
+                border-bottom: 2px solid #000;
+            }
+            
+            .screen-only {
+                display: none;
+            }
+            
+            .print-only {
+                display: block;
+                background: #000;
+                color: white;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            .different-colors {
+                background: #666;
+                color: white;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            .box-shadow-test {
+                box-shadow: none;
+                border: 1px solid #000;
+                background: #f0f0f0;
+            }
+            
+            .border-test {
+                border: 2px solid #000;
+            }
+        }
+        
+        @page {
+            margin: 1in;
+            size: A4;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <p><strong>Purpose:</strong> Test @media print CSS overrides and print-specific styling</p>
+    </header>
+
+    <main>
+        <section class="screen-only">
+            <h2>Screen Only Content</h2>
+            <p>This section is only visible on screen and will be hidden when printed or converted to PDF.</p>
+            <p><strong>CSS:</strong> <code>@media print { .screen-only { display: none; } }</code></p>
+        </section>
+
+        <section class="print-only">
+            <h2>Print Only Content</h2>
+            <p>This section is only visible in print/PDF and hidden on screen.</p>
+            <p><strong>CSS:</strong> <code>@media print { .print-only { display: block; } }</code></p>
+        </section>
+
+        <section class="different-colors">
+            <h2>Different Colors for Print</h2>
+            <p>This section has different colors for screen vs print media.</p>
+            <p><strong>Screen:</strong> Orange background</p>
+            <p><strong>Print:</strong> Gray background (defined in @media print)</p>
+        </section>
+
+        <section class="box-shadow-test">
+            <h2>Box Shadow Removal</h2>
+            <p>This section has a box shadow on screen but uses a border in print for better compatibility.</p>
+            <p><strong>Screen:</strong> Drop shadow effect</p>
+            <p><strong>Print:</strong> Simple border (shadows removed)</p>
+        </section>
+
+        <section class="border-test">
+            <h2>Border Adjustments</h2>
+            <p>Borders are often adjusted for print to ensure they render clearly.</p>
+            <p><strong>Screen:</strong> 3px purple border</p>
+            <p><strong>Print:</strong> 2px black border</p>
+        </section>
+
+        <section>
+            <h2>Testing Instructions</h2>
+            <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">Test Case</th>
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">CLI Command</th>
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">Expected Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Screen Media</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--media-type screen</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Blue "Screen Only" section visible</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Print Media</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--media-type print</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Green "Print Only" section visible</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Print Backgrounds</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--print-background</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Background colors preserved</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">No Backgrounds</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Default (no --print-background)</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">White backgrounds, black text</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee; color: #666; font-size: 0.9rem;">
+        <p><strong>Print CSS Testing:</strong> Compare screen preview with PDF output to verify @media print styles</p>
+    </footer>
+</body>
+</html>

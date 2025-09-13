@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #9b59b6;
+            padding-bottom: 0.5rem;
+        }
+        
+        .font-sample {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .font-name {
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sample-text {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .font-details {
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        /* Google Fonts */
+        .roboto { font-family: 'Roboto', sans-serif; }
+        .open-sans { font-family: 'Open Sans', sans-serif; }
+        .lato { font-family: 'Lato', sans-serif; }
+        .montserrat { font-family: 'Montserrat', sans-serif; }
+        .source-sans { font-family: 'Source Sans Pro', sans-serif; }
+        .playfair { font-family: 'Playfair Display', serif; }
+        .merriweather { font-family: 'Merriweather', serif; }
+        .fira-code { font-family: 'Fira Code', monospace; }
+        
+        /* System fonts */
+        .system-ui { font-family: system-ui, sans-serif; }
+        .helvetica { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+        .times { font-family: 'Times New Roman', Times, serif; }
+        .courier { font-family: 'Courier New', Courier, monospace; }
+        .georgia { font-family: Georgia, serif; }
+        .verdana { font-family: Verdana, sans-serif; }
+        
+        /* Fallback test */
+        .missing-font { font-family: 'NonExistentFont', Arial, sans-serif; }
+        
+        .loading-indicator {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 1rem;
+            }
+            
+            .font-sample {
+                background: #f5f5f5;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;600;700&family=Source+Sans+Pro:wght@300;400;600;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@300;400;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <div class="loading-indicator">
+            <strong>Font Loading Test:</strong> This page loads various web fonts to test font rendering, fallbacks, and resource blocking in PDF/PNG conversion.
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>Google Web Fonts</h2>
+            <p>These fonts are loaded from Google Fonts CDN and test external resource loading:</p>
+            
+            <div class="font-sample">
+                <div class="font-name">Roboto (Sans-serif)</div>
+                <div class="sample-text roboto">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text roboto" style="font-weight: 300;">Light weight: Typography matters in document conversion</div>
+                <div class="sample-text roboto" style="font-weight: 700;">Bold weight: Professional document formatting</div>
+                <div class="font-details">Google Fonts - Popular sans-serif, good for body text</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Open Sans (Sans-serif)</div>
+                <div class="sample-text open-sans">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text open-sans" style="font-weight: 300;">Light: Highly readable in both print and digital formats</div>
+                <div class="sample-text open-sans" style="font-weight: 600;">Semi-bold: Excellent for headings and emphasis</div>
+                <div class="font-details">Google Fonts - Optimized for legibility across print and web</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Lato (Sans-serif)</div>
+                <div class="sample-text lato">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text lato" style="font-weight: 300;">Light: Semi-rounded details give a feeling of warmth</div>
+                <div class="sample-text lato" style="font-weight: 700;">Bold: Strong and stable, yet friendly appearance</div>
+                <div class="font-details">Google Fonts - Humanist sans-serif with warm character</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Montserrat (Sans-serif)</div>
+                <div class="sample-text montserrat">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text montserrat" style="font-weight: 300;">Light: Inspired by urban typography from Buenos Aires</div>
+                <div class="sample-text montserrat" style="font-weight: 600;">Semi-bold: Modern geometric sans-serif</div>
+                <div class="font-details">Google Fonts - Geometric sans-serif, great for headings</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Serif Fonts</h2>
+            
+            <div class="font-sample">
+                <div class="font-name">Playfair Display (Serif)</div>
+                <div class="sample-text playfair">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text playfair" style="font-weight: 700;">Bold: Elegant and distinctive display serif</div>
+                <div class="font-details">Google Fonts - High contrast serif, perfect for titles</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Merriweather (Serif)</div>
+                <div class="sample-text merriweather">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text merriweather" style="font-weight: 300;">Light: Designed for optimal readability on screens</div>
+                <div class="sample-text merriweather" style="font-weight: 700;">Bold: Pleasant reading experience in small sizes</div>
+                <div class="font-details">Google Fonts - Optimized for reading on screens and print</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Monospace Fonts</h2>
+            
+            <div class="font-sample">
+                <div class="font-name">Fira Code (Monospace)</div>
+                <div class="sample-text fira-code">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text fira-code">function convertToPDF() { return 'success'; }</div>
+                <div class="sample-text fira-code">console.log('Font rendering test: ' + status);</div>
+                <div class="font-details">Google Fonts - Programming font with ligatures</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>System Fonts (Fallbacks)</h2>
+            <p>These fonts test system font fallbacks and should work without external resources:</p>
+            
+            <div class="font-sample">
+                <div class="font-name">System UI</div>
+                <div class="sample-text system-ui">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="font-details">Uses the system's default UI font</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Helvetica Neue / Arial</div>
+                <div class="sample-text helvetica">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="font-details">Classic sans-serif with Arial fallback</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Times New Roman</div>
+                <div class="sample-text times">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="font-details">Traditional serif font, widely available</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Georgia</div>
+                <div class="sample-text georgia">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="font-details">Screen-optimized serif font</div>
+            </div>
+            
+            <div class="font-sample">
+                <div class="font-name">Courier New</div>
+                <div class="sample-text courier">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="sample-text courier">function test() { return 'monospace'; }</div>
+                <div class="font-details">System monospace font</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Font Fallback Test</h2>
+            
+            <div class="font-sample">
+                <div class="font-name">Missing Font (Fallback Test)</div>
+                <div class="sample-text missing-font">The quick brown fox jumps over the lazy dog. 1234567890</div>
+                <div class="font-details">Tests fallback when primary font is unavailable</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Font Loading Scenarios</h2>
+            <table style="width: 100%; border-collapse: collapse; margin: 2rem 0;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">Scenario</th>
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">CLI Option</th>
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">Expected Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Normal Loading</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Default</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">All fonts load and render correctly</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Block Fonts</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">--block-resources font</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Fallback to system fonts</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Fast Loading</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">--wait-until domcontentloaded</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">May use fallback fonts if web fonts not loaded</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Network Idle</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">--wait-until networkidle0</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">All fonts fully loaded and rendered</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee; color: #666; font-size: 0.9rem;">
+        <p><strong>Font Testing Summary:</strong> This page tests web font loading, system font fallbacks, and resource blocking scenarios.</p>
+        <p><strong>Use with CLI:</strong> Try different --block-resources and --wait-until options to test font loading behavior.</p>
+    </footer>
+
+    <script>
+        // Font loading detection
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function() {
+                    console.log('All fonts loaded successfully');
+                    window.__fontsReady = true;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

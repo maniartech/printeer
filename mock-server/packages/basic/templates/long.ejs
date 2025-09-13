@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            color: #34495e;
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            page-break-before: auto;
+        }
+        
+        .section {
+            margin-bottom: 4rem;
+            padding: 2rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            page-break-inside: avoid;
+        }
+        
+        .section-header {
+            background: #f8f9fa;
+            margin: -2rem -2rem 1rem -2rem;
+            padding: 1rem 2rem;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .page-marker {
+            position: absolute;
+            right: 2rem;
+            top: 2rem;
+            background: #007bff;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .content-block {
+            margin: 1rem 0;
+            text-align: justify;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 1rem;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+                margin-bottom: 2rem;
+            }
+            
+            h2 {
+                page-break-after: avoid;
+            }
+            
+            .page-marker {
+                display: none;
+            }
+        }
+        
+        @page {
+            margin: 1in;
+            size: A4;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-marker">Page 1 of <%= totalPages %></div>
+    
+    <header>
+        <h1><%= title %></h1>
+        <p><strong>Total Sections:</strong> <%= totalPages %> | <strong>Purpose:</strong> Multi-page content for pagination testing</p>
+    </header>
+
+    <main>
+        <% sections.forEach((section, index) => { %>
+        <div class="section">
+            <div class="section-header">
+                <h2>Section <%= section.number %>: <%= section.title %></h2>
+                <p><strong>Section <%= section.number %> of <%= totalPages %></strong></p>
+            </div>
+            
+            <div class="content-block">
+                <p><%= section.content %></p>
+            </div>
+            
+            <div class="content-block">
+                <p>This section demonstrates how content flows across multiple pages when converted to PDF. Each section is designed to be substantial enough to test page breaks, headers, footers, and pagination features.</p>
+            </div>
+            
+            <div class="content-block">
+                <h3>Subsection <%= section.number %>.1: Details</h3>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                
+                <ul>
+                    <li>List item 1 for section <%= section.number %></li>
+                    <li>List item 2 for section <%= section.number %></li>
+                    <li>List item 3 for section <%= section.number %></li>
+                </ul>
+            </div>
+            
+            <div class="content-block">
+                <h3>Subsection <%= section.number %>.2: Additional Content</h3>
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="border: 1px solid #ddd; padding: 0.5rem;">Item</th>
+                            <th style="border: 1px solid #ddd; padding: 0.5rem;">Value</th>
+                            <th style="border: 1px solid #ddd; padding: 0.5rem;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 0.5rem;">Section <%= section.number %> Item A</td>
+                            <td style="border: 1px solid #ddd; padding: 0.5rem;"><%= Math.floor(Math.random() * 1000) %></td>
+                            <td style="border: 1px solid #ddd; padding: 0.5rem;">Active</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 0.5rem;">Section <%= section.number %> Item B</td>
+                            <td style="border: 1px solid #ddd; padding: 0.5rem;"><%= Math.floor(Math.random() * 1000) %></td>
+                            <td style="border: 1px solid #ddd; padding: 0.5rem;">Pending</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <% }); %>
+    </main>
+
+    <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #3498db; color: #666; font-size: 0.9rem;">
+        <p><strong>Document Summary:</strong> <%= totalPages %> sections generated for multi-page testing</p>
+        <p><strong>Use Cases:</strong> Page breaks, headers/footers, pagination, long document handling</p>
+    </footer>
+</body>
+</html>

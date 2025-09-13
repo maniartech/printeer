@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e67e22;
+            padding-bottom: 0.5rem;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .image-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8f9fa;
+            text-align: center;
+        }
+        
+        .image-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .image-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .image-details {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        .background-test {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .background-image-test {
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZGRkIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=');
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        .quality-test {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .quality-sample {
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .svg-complex {
+            width: 200px;
+            height: 150px;
+            margin: 1rem auto;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 1rem;
+            }
+            
+            .image-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .image-card {
+                page-break-inside: avoid;
+                background: #f5f5f5;
+            }
+            
+            .background-test {
+                background: #333 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+        <p><strong>Purpose:</strong> Test image rendering, background graphics, and quality settings in PDF/PNG conversion</p>
+    </header>
+
+    <main>
+        <section>
+            <h2>Image Format Testing</h2>
+            <div class="image-grid">
+                <% images.forEach(image => { %>
+                <div class="image-card">
+                    <img src="<%= image.src %>" alt="<%= image.type %> sample" loading="lazy">
+                    <div class="image-title"><%= image.type %> Image</div>
+                    <div class="image-details">
+                        Format: <%= image.type %><br>
+                        Source: Data URI<br>
+                        Test: Basic rendering
+                    </div>
+                </div>
+                <% }); %>
+                
+                <div class="image-card">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjc0NzQiLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzQyYTVmNSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzY2ZDllZiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JhZCkiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI3NSIgcj0iMzAiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuOCIvPjx0ZXh0IHg9IjEwMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U1ZHPC90ZXh0Pjwvc3ZnPg==" alt="Complex SVG">
+                    <div class="image-title">Complex SVG</div>
+                    <div class="image-details">
+                        Format: SVG<br>
+                        Features: Gradients, shapes, text<br>
+                        Test: Complex rendering
+                    </div>
+                </div>
+                
+                <div class="image-card">
+                    <svg class="svg-complex" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="pattern1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <rect width="10" height="10" fill="#e74c3c"/>
+                                <rect x="10" y="10" width="10" height="10" fill="#e74c3c"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#pattern1)"/>
+                        <circle cx="100" cy="75" r="40" fill="#3498db" opacity="0.8"/>
+                        <text x="100" y="80" font-family="Arial" font-size="16" fill="white" text-anchor="middle">Inline SVG</text>
+                    </svg>
+                    <div class="image-title">Inline SVG</div>
+                    <div class="image-details">
+                        Format: Inline SVG<br>
+                        Features: Patterns, transparency<br>
+                        Test: Direct SVG rendering
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Background Graphics Testing</h2>
+            <p>These sections test the <code>--print-background</code> CLI option:</p>
+            
+            <div class="background-test">
+                <h3>CSS Gradient Background</h3>
+                <p>This section has a CSS gradient background. Use <code>--print-background</code> to include it in PDF output, or omit the flag to test without background graphics.</p>
+            </div>
+            
+            <div class="background-image-test">
+                <h3>CSS Background Image</h3>
+                <p>This section uses a CSS background image (SVG pattern). Background images are often omitted in print unless specifically enabled.</p>
+                <ul>
+                    <li><strong>With --print-background:</strong> Pattern should be visible</li>
+                    <li><strong>Without --print-background:</strong> Plain background</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Image Quality Testing</h2>
+            <p>These samples help test the <code>--quality</code> option for JPEG/WebP outputs:</p>
+            
+            <div class="quality-test">
+                <div class="quality-sample">
+                    <h4>Fine Details</h4>
+                    <svg width="150" height="100" viewBox="0 0 150 100">
+                        <defs>
+                            <pattern id="fine-lines" x="0" y="0" width="2" height="2" patternUnits="userSpaceOnUse">
+                                <rect width="1" height="1" fill="#333"/>
+                                <rect x="1" y="1" width="1" height="1" fill="#333"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#fine-lines)"/>
+                    </svg>
+                    <p>Fine line patterns test compression artifacts</p>
+                </div>
+                
+                <div class="quality-sample">
+                    <h4>Gradients</h4>
+                    <svg width="150" height="100" viewBox="0 0 150 100">
+                        <defs>
+                            <linearGradient id="smooth-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff0000"/>
+                                <stop offset="25%" stop-color="#ffff00"/>
+                                <stop offset="50%" stop-color="#00ff00"/>
+                                <stop offset="75%" stop-color="#00ffff"/>
+                                <stop offset="100%" stop-color="#0000ff"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#smooth-grad)"/>
+                    </svg>
+                    <p>Smooth gradients test color banding</p>
+                </div>
+                
+                <div class="quality-sample">
+                    <h4>Text Clarity</h4>
+                    <div style="font-size: 8px; line-height: 1.2;">
+                        Small text clarity test<br>
+                        8px font size<br>
+                        Multiple lines<br>
+                        Edge sharpness
+                    </div>
+                    <div style="font-size: 12px; margin-top: 0.5rem;">
+                        12px normal text
+                    </div>
+                </div>
+                
+                <div class="quality-sample">
+                    <h4>High Contrast</h4>
+                    <div style="background: #000; color: #fff; padding: 0.5rem; margin: 0.5rem 0;">
+                        White on black
+                    </div>
+                    <div style="background: #fff; color: #000; padding: 0.5rem; border: 1px solid #000;">
+                        Black on white
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Resource Loading Scenarios</h2>
+            <table style="width: 100%; border-collapse: collapse; margin: 2rem 0;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">Test Scenario</th>
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">CLI Command</th>
+                        <th style="border: 1px solid #ddd; padding: 0.75rem; text-align: left;">Expected Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Normal Images</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>printeer convert --url [url]</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">All images render correctly</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Block Images</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--block-resources image</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Images blocked, placeholders shown</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Print Backgrounds</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--print-background</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">CSS backgrounds included</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">High Quality JPEG</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--format jpeg --quality 95</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">High quality JPEG output</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">PNG with Transparency</td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;"><code>--format png --omit-background</code></td>
+                        <td style="border: 1px solid #ddd; padding: 0.75rem;">Transparent PNG background</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee; color: #666; font-size: 0.9rem;">
+        <p><strong>Image Testing Summary:</strong> This page tests various image formats, background graphics, and quality settings.</p>
+        <p><strong>CLI Testing:</strong> Use different --quality, --print-background, and --block-resources options to test image handling.</p>
+    </footer>
+</body>
+</html>

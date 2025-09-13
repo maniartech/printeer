@@ -21,6 +21,39 @@ app.use('/assets', express.static(path.join(__dirname, 'public')));
 app.set('views', path.join(__dirname, 'templates'));
 app.set('view engine', 'ejs');
 
+// Auto-discover and mount package routers
+async function mountPackageRouters() {
+  const packagesDir = path.join(__dirname, 'packages');
+  
+  if (!fs.existsSync(packagesDir)) {
+    console.log('No packages directory found, skipping package auto-discovery');
+    return;
+  }
+
+  const packageDirs = fs.readdirSync(packagesDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name);
+
+  for (const packageName of packageDirs) {
+    try {
+      const routesPath = path.join(packagesDir, packageName, 'routes.js');
+      
+      if (fs.existsSync(routesPath)) {
+        const { createRouter } = await import(`./packages/${packageName}/routes.js`);
+        const router = createRouter();
+        
+        app.use('/', router);
+        console.log(`✓ Mounted ${packageName} package routes`);
+      }
+    } catch (error) {
+      console.warn(`⚠️  Failed to mount ${packageName} package:`, error.message);
+    }
+  }
+}
+
+// Mount package routers
+await mountPackageRouters();
+
 // Load catalog from disk (single source of truth for launcher)
 const catalogPath = path.join(__dirname, 'catalog.json');
 function loadCatalog() {

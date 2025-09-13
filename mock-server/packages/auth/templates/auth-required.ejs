@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        h1 {
+            color: #dc3545;
+            border-bottom: 3px solid #dc3545;
+            padding-bottom: 0.5rem;
+        }
+        
+        .auth-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            color: #004085;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .test-scenarios {
+            margin: 2rem 0;
+        }
+        
+        .scenario {
+            background: #f8f9fa;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            border-left: 4px solid #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><%= title %></h1>
+    </header>
+
+    <main>
+        <div class="auth-error">
+            <h2>🔒 Authentication Required</h2>
+            <p><strong>Auth Type:</strong> <%= authType %></p>
+            <p>This endpoint requires authentication. Please provide valid credentials.</p>
+        </div>
+
+        <div class="instructions">
+            <h3>CLI Instructions</h3>
+            <p><%= instructions %></p>
+        </div>
+
+        <section class="test-scenarios">
+            <h3>Test Scenarios</h3>
+            
+            <% if (authType === 'Basic') { %>
+            <div class="scenario">
+                <h4>Valid Credentials</h4>
+                <p><code>printeer convert --url [url] --basic-auth user:pass</code></p>
+                <p>Should show success page with authenticated content</p>
+            </div>
+            
+            <div class="scenario">
+                <h4>Invalid Credentials</h4>
+                <p><code>printeer convert --url [url] --basic-auth wrong:creds</code></p>
+                <p>Should show 401 error page</p>
+            </div>
+            <% } %>
+            
+            <% if (authType === 'Bearer') { %>
+            <div class="scenario">
+                <h4>Valid Token</h4>
+                <p><code>printeer convert --url [url] --header "Authorization: Bearer test-token"</code></p>
+                <p>Should show success page with token info</p>
+            </div>
+            
+            <div class="scenario">
+                <h4>Invalid Token</h4>
+                <p><code>printeer convert --url [url] --header "Authorization: Bearer invalid"</code></p>
+                <p>Should show 401 error page</p>
+            </div>
+            <% } %>
+            
+            <% if (authType === 'Cookie') { %>
+            <div class="scenario">
+                <h4>With Session Cookie</h4>
+                <p><code>printeer convert --url [url] --cookie "session=valid-session-token"</code></p>
+                <p>Should show protected content</p>
+            </div>
+            
+            <div class="scenario">
+                <h4>Login Flow</h4>
+                <p>1. POST to /auth/login with credentials</p>
+                <p>2. Use returned session cookie for protected pages</p>
+            </div>
+            <% } %>
+        </section>
+    </main>
+
+    <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee; color: #666; font-size: 0.9rem;">
+        <p><strong>Authentication Test:</strong> This page tests <%= authType %> authentication handling</p>
+    </footer>
+</body>
+</html>

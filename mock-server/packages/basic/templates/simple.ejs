@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .meta {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><%= title %></h1>
+        <p>A simple, semantic HTML page for basic testing</p>
+    </div>
+
+    <div class="content">
+        <h2>About This Page</h2>
+        <p>This is a simple HTML page designed for testing basic web-to-PDF conversion functionality. It contains semantic HTML elements and predictable content.</p>
+        
+        <h3>Features</h3>
+        <ul>
+            <li>Clean, semantic HTML structure</li>
+            <li>Predictable title for filename generation</li>
+            <li>Standard typography and spacing</li>
+            <li>Basic CSS styling</li>
+        </ul>
+
+        <h3>Testing Scenarios</h3>
+        <p>This page is ideal for testing:</p>
+        <ol>
+            <li>Basic PDF generation</li>
+            <li>Title-based filename generation</li>
+            <li>Font rendering and typography</li>
+            <li>CSS styling preservation</li>
+        </ol>
+
+        <blockquote>
+            <p>"The best way to test web-to-PDF conversion is with clean, predictable content."</p>
+        </blockquote>
+    </div>
+
+    <div class="meta">
+        <p><strong>Generated:</strong> <%= timestamp %></p>
+        <p><strong>Page Type:</strong> Simple Static Content</p>
+        <p><strong>Test Category:</strong> Basic Layout</p>
+    </div>
+</body>
+</html>
