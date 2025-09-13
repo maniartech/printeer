@@ -82,6 +82,50 @@ Optional root convenience (no changes made by default):
 - Homepage: `GET /` — Groups all endpoints by feature area with clickable links.
 - Catalog: `GET /__catalog.json` — Returns `{ port, groups: [...] }` where each group contains `title` and `routes` (path, title, optional method). Use this in automated suites to iterate scenarios.
 
+### Launcher UI (beautiful, searchable homepage)
+
+The mock server includes a polished launcher you can open in a browser to manually explore and test every URL.
+
+- Location: `GET /` (served from `mock-server/public/index.html`)
+- Styling and behavior: `mock-server/public/styles.css`, `mock-server/public/launcher.js`
+- Data source: `mock-server/catalog.json` (single source of truth for groups and routes)
+
+Key features:
+- Instant search by route name, path, or group
+- Cards grouped by feature area (Basic, Print, Dynamic, Auth, Redirects, Resources, Errors, i18n, Media, Templates, Cache/CSP, Image)
+- Per-route method badges and direct links (open in new tab)
+- Quick links to Catalog JSON and Health endpoint
+
+How it works:
+1) The server serves `/__catalog.json`, derived from `mock-server/catalog.json`, enriched with `port` and `baseUrl`.
+2) The launcher fetches `/__catalog.json` and renders groups and routes.
+3) If a route is listed in the catalog but not yet implemented, a friendly placeholder page is shown instead of 404 (so you can still click and test URLs immediately).
+
+Adding a route to the launcher:
+- Edit `mock-server/catalog.json` and add an entry under the appropriate group, for example:
+
+```jsonc
+{
+	"id": "print",
+	"title": "Print CSS & Page Formatting",
+	"routes": [
+		{ "path": "/print/scale-markers", "title": "Scale markers" },
+		{ "path": "/print/margins?top=1in&right=1in&bottom=1in&left=1in", "title": "Margins" }
+	]
+}
+```
+
+- The launcher updates automatically on refresh. Implement the actual route in your group sub-package (or temporarily rely on the placeholder until migration is done).
+
+Environment variables:
+- `PORT` — port to bind (default `4000`)
+- `MOCK_BASE_URL` — override base URL in catalog (useful if reverse-proxying the server)
+
+Optional enhancements (future):
+- “Copy printeer command” button next to each route to prefill CLI examples
+- Filters for method (GET/POST) or tag-based filtering per route
+- Collapsible groups with remembered state
+
 ### Auto-discovery (recommended)
 
 - The root server can auto-discover group sub-packages under `mock-server/packages/*` and mount their exported routers.
