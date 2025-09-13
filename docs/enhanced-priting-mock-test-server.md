@@ -1,8 +1,13 @@
 # Enhanced Printing Mock Test Express Server
 
-A local Express server you can run during development to provide a comprehensive set of test pages and APIs that exercise every major feature of the enhanced Printeer CLI and printing pipeline.
+A dedicated, standalone mock web server (own package) you can run during development to test every major feature of the enhanced Printeer CLI and printing pipeline.
 
-This server is documentation-first. It describes the structure, endpoints, and sample code to copy into `examples/mock-server.js` (or `.ts`) when you're ready. Per request, no repository code or configs are changed yet.
+It ships with:
+- A grouped launcher homepage that links to all endpoints for easy navigation.
+- A machine-readable catalog endpoint (`/__catalog.json`) for automated test discovery.
+- Comprehensive routes covering print CSS, SPA/waits, auth, redirects, resources, errors, i18n, media, templates, and cache/CSP.
+
+Additionally, all endpoint groups are designed to live as dedicated sub-packages, each with its own `templates/` directory so pages can be edited as HTML files rather than embedded as strings in JavaScript.
 
 ## Goals
 
@@ -14,42 +19,89 @@ This server is documentation-first. It describes the structure, endpoints, and s
 - Support template testing: header/footer/content variables and quick previews.
 - Provide internationalization, RTL, web fonts, and print-specific CSS.
 
-## Installation (dev-only)
+## Package layout (dedicated package)
 
-Install dependencies as devDependencies (don’t commit yet if you’re only evaluating):
-
-```bash
-npm i -D express cookie-parser
-# Optional extras for advanced scenarios (recommended):
-npm i -D compression helmet cors
+```
+mock-server/
+	package.json         # standalone dev package (private)
+	server.js            # Express app with grouped launcher and routes
+	README.md            # Quick usage
+	packages/            # (Recommended) one subpackage per feature group
+		basic/
+			package.json
+			routes.js        # exports an Express.Router and group metadata
+			templates/       # .html (and optional .css/.js) used by routes
+		print/
+			package.json
+			routes.js
+			templates/
+		dynamic/
+			...
+		auth/
+			...
+		redirects/
+			...
+		resources/
+			...
+		errors/
+			...
+		i18n/
+			...
+		media/
+			...
+		templates-group/   # to avoid clash with folder name "templates"
+			...
+		cache-csp/
+			...
 ```
 
-## Suggested file locations (no files created yet)
+This package is not published and is intended for local development/testing only.
 
-- `examples/mock-server.js` — Express app with all endpoints (ESM since the repo uses "type": "module").
-- `examples/assets/` — Optional static assets (images, CSS, JS, fonts). You can generate most assets dynamically, but a static folder is convenient.
+## Install & run
 
-## How to run (once added)
+```bash
+cd mock-server
+npm install
+npm start
+# Server runs at http://localhost:4000 (override with PORT)
+```
 
-1) Create `examples/mock-server.js` using the sample below.
-2) Optionally add script to `package.json` (dev-only):
+Optional root convenience (no changes made by default):
 
 ```jsonc
-// scripts snippet
+// Add to repository root package.json if desired
 {
 	"scripts": {
-		"mock:server": "node examples/mock-server.js"
+		"mock:server": "npm --prefix ./mock-server start"
 	}
 }
 ```
 
-3) Start the server:
+## Launcher & catalog
 
-```bash
-npm run mock:server
+- Homepage: `GET /` — Groups all endpoints by feature area with clickable links.
+- Catalog: `GET /__catalog.json` — Returns `{ port, groups: [...] }` where each group contains `title` and `routes` (path, title, optional method). Use this in automated suites to iterate scenarios.
+
+### Auto-discovery (recommended)
+
+- The root server can auto-discover group sub-packages under `mock-server/packages/*` and mount their exported routers.
+- Each sub-package should export a small metadata object used to populate the launcher and catalog. Example shape:
+
+```ts
+// packages/<group>/routes.js
+export const group = {
+	id: 'print',
+	title: 'Print CSS & Page Formatting',
+	routes: [
+		{ path: '/print/css-default', title: 'Print CSS overrides' },
+		// ...
+	],
+};
+
+export function createRouter() { /* return Express.Router() with endpoints */ }
 ```
 
-The server defaults to http://localhost:4000 (configurable via `PORT`).
+The root server can combine all `group` objects into a single catalog and render the grouped launcher automatically.
 
 ## Endpoint Catalog (by feature)
 
@@ -63,6 +115,8 @@ The endpoints are grouped to map 1:1 with CLI features and the design doc.
 - GET `/static/rtl` — RTL language with Arabic/Hebrew sample text.
 - GET `/static/fonts` — Loads a webfont (e.g., Google Fonts) and local fallback.
 - GET `/static/images` — Grid of images (SVG + raster) to test background and quality.
+- GET `/debug/ua` — Echoes user agent and device info derived from request headers.
+- GET `/debug/echo` — Echos method, query, and body (useful for testing POST data and headers).
 
 ### 2) Print CSS and page formatting
 
@@ -71,6 +125,12 @@ The endpoints are grouped to map 1:1 with CLI features and the design doc.
 - GET `/print/page-breaks` — Explicit `page-break-before/after/inside` examples.
 - GET `/print/margins?top=1in&right=1in&bottom=1in&left=1in` — Visual rulers to validate margins.
 - GET `/print/header-footer-demo` — Static header/footer placeholders for template testing.
+- GET `/print/custom-size?width=210mm&height=99mm` — Visual guides for testing custom page sizes.
+- GET `/print/orientation?landscape=true` — Content aligned to verify landscape vs portrait.
+- GET `/print/scale-markers` — Millimeter/inch rulers and grids to validate `--scale`.
+- GET `/print/css-page-size` — Uses `@page size: A5;` to validate `--prefer-css-page-size`.
+- GET `/pdf/tagged-structure` — Landmark roles and semantic tags to test tagged-PDF friendliness.
+- GET `/print/page-ranges-demo?pages=10` — Long document with labeled page numbers to test `--page-ranges`.
 
 ### 3) Dynamic/SPA and wait strategies
 
@@ -78,6 +138,7 @@ The endpoints are grouped to map 1:1 with CLI features and the design doc.
 - GET `/spa/network-idle?requests=5` — Triggers a burst of XHR/fetch calls, then becomes idle.
 - GET `/spa/title-late?ms=1000` — Changes `<title>` after delay to test filename-from-title.
 - GET `/spa/interactive` — Loads content on click or IntersectionObserver visibility.
+- GET `/spa/custom-ready?ms=2000` — Sets `window.__ready = true` after delay to test `--wait-for-function`.
 
 ### 4) Authentication and headers
 
@@ -85,6 +146,7 @@ The endpoints are grouped to map 1:1 with CLI features and the design doc.
 - GET `/auth/bearer` — Requires `Authorization: Bearer <token>`.
 - POST `/auth/login` — Accepts form credentials, sets session cookie.
 - GET `/auth/protected` — Requires a specific cookie (set by `/auth/login`).
+- GET `/auth/csrf-login` — GET serves form with CSRF token (cookie + hidden field), POST validates and sets session.
 - GET `/debug/headers` — Echoes request headers for verification.
 - GET `/debug/cookies` — Echoes cookie values.
 
@@ -101,29 +163,37 @@ The endpoints are grouped to map 1:1 with CLI features and the design doc.
 - GET `/assets/large-image.svg?kb=1024` — Generates an SVG of target size.
 - GET `/assets/random-image` — Returns a dynamically generated SVG rasterized via data URI.
 - GET `/assets/missing` — 404 response for missing assets.
+- GET `/assets/huge-css?kb=256` — Large CSS payload to exercise bandwidth and compression.
+- GET `/assets/huge-js?kb=512` — Large JS payload to stress resource loading and blocking.
 
 ### 7) Errors and resilience
 
 - GET `/error/500` — Always returns HTTP 500.
 - GET `/error/timeout?ms=10000` — Holds the connection open to trigger client timeout.
 - GET `/error/reset` — Abruptly terminates the socket.
+- GET `/error/flaky?fail=2` — Deterministically fails the first N requests, then succeeds (to test retries).
 
 ### 8) Internationalization
 
 - GET `/i18n/utf8` — Rich UTF-8 sample (accents, emoji).
 - GET `/i18n/cjk` — CJK text blocks with headings.
 - GET `/i18n/arabic` — Arabic sample (RTL), with proper `dir="rtl"`.
+- GET `/debug/intl` — Echo page showing Intl-formatted date/number for current locale/timezone.
 
 ### 9) Media emulation and responsive
 
 - GET `/media/print-vs-screen` — Visually different styles between screen and print.
 - GET `/viewport/responsive` — Breakpoint grid; includes meta viewport.
+- GET `/viewport/dsf-markers` — CSS pixel vs device pixel markers for validating device scale factor.
+- GET `/media/color-scheme` — Adapts styles based on `prefers-color-scheme` (light/dark) to verify emulation.
 
 ### 10) Templates and variables
 
 - GET `/template/header` — Simple header with query-driven variables (e.g., `?company=Acme&date=...`).
 - GET `/template/footer` — Simple footer with variables (e.g., page number placeholders as text for visual reference).
 - GET `/template/content` — Content page demonstrating interpolation (server-side) for preview.
+- GET `/template/header-variables` — Demonstrates all supported header variables and placeholders.
+- GET `/template/footer-variables` — Demonstrates all supported footer variables and placeholders.
 
 ### 11) Caching, compression, CSP (optional extras)
 
@@ -131,342 +201,105 @@ The endpoints are grouped to map 1:1 with CLI features and the design doc.
 - GET `/cache/no-store` — Sets `Cache-Control: no-store`.
 - GET `/csp/strict` — Strong CSP header to test blocked resources (if using `helmet`).
 - GET `/compress/text` — Returns large text (if using `compression`).
+- GET `/debug/console` — Emits console messages based on query (e.g., `?error=1&warn=2`).
 
-## Copy-paste server (ESM) — examples/mock-server.js
+### 12) Image capture and clipping
 
-This example implements the representative endpoints above. You can start with this and expand.
+- GET `/image/clip-target` — Page with a clearly marked rectangle and coordinates to validate `--clip` options.
+- GET `/image/transparent-bg` — Transparent background canvas to test `--omit-background` and PNG/WebP alpha.
+- GET `/image/quality-grid` — Gradients and fine details to assess `--quality` for JPEG/WebP outputs.
 
-```js
-// examples/mock-server.js (ESM)
-import express from 'express';
-import cookieParser from 'cookie-parser';
+---
 
-// Optional extras if installed
-// import compression from 'compression';
-// import helmet from 'helmet';
-// import cors from 'cors';
+## Comprehensive URL coverage matrix (CLI feature → endpoint)
 
-const app = express();
-const PORT = process.env.PORT || 4000;
+Use this list to ensure every CLI option has at least one deterministic target URL.
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(cookieParser());
-// app.use(compression());
-// app.use(helmet());
-// app.use(cors());
+- Page format (A4/A3/Letter/Legal): any long page; prefer `/static/long?pages=5` or `/print/margins`.
+- Custom page size: `/print/custom-size?width=210mm&height=99mm`.
+- Orientation (landscape/portrait): `/print/orientation?landscape=true`.
+- Margins (unified/per-side): `/print/margins?top=1in&right=0.5in&bottom=1in&left=0.5in`.
+- Prefer CSS page size: `/print/css-page-size`.
+- Scale: `/print/scale-markers`.
+- Print background: `/static/images` or `/media/print-vs-screen`.
+- Headers/Footers (template files): content from `/static/long?pages=4` + template previews at `/template/header`, `/template/footer`, `/template/header-variables`, `/template/footer-variables`.
+- Tagged PDFs: `/pdf/tagged-structure`.
+- Viewport size: `/viewport/responsive`.
+- Device emulation (mobile/DSF): `/viewport/responsive` (verify with `/debug/ua`).
+- Device scale factor: `/viewport/dsf-markers`.
+- Media type emulation (screen/print): `/media/print-vs-screen`.
+- Image outputs (PNG/JPEG/WebP): `/static/images`, `/image/quality-grid`.
+- Image quality (JPEG/WebP): `/image/quality-grid`.
+- Screenshot clipping: `/image/clip-target`.
+- Full-page screenshot: `/static/long?pages=3`.
+- Wait for selector: `/spa/delay-content?ms=2000` (e.g., `#ready`).
+- Wait for network idle: `/spa/network-idle?requests=5`.
+- Wait for function: `/spa/custom-ready?ms=2000` with predicate `() => window.__ready === true`.
+- Wait fixed time: any endpoint (e.g., `/static/simple`) using CLI `--wait-for-time`.
+- Wait-until load/DOMContentLoaded: `/static/simple` (use CLI `--wait-until load|domcontentloaded`).
+- Disable JavaScript: `/spa/delay-content?ms=2000` (content remains missing when JS is disabled).
+- Title-based filename: `/spa/title-late?ms=1000` and `/static/simple`.
+- Basic Auth: `/auth/basic`.
+- Bearer token: `/auth/bearer`.
+- Cookie login flow: `/auth/login` → `/auth/protected`.
+- CSRF login flow: `/auth/csrf-login` (GET then POST), then `/auth/protected`.
+- Custom headers: `/debug/headers`.
+- Cookies echo/verify: `/debug/cookies`.
+- Locale & timezone: `/debug/intl`.
+- Resource blocklist (image,font,media): `/static/images`, `/static/fonts` (use CLI `--block-resources`).
+- Redirect chain: `/redirect/chain?n=3&to=/static/simple`.
+- Redirect loop: `/redirect/loop`.
+- Delayed redirect: `/redirect/delay?ms=1000&to=/static/simple`.
+- Slow resources (JS/CSS): `/assets/slow.js?ms=1500`, `/assets/slow.css?ms=1500`.
+- Large assets: `/assets/large-image.svg?kb=1024`, `/assets/huge-css?kb=256`, `/assets/huge-js?kb=512`.
+- Missing resources: `/assets/missing`.
+- Server error: `/error/500`.
+- Flaky error with retries: `/error/flaky?fail=2`.
+- Timeout (hang): `/error/timeout?ms=10000`.
+- Connection reset: `/error/reset`.
+- I18N UTF-8: `/i18n/utf8`.
+- I18N CJK: `/i18n/cjk`.
+- I18N RTL: `/i18n/arabic`.
+- Web fonts: `/static/fonts`.
+- No-print elements: `/print/no-print-elements`.
+- Page breaks: `/print/page-breaks`.
+- Page ranges: `/print/page-ranges-demo?pages=10` (use CLI `--page-ranges`).
+- Caching: `/cache/cacheable`, `/cache/no-store`.
+- CSP: `/csp/strict`.
+- Compression: `/compress/text`.
+- User agent/device verification: `/debug/ua`.
+- Bypass cache/disable cache: `/cache/cacheable` (run with and without CLI cache bypass).
+- HTTP method & POST data: `/debug/echo` with `--method POST --post-data`.
+- Console error detection (fail on console): `/debug/console?error=1`.
 
-// --- Helpers ---------------------------------------------------------------
-const html = (title, body, opts = {}) => `<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>${title}</title>
-	${opts.printCss || ''}
-</head>
-<body>
-	<header><nav><a href="/">Home</a></nav></header>
-	<main>${body}</main>
-	<footer><small>Mock Server · ${new Date().toISOString()}</small></footer>
-</body>
-</html>`;
+Notes:
+- Unless otherwise noted, query params are optional and exist to vary test scenarios without adding new routes.
+- Some endpoints may be “planned” and implemented in their respective sub-packages during the migration from the monolithic server. They are listed here to guarantee full coverage.
 
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+## Implementation location
 
-// --- Index ----------------------------------------------------------------
-app.get('/', (req, res) => {
-	const links = [
-		['Static simple', '/static/simple'],
-		['Long content', '/static/long?pages=5'],
-		['RTL sample', '/static/rtl'],
-		['Fonts', '/static/fonts'],
-		['Images', '/static/images'],
-		['Print CSS default', '/print/css-default'],
-		['No-print elements', '/print/no-print-elements'],
-		['Page breaks', '/print/page-breaks'],
-		['Margins', '/print/margins?top=1in&right=1in&bottom=1in&left=1in'],
-		['Header/Footer demo', '/print/header-footer-demo'],
-		['SPA delay content', '/spa/delay-content?ms=1500'],
-		['SPA network idle', '/spa/network-idle?requests=3'],
-		['Title late', '/spa/title-late?ms=1000'],
-		['Auth protected (Basic)', '/auth/basic'],
-		['Auth protected (Bearer)', '/auth/bearer'],
-		['Auth login (cookie)', '/auth/login'],
-		['Protected via cookie', '/auth/protected'],
-		['Redirect chain', '/redirect/chain?n=2&to=/static/simple'],
-		['Slow JS', '/assets/slow.js?ms=1200'],
-		['Large SVG', '/assets/large-image.svg?kb=256'],
-		['500 error', '/error/500'],
-		['UTF-8', '/i18n/utf8'],
-		['CJK', '/i18n/cjk'],
-		['Arabic', '/i18n/arabic'],
-		['Media print vs screen', '/media/print-vs-screen'],
-		['Responsive viewport', '/viewport/responsive'],
-		['Template header', '/template/header?company=Acme&date=2025-09-12'],
-		['Template footer', '/template/footer?company=Acme'],
-	]
-		.map(([t, u]) => `<li><a href="${u}">${t}</a></li>`)
-		.join('');
-	res.type('html').send(html('Printeer Mock', `<h1>Printeer Mock</h1><ul>${links}</ul>`));
-});
+- Current: implemented in `mock-server/server.js` (monolithic) with a grouped launcher and comprehensive endpoints.
+- Target architecture: migrate each group into a dedicated sub-package under `mock-server/packages/<group>` with its own `routes.js` and `templates/` directory. The root server should auto-mount these packages and build the launcher/catalog from their metadata. See `mock-server/README.md` for a quick start.
 
-// --- Static ---------------------------------------------------------------
-app.get('/static/simple', (req, res) => {
-	res.type('html').send(html('Simple Page', '<h1>Simple</h1><p>Hello, world.</p>'));
-});
+## Templates over inline HTML
 
-app.get('/static/long', (req, res) => {
-	const pages = Number(req.query.pages ?? 5);
-	const blocks = Array.from({ length: pages * 3 }, (_, i) => `<section><h2>Block ${i + 1}</h2><p>${'Lorem ipsum '.repeat(50)}</p></section>`).join('');
-	res.type('html').send(html(`Long (${pages} pages)`, `<h1>Long Content</h1>${blocks}`));
-});
+To make pages easy to author, review, and share:
 
-app.get('/static/rtl', (req, res) => {
-	const body = `<section dir="rtl" style="direction:rtl;text-align:right">
-		<h1>نص عربي</h1>
-		<p>هذا نص عربي لاختبار اتجاه الكتابة من اليمين إلى اليسار.</p>
-	</section>`;
-	res.type('html').send(html('RTL Sample', body));
-});
+- Avoid embedding large HTML strings in JavaScript. Prefer serving `.html` files from each group’s `templates/` directory.
+- If variables are needed, prefer a lightweight template engine (e.g., EJS, Nunjucks, or Handlebars) or a minimal placeholder replacement step. Keep it dev-only.
+- Suggested folder structure per group:
 
-app.get('/static/fonts', (req, res) => {
-	const body = `
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600&display=swap" rel="stylesheet">
-	<style> .inter{font-family: 'Inter', system-ui, sans-serif;} </style>
-	<h1 class="inter">Inter Webfont</h1>
-	<p class="inter">This text uses a webfont to verify font embedding/printing.</p>`;
-	res.type('html').send(html('Webfonts', body));
-});
-
-app.get('/static/images', (req, res) => {
-	const img = (w, h, color) => `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'><rect width='100%' height='100%' fill='${color}'/><text x='50%' y='50%' alignment-baseline='middle' text-anchor='middle' fill='white' font-size='24'>${w}x${h}</text></svg>`;
-	const body = `<h1>Images</h1><div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px">${[
-		[200, 150, 'tomato'], [300, 200, 'royalblue'], [400, 300, 'seagreen'],
-	].map(([w,h,c]) => `<img src="${img(w,h,c)}" alt="${w}x${h}"/>`).join('')}</div>`;
-	res.type('html').send(html('Images', body));
-});
-
-// --- Print CSS ------------------------------------------------------------
-app.get('/print/css-default', (req, res) => {
-	const css = `<style>
-	@media print { body { background: white !important; } h1 { color: darkslateblue; } }
-	</style>`;
-	res.type('html').send(html('Print CSS Default', `<h1>Print me</h1><p>Check print media overrides.</p>`, { printCss: css }));
-});
-
-app.get('/print/no-print-elements', (req, res) => {
-	const css = `<style>@media print { .no-print { display:none !important } }</style>`;
-	const body = `<h1>Some parts hide on print</h1><p class="no-print">This should be hidden in print.</p>`;
-	res.type('html').send(html('No-Print Elements', body, { printCss: css }));
-});
-
-app.get('/print/page-breaks', (req, res) => {
-	const css = `<style>@media print { .page-break { page-break-before: always; } }</style>`;
-	const body = `<h1>Page Breaks</h1><p>First page content</p><div class="page-break"></div><p>Second page content</p>`;
-	res.type('html').send(html('Page Breaks', body, { printCss: css }));
-});
-
-app.get('/print/margins', (req, res) => {
-	const { top='1in', right='1in', bottom='1in', left='1in' } = req.query;
-	const css = `<style>@page { margin: ${top} ${right} ${bottom} ${left}; }</style>`;
-	const body = `<h1>Margins</h1><p>Top:${top}, Right:${right}, Bottom:${bottom}, Left:${left}</p>`;
-	res.type('html').send(html('Margins', body, { printCss: css }));
-});
-
-app.get('/print/header-footer-demo', (req, res) => {
-	const body = `<h1>Header/Footer Demo</h1><p>Use your CLI header/footer template injection to replace or complement this.</p>`;
-	res.type('html').send(html('Header Footer Demo', body));
-});
-
-// --- SPA / Dynamic --------------------------------------------------------
-app.get('/spa/delay-content', async (req, res) => {
-	const ms = Number(req.query.ms ?? 1500);
-	const body = `
-		<h1>Delayed Content</h1>
-		<div id="holder">Waiting...</div>
-		<script>setTimeout(()=>{ document.getElementById('holder').innerHTML = '<strong id="ready">READY</strong>'; }, ${ms});</script>
-	`;
-	res.type('html').send(html('Delay Content', body));
-});
-
-app.get('/spa/network-idle', (req, res) => {
-	const requests = Number(req.query.requests ?? 3);
-	const body = `
-	<h1>Network Idle</h1>
-	<script>
-		let done = 0;
-		for (let i=0;i<${requests};i++) {
-			fetch('/assets/slow.js?ms=' + (300 + i*200)).then(()=>{ done++; if (done === ${requests}) { const x = document.createElement('div'); x.id='idle'; x.textContent='IDLE'; document.body.appendChild(x); } });
-		}
-	</script>`;
-	res.type('html').send(html('Network Idle', body));
-});
-
-app.get('/spa/title-late', async (req, res) => {
-	const ms = Number(req.query.ms ?? 1000);
-	const body = `
-	<h1>Title changes late</h1>
-	<script>setTimeout(()=>{ document.title = 'Late Title ' + Date.now(); }, ${ms});</script>`;
-	res.type('html').send(html('Initial Title', body));
-});
-
-// --- Auth -----------------------------------------------------------------
-app.get('/auth/basic', (req, res) => {
-	const auth = req.headers['authorization'];
-	if (!auth || !auth.startsWith('Basic ')) {
-		res.set('WWW-Authenticate', 'Basic realm="mock"');
-		return res.status(401).send('Auth required');
-	}
-	res.type('html').send(html('Basic OK', '<h1>Basic Auth OK</h1>'));
-});
-
-app.get('/auth/bearer', (req, res) => {
-	const token = (req.headers['authorization'] || '').toString().replace('Bearer ', '');
-	if (token !== 'test-token') return res.status(401).send('Invalid token');
-	res.type('html').send(html('Bearer OK', '<h1>Bearer OK</h1>'));
-});
-
-app.post('/auth/login', (req, res) => {
-	const { username, password } = req.body;
-	if (username === 'user' && password === 'pass') {
-		res.cookie('session', 'mock-session', { httpOnly: true });
-		return res.type('html').send(html('Logged In', '<h1>Logged In</h1>'));
-	}
-	res.status(401).type('html').send(html('Login Failed', '<h1>Login Failed</h1>'));
-});
-
-app.get('/auth/protected', (req, res) => {
-	if (req.cookies.session !== 'mock-session') return res.status(401).send('Not logged in');
-	res.type('html').send(html('Protected', '<h1>Protected Content</h1>'));
-});
-
-app.get('/debug/headers', (req, res) => {
-	res.json({ headers: req.headers });
-});
-
-app.get('/debug/cookies', (req, res) => {
-	res.json({ cookies: req.cookies });
-});
-
-// --- Redirects ------------------------------------------------------------
-app.get('/redirect/chain', (req, res) => {
-	const n = Number(req.query.n ?? 1);
-	const to = (req.query.to || '/static/simple').toString();
-	if (n <= 0) return res.redirect(to);
-	res.redirect(`/redirect/chain?n=${n - 1}&to=${encodeURIComponent(to)}`);
-});
-
-app.get('/redirect/loop', (req, res) => {
-	res.redirect('/redirect/loop');
-});
-
-app.get('/redirect/delay', async (req, res) => {
-	const ms = Number(req.query.ms ?? 1000);
-	const to = (req.query.to || '/static/simple').toString();
-	await delay(ms);
-	res.redirect(to);
-});
-
-// --- Assets / Resources ---------------------------------------------------
-app.get('/assets/slow.js', async (req, res) => {
-	const ms = Number(req.query.ms ?? 1000);
-	await delay(ms);
-	res.type('application/javascript').send(`console.log('slow js ${ms}ms loaded');`);
-});
-
-app.get('/assets/slow.css', async (req, res) => {
-	const ms = Number(req.query.ms ?? 1000);
-	await delay(ms);
-	res.type('text/css').send(`body{outline:1px solid rgba(0,0,0,.05)}`);
-});
-
-app.get('/assets/large-image.svg', (req, res) => {
-	const kb = Number(req.query.kb ?? 1024);
-	const payload = 'A'.repeat(kb * 1024);
-	res.type('image/svg+xml').send(`<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><text x='10' y='50'>${payload}</text></svg>`);
-});
-
-app.get('/assets/random-image', (req, res) => {
-	const color = ['tomato','royalblue','seagreen','purple'][Math.floor(Math.random()*4)];
-	res.type('image/svg+xml').send(`<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='100%' height='100%' fill='${color}'/></svg>`);
-});
-
-app.get('/assets/missing', (req, res) => {
-	res.status(404).send('Not Found');
-});
-
-// --- Errors ---------------------------------------------------------------
-app.get('/error/500', (req, res) => res.status(500).send('Server error'));
-app.get('/error/timeout', async (req, res) => { const ms = Number(req.query.ms ?? 10000); await delay(ms); res.send('Late'); });
-app.get('/error/reset', (req, res) => { req.socket.destroy(); });
-
-// --- I18N -----------------------------------------------------------------
-app.get('/i18n/utf8', (req, res) => {
-	res.type('html').send(html('UTF-8', '<h1>UTF-8 ✓</h1><p>Zażółć gęślą jaźń — café — naïve — résumé — emojis 😄🚀.</p>'));
-});
-
-app.get('/i18n/cjk', (req, res) => {
-	res.type('html').send(html('CJK', '<h1>中文/日本語/한국어</h1><p>漢字かな交じり文。ひらがな、カタカナ、漢字。한글 테스트.</p>'));
-});
-
-app.get('/i18n/arabic', (req, res) => {
-	const body = `<section dir="rtl" style="direction:rtl;text-align:right"><h1>العربية</h1><p>مثال للنص العربي مع اتجاه من اليمين إلى اليسار.</p></section>`;
-	res.type('html').send(html('Arabic', body));
-});
-
-// --- Media / Responsive ---------------------------------------------------
-app.get('/media/print-vs-screen', (req, res) => {
-	const css = `<style>@media print { body { background: #fff; } h1 { color: firebrick; } } @media screen { h1 { color: seagreen; } }</style>`;
-	res.type('html').send(html('Media Demo', '<h1>Media differences</h1>', { printCss: css }));
-});
-
-app.get('/viewport/responsive', (req, res) => {
-	const body = `<style>
-		.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-		.card{background:#eee;padding:10px;border-radius:6px}
-	</style>
-	<h1>Responsive Grid</h1>
-	<div class="grid">${Array.from({length:12},(_,i)=>`<div class="card">Item ${i+1}</div>`).join('')}</div>`;
-	res.type('html').send(html('Responsive', body));
-});
-
-// --- Templates ------------------------------------------------------------
-app.get('/template/header', (req, res) => {
-	const company = (req.query.company || 'Company').toString();
-	const date = (req.query.date || new Date().toISOString()).toString();
-	const body = `<div style="font-family:Arial, sans-serif; border-bottom:1px solid #ccc; padding:8px 0;">
-		<strong>${company}</strong> · <span>${date}</span>
-	</div>`;
-	res.type('html').send(html('Header Template', body));
-});
-
-app.get('/template/footer', (req, res) => {
-	const company = (req.query.company || 'Company').toString();
-	const body = `<div style="font-family:Arial, sans-serif; border-top:1px solid #ccc; padding:8px 0; text-align:center; font-size:12px; color:#666;">
-		${company} · Page {{pageNumber}} of {{totalPages}}
-	</div>`;
-	res.type('html').send(html('Footer Template', body));
-});
-
-app.get('/template/content', (req, res) => {
-	const name = (req.query.name || 'Customer').toString();
-	const body = `<h1>Content Template</h1><p>Hello, ${name}.</p>`;
-	res.type('html').send(html('Content Template', body));
-});
-
-// --- Cache / CSP / Compression (if extras installed) ----------------------
-app.get('/cache/cacheable', (req, res) => { res.set('Cache-Control','public, max-age=86400'); res.send('cacheable'); });
-app.get('/cache/no-store', (req, res) => { res.set('Cache-Control','no-store'); res.send('no-store'); });
-app.get('/csp/strict', (req, res) => { res.set('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" ); res.type('html').send(html('CSP Strict', '<h1>CSP Strict</h1><img src="/assets/random-image"/>')); });
-app.get('/compress/text', (req, res) => { const big = 'Line\n'.repeat(5000); res.type('text/plain').send(big); });
-
-app.listen(PORT, () => {
-	console.log(`Mock server listening on http://localhost:${PORT}`);
-});
 ```
+packages/<group>/
+	package.json
+	routes.js
+	templates/
+		index.html
+		*.html          # page templates (header/footer demos, print CSS demos, etc.)
+	public/           # optional static assets for that group
+```
+
+- Routes should render these templates and pass values from query parameters for quick variation (`?ms=2000`, `?pages=5`, etc.).
 
 ## Mapping endpoints to CLI options
 
@@ -591,4 +424,13 @@ Use this as a guide to build automated or manual runs:
 
 ---
 
-When you’re ready, copy the server into `examples/mock-server.js`, install devDependencies, and add the `mock:server` script. This gives you a stable playground to validate every CLI feature end-to-end.
+## Maintenance: groups, naming, and adding endpoints
+
+- Classification: keep endpoints grouped by feature area (basic, print, dynamic, auth, redirects, resources, errors, i18n, media, templates, cache/csp). This mirrors the design doc and makes exploration intuitive.
+- Dedicated sub-packages: each group must be its own sub-package under `mock-server/packages/`, with `routes.js` and a `templates/` directory. This keeps boundaries clean and maintenance localized.
+- Templates: serve HTML from `templates/` rather than embedding strings in JS. Keep any associated CSS/JS either in the same folder or `public/`.
+- Naming: use short, intention-revealing titles and stable paths. Prefer query parameters for variants (e.g., `?ms=2000`, `?pages=5`).
+- Launcher & catalog: the root server should assemble entries from each sub-package’s exported metadata so additions automatically appear on `/` and `/__catalog.json`.
+- Determinism: where possible, make content predictable (use fixed titles, seeded content) to improve snapshot diffs and filename generation.
+
+If you need root-level scripts or CI wiring to start/stop the server during tests, we can add them without changing production code paths.
