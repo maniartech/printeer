@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title><%= title %> – Placeholder</title>
+  <link rel="stylesheet" href="/assets/styles.css"/>
+</head>
+<body>
+  <div class="placeholder container">
+    <p><a class="button" href="/">← Back to Launcher</a></p>
+    <h1><%= title %></h1>
+    <p>This endpoint is listed in the catalog but not yet implemented. Use it to verify CLI flags and URLs for now.</p>
+
+    <h3>Catalog variants</h3>
+    <ul class="routes">
+      <% for (const e of entries) { %>
+        <li class="route">
+          <a href="<%= baseUrl %><%= e.path %>" target="_blank" rel="noopener"><%= e.title || e.path %></a>
+          <span class="badge"><%= (e.method || 'GET').toUpperCase() %></span>
+          <span class="path"><%= e.path %></span>
+        </li>
+      <% } %>
+    </ul>
+
+    <h3>Request</h3>
+    <div class="kv path"><%= method %> <%= pathname %><%= queryString ? ('?' + queryString) : '' %></div>
+  </div>
+</body>
+</html>

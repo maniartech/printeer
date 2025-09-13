@@ -17,6 +17,10 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static assets for the launcher UI
 app.use('/assets', express.static(path.join(__dirname, 'public')));
 
+// View engine for file-based templates (no HTML embedded in JS)
+app.set('views', path.join(__dirname, 'templates'));
+app.set('view engine', 'ejs');
+
 // Load catalog from disk (single source of truth for launcher)
 const catalogPath = path.join(__dirname, 'catalog.json');
 function loadCatalog() {
@@ -60,35 +64,20 @@ function buildRouteIndex(catalog) {
   return index;
 }
 
-function renderPlaceholderHTML(baseUrl, pathname, entries, req) {
+// Render placeholder using file-based template
+function renderPlaceholder(res, baseUrl, pathname, entries, req) {
   const title = entries[0]?.title || pathname;
-  const items = entries
-    .map(e => `<li><code>${e.method || 'GET'}</code> <a href="${baseUrl}${e.path}">${e.title || e.path}</a></li>`) // e.path may include query
-    .join('');
-  const query = Object.entries(req.query || {})
-    .map(([k,v]) => `${k}=${Array.isArray(v)?v.join(','):v}`)
+  const queryString = Object.entries(req.query || {})
+    .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(',') : v}`)
     .join('&');
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>${title} – Placeholder</title>
-  <link rel="stylesheet" href="/assets/styles.css"/>
-  <style>.placeholder{padding:24px}.placeholder h1{margin-top:0}.kv{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#a9b7ff}</style>
-  </head>
-<body>
-  <div class="placeholder">
-    <p><a class="button" href="/">← Back to Launcher</a></p>
-    <h1>${title}</h1>
-    <p>This endpoint is listed in the catalog but not yet implemented. Use it to verify CLI flags and URLs for now.</p>
-    <h3>Catalog variants</h3>
-    <ul>${items}</ul>
-    <h3>Request</h3>
-    <div class="kv">${req.method} ${pathname}${query?('?'+query):''}</div>
-  </div>
-</body>
-</html>`;
+  res.render('placeholder', {
+    baseUrl,
+    pathname,
+    entries,
+    title,
+    method: req.method,
+    queryString
+  });
 }
 
 app.use((req, res, next) => {
@@ -97,8 +86,7 @@ app.use((req, res, next) => {
   const catalog = loadCatalog();
   const idx = buildRouteIndex(catalog);
   if (idx.has(req.path)) {
-    const html = renderPlaceholderHTML(catalog.baseUrl, req.path, idx.get(req.path), req);
-    res.status(200).send(html);
+    renderPlaceholder(res, catalog.baseUrl, req.path, idx.get(req.path), req);
   } else {
     next();
   }
