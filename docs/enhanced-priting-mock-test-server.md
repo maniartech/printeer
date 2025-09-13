@@ -92,7 +92,7 @@ The mock server includes a polished launcher you can open in a browser to manual
 
 Key features:
 - Instant search by route name, path, or group
-- Cards grouped by feature area (Basic, Print, Dynamic, Auth, Redirects, Resources, Errors, i18n, Media, Templates, Cache/CSP, Image)
+ Catalog: `GET /__catalog.json` — Returns `{ port, baseUrl, groups: [...] }` where each group contains `title` and `routes` (path, title, optional method). Use this in automated suites to iterate scenarios.
 - Per-route method badges and direct links (open in new tab)
 - Quick links to Catalog JSON and Health endpoint
 
