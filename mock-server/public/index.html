@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Printeer Mock Server – Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css"/>
+</head>
+<body>
+  <header class="app-header">
+    <div class="container">
+      <h1>Printeer Mock Server</h1>
+      <p class="subtitle">Explore and manually test every endpoint used by the enhanced CLI</p>
+      <div class="controls">
+        <input id="search" type="search" placeholder="Search endpoints (name, path, group)" aria-label="Search endpoints"/>
+        <a class="button" href="/__catalog.json" target="_blank" rel="noopener">View Catalog JSON</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="meta" class="meta"></section>
+    <div id="groups" class="groups"></div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="container">
+      <span>Port <strong id="port"></strong> • <a href="/__health" target="_blank" rel="noopener">Health</a></span>
+    </div>
+  </footer>
+
+  <script type="module" src="/assets/launcher.js"></script>
+</body>
+</html>

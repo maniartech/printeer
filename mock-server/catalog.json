@@ -1,0 +1,143 @@
+{
+  "name": "Printeer Mock Server",
+  "groups": [
+    {
+      "id": "basic",
+      "title": "Basic pages and layout",
+      "routes": [
+        { "path": "/", "title": "Launcher" },
+        { "path": "/static/simple", "title": "Simple HTML" },
+        { "path": "/static/long?pages=5", "title": "Multi-page long content" },
+        { "path": "/static/rtl", "title": "RTL sample" },
+        { "path": "/static/fonts", "title": "Web fonts" },
+        { "path": "/static/images", "title": "Image grid" },
+        { "path": "/debug/ua", "title": "User agent" },
+        { "path": "/debug/echo", "title": "Echo request" }
+      ]
+    },
+    {
+      "id": "print",
+      "title": "Print CSS & Page Formatting",
+      "routes": [
+        { "path": "/print/css-default", "title": "@media print overrides" },
+        { "path": "/print/no-print-elements", "title": "No-print elements" },
+        { "path": "/print/page-breaks", "title": "Page breaks" },
+        { "path": "/print/margins?top=1in&right=1in&bottom=1in&left=1in", "title": "Margins" },
+        { "path": "/print/header-footer-demo", "title": "Header/Footer demo" },
+        { "path": "/print/custom-size?width=210mm&height=99mm", "title": "Custom page size" },
+        { "path": "/print/orientation?landscape=true", "title": "Landscape orientation" },
+        { "path": "/print/scale-markers", "title": "Scale markers" },
+        { "path": "/print/css-page-size", "title": "CSS @page size" },
+        { "path": "/pdf/tagged-structure", "title": "Tagged structure" },
+        { "path": "/print/page-ranges-demo?pages=10", "title": "Page ranges demo" }
+      ]
+    },
+    {
+      "id": "dynamic",
+      "title": "Dynamic/SPA & Wait Strategies",
+      "routes": [
+        { "path": "/spa/delay-content?ms=2000", "title": "Wait for selector" },
+        { "path": "/spa/network-idle?requests=5", "title": "Wait for network idle" },
+        { "path": "/spa/title-late?ms=1000", "title": "Late title change" },
+        { "path": "/spa/interactive", "title": "Interactive content" },
+        { "path": "/spa/custom-ready?ms=2000", "title": "Wait for function (window.__ready)" }
+      ]
+    },
+    {
+      "id": "auth",
+      "title": "Authentication & Headers",
+      "routes": [
+        { "path": "/auth/basic", "title": "Basic auth" },
+        { "path": "/auth/bearer", "title": "Bearer token" },
+        { "path": "/auth/login", "title": "Login (POST)", "method": "POST" },
+        { "path": "/auth/protected", "title": "Cookie-protected" },
+        { "path": "/auth/csrf-login", "title": "CSRF login flow" },
+        { "path": "/debug/headers", "title": "Headers echo" },
+        { "path": "/debug/cookies", "title": "Cookies echo" }
+      ]
+    },
+    {
+      "id": "redirects",
+      "title": "Redirects & Navigation",
+      "routes": [
+        { "path": "/redirect/chain?n=3&to=/static/simple", "title": "Redirect chain" },
+        { "path": "/redirect/loop", "title": "Infinite redirect" },
+        { "path": "/redirect/delay?ms=1000&to=/static/simple", "title": "Delayed redirect" }
+      ]
+    },
+    {
+      "id": "resources",
+      "title": "Resources & Performance",
+      "routes": [
+        { "path": "/assets/slow.js?ms=1500", "title": "Slow JS" },
+        { "path": "/assets/slow.css?ms=1500", "title": "Slow CSS" },
+        { "path": "/assets/large-image.svg?kb=1024", "title": "Large SVG" },
+        { "path": "/assets/random-image", "title": "Random image" },
+        { "path": "/assets/missing", "title": "Missing asset" },
+        { "path": "/assets/huge-css?kb=256", "title": "Huge CSS" },
+        { "path": "/assets/huge-js?kb=512", "title": "Huge JS" }
+      ]
+    },
+    {
+      "id": "errors",
+      "title": "Errors & Resilience",
+      "routes": [
+        { "path": "/error/500", "title": "HTTP 500" },
+        { "path": "/error/timeout?ms=10000", "title": "Timeout/Hang" },
+        { "path": "/error/reset", "title": "Connection reset" },
+        { "path": "/error/flaky?fail=2", "title": "Flaky (retry)" }
+      ]
+    },
+    {
+      "id": "i18n",
+      "title": "Internationalization",
+      "routes": [
+        { "path": "/i18n/utf8", "title": "UTF-8 sample" },
+        { "path": "/i18n/cjk", "title": "CJK sample" },
+        { "path": "/i18n/arabic", "title": "Arabic RTL" },
+        { "path": "/debug/intl", "title": "Intl/locale debug" }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "Media Emulation & Responsive",
+      "routes": [
+        { "path": "/media/print-vs-screen", "title": "Print vs Screen" },
+        { "path": "/viewport/responsive", "title": "Responsive grid" },
+        { "path": "/viewport/dsf-markers", "title": "Device scale factor" },
+        { "path": "/media/color-scheme", "title": "Color scheme" }
+      ]
+    },
+    {
+      "id": "templates",
+      "title": "Templates & Variables",
+      "routes": [
+        { "path": "/template/header", "title": "Header template" },
+        { "path": "/template/footer", "title": "Footer template" },
+        { "path": "/template/content", "title": "Content template" },
+        { "path": "/template/header-variables", "title": "Header variables" },
+        { "path": "/template/footer-variables", "title": "Footer variables" }
+      ]
+    },
+    {
+      "id": "cache-csp",
+      "title": "Cache, Compression, CSP & Debug",
+      "routes": [
+        { "path": "/cache/cacheable", "title": "Cacheable" },
+        { "path": "/cache/no-store", "title": "No-store" },
+        { "path": "/csp/strict", "title": "Strict CSP" },
+        { "path": "/compress/text", "title": "Compression text" },
+        { "path": "/debug/console?error=1", "title": "Console errors" }
+      ]
+    },
+    {
+      "id": "image",
+      "title": "Image Capture & Clipping",
+      "routes": [
+        { "path": "/image/clip-target", "title": "Clip target" },
+        { "path": "/image/transparent-bg", "title": "Transparent background" },
+        { "path": "/image/quality-grid", "title": "Quality grid" }
+      ]
+    }
+  ]
+}
