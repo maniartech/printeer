@@ -14,295 +14,310 @@
         
         .page-container {
             background: white;
-            width: <%= width %>;
-            height: <%= height %>;
-            margin: 20px auto;
-            border: 2px solid #007bff;
+            min-height: 100vh;
             position: relative;
+            border: 3px solid #007bff;
             box-sizing: border-box;
-            padding: 20px;
         }
         
+        /* Page size indicators */
         .size-indicator {
             position: absolute;
-            top: 10px;
-            right: 10px;
             background: rgba(0, 123, 255, 0.1);
-            border: 1px solid #007bff;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 14px;
+            border: 2px solid #007bff;
+            color: #007bff;
             font-weight: bold;
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 4px;
         }
         
-        .corner-markers {
+        .size-width {
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .size-height {
+            left: -80px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+        }
+        
+        /* Corner markers */
+        .corner-marker {
             position: absolute;
             width: 20px;
             height: 20px;
             border: 2px solid #dc3545;
+            background: rgba(220, 53, 69, 0.1);
         }
         
-        .corner-tl {
-            top: 0;
-            left: 0;
-            border-right: none;
-            border-bottom: none;
+        .corner-tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+        .corner-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+        .corner-br { bottom: 0; right: 0; border-left: none; border-top: none; }
+        
+        /* Content area */
+        .content {
+            padding: 40px;
+            height: calc(100vh - 80px);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
-        .corner-tr {
-            top: 0;
-            right: 0;
-            border-left: none;
-            border-bottom: none;
-        }
-        
-        .corner-bl {
-            bottom: 0;
-            left: 0;
-            border-right: none;
-            border-top: none;
-        }
-        
-        .corner-br {
-            bottom: 0;
-            right: 0;
-            border-left: none;
-            border-top: none;
-        }
-        
-        .measurement-guides {
+        /* Measurement grid */
+        .measurement-grid {
             position: absolute;
-        }
-        
-        .width-guide {
-            top: -30px;
+            top: 0;
             left: 0;
             right: 0;
-            height: 20px;
-            background: linear-gradient(90deg, 
-                #007bff 0px, 
-                #007bff 2px, 
-                transparent 2px, 
-                transparent 10px
-            );
-            background-size: 10px 100%;
-            border: 1px solid #007bff;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0.2;
         }
         
-        .height-guide {
-            left: -30px;
+        .grid-line {
+            position: absolute;
+            background: #6c757d;
+        }
+        
+        .grid-line.horizontal {
+            left: 0;
+            right: 0;
+            height: 1px;
+        }
+        
+        .grid-line.vertical {
             top: 0;
             bottom: 0;
-            width: 20px;
-            background: linear-gradient(0deg, 
-                #007bff 0px, 
-                #007bff 2px, 
-                transparent 2px, 
-                transparent 10px
-            );
-            background-size: 100% 10px;
-            border: 1px solid #007bff;
+            width: 1px;
         }
         
-        .content-area {
-            height: calc(100% - 40px);
-            overflow: hidden;
-        }
-        
-        .info-grid {
+        /* Size comparison boxes */
+        .size-comparison {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
             margin: 20px 0;
         }
         
-        .info-box {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            border-radius: 6px;
-            padding: 15px;
-        }
-        
-        .size-comparison {
+        .size-box {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 6px;
             padding: 15px;
-            margin: 15px 0;
+            text-align: center;
         }
         
-        .size-table {
+        .size-box.current {
+            background: #e7f3ff;
+            border-color: #007bff;
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        .dimensions-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 12px;
+            margin: 20px 0;
+            background: white;
         }
         
-        .size-table th,
-        .size-table td {
-            padding: 8px;
+        .dimensions-table th,
+        .dimensions-table td {
+            padding: 10px;
             text-align: left;
-            border: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
         }
         
-        .size-table th {
+        .dimensions-table th {
             background: #f8f9fa;
             font-weight: 600;
         }
         
         .current-size {
-            background: #d4edda;
+            background: #e7f3ff !important;
+            color: #007bff;
             font-weight: bold;
         }
         
         @media print {
             body {
                 background: white;
-                margin: 0;
             }
             
             .page-container {
-                margin: 0;
                 border: 1px solid #000;
             }
             
+            .measurement-grid {
+                display: none;
+            }
+            
             .size-indicator {
-                background: rgba(0, 0, 0, 0.1);
-                border-color: #000;
+                background: rgba(0, 123, 255, 0.2);
             }
         }
     </style>
 </head>
 <body>
     <div class="page-container">
+        <!-- Size indicators -->
+        <div class="size-indicator size-width">Width: <%= width %></div>
+        <div class="size-indicator size-height">Height: <%= height %></div>
+        
         <!-- Corner markers -->
-        <div class="corner-markers corner-tl"></div>
-        <div class="corner-markers corner-tr"></div>
-        <div class="corner-markers corner-bl"></div>
-        <div class="corner-markers corner-br"></div>
+        <div class="corner-marker corner-tl"></div>
+        <div class="corner-marker corner-tr"></div>
+        <div class="corner-marker corner-bl"></div>
+        <div class="corner-marker corner-br"></div>
         
-        <!-- Measurement guides -->
-        <div class="measurement-guides width-guide"></div>
-        <div class="measurement-guides height-guide"></div>
-        
-        <!-- Size indicator -->
-        <div class="size-indicator">
-            <%= width %> × <%= height %>
+        <!-- Measurement grid -->
+        <div class="measurement-grid">
+            <% 
+            // Convert dimensions to pixels for grid (rough approximation)
+            const widthPx = width.includes('mm') ? parseInt(width) * 3.78 : parseInt(width) * 72;
+            const heightPx = height.includes('mm') ? parseInt(height) * 3.78 : parseInt(height) * 72;
+            const gridSpacing = 50; // pixels
+            %>
+            <% for (let i = 0; i <= Math.ceil(heightPx / gridSpacing); i++) { %>
+                <div class="grid-line horizontal" style="top: <%= i * gridSpacing %>px;"></div>
+            <% } %>
+            <% for (let i = 0; i <= Math.ceil(widthPx / gridSpacing); i++) { %>
+                <div class="grid-line vertical" style="left: <%= i * gridSpacing %>px;"></div>
+            <% } %>
         </div>
         
-        <div class="content-area">
-            <h1><%= title %></h1>
-            <p>This page demonstrates custom page size settings. The page is sized to <strong><%= width %> × <%= height %></strong>.</p>
-            
-            <div class="info-grid">
-                <div class="info-box">
-                    <h3>Current Settings</h3>
-                    <ul>
-                        <li><strong>Width:</strong> <%= width %></li>
-                        <li><strong>Height:</strong> <%= height %></li>
-                        <li><strong>Aspect Ratio:</strong> Custom</li>
-                    </ul>
+        <!-- Content -->
+        <div class="content">
+            <div>
+                <h1><%= title %></h1>
+                <p>This page demonstrates custom page size testing with visual guides and dimension validation.</p>
+                
+                <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                    <h3>Current Page Size</h3>
+                    <p><strong>Width:</strong> <%= width %></p>
+                    <p><strong>Height:</strong> <%= height %></p>
+                    <p><strong>Aspect Ratio:</strong> <%= (parseInt(width) / parseInt(height)).toFixed(2) %></p>
                 </div>
                 
-                <div class="info-box">
-                    <h3>Visual Indicators</h3>
-                    <ul>
-                        <li><strong>Blue border:</strong> Page boundary</li>
-                        <li><strong>Red corners:</strong> Page corners</li>
-                        <li><strong>Rulers:</strong> Measurement guides</li>
-                    </ul>
+                <div class="size-comparison">
+                    <div class="size-box <%= width === '210mm' && height === '297mm' ? 'current' : '' %>">
+                        <strong>A4</strong><br>
+                        210mm × 297mm<br>
+                        <small>8.27" × 11.69"</small>
+                    </div>
+                    <div class="size-box <%= width === '297mm' && height === '420mm' ? 'current' : '' %>">
+                        <strong>A3</strong><br>
+                        297mm × 420mm<br>
+                        <small>11.69" × 16.54"</small>
+                    </div>
+                    <div class="size-box <%= width === '8.5in' && height === '11in' ? 'current' : '' %>">
+                        <strong>Letter</strong><br>
+                        8.5in × 11in<br>
+                        <small>216mm × 279mm</small>
+                    </div>
+                    <div class="size-box <%= width === '8.5in' && height === '14in' ? 'current' : '' %>">
+                        <strong>Legal</strong><br>
+                        8.5in × 14in<br>
+                        <small>216mm × 356mm</small>
+                    </div>
+                    <div class="size-box current">
+                        <strong>Custom</strong><br>
+                        <%= width %> × <%= height %>
+                    </div>
                 </div>
             </div>
             
-            <div class="size-comparison">
-                <h3>Standard Page Size Comparison</h3>
-                <table class="size-table">
+            <div>
+                <h3>Standard Page Sizes Reference</h3>
+                <table class="dimensions-table">
                     <thead>
                         <tr>
                             <th>Format</th>
-                            <th>Width</th>
-                            <th>Height</th>
-                            <th>Aspect Ratio</th>
+                            <th>Millimeters</th>
+                            <th>Inches</th>
+                            <th>Pixels (72 DPI)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="<%= width === '210mm' && height === '297mm' ? 'current-size' : '' %>">
                             <td>A4</td>
-                            <td>210mm</td>
-                            <td>297mm</td>
-                            <td>1:√2</td>
+                            <td>210 × 297 mm</td>
+                            <td>8.27 × 11.69 in</td>
+                            <td>595 × 842 px</td>
                         </tr>
                         <tr class="<%= width === '297mm' && height === '420mm' ? 'current-size' : '' %>">
                             <td>A3</td>
-                            <td>297mm</td>
-                            <td>420mm</td>
-                            <td>1:√2</td>
+                            <td>297 × 420 mm</td>
+                            <td>11.69 × 16.54 in</td>
+                            <td>842 × 1191 px</td>
+                        </tr>
+                        <tr class="<%= width === '148mm' && height === '210mm' ? 'current-size' : '' %>">
+                            <td>A5</td>
+                            <td>148 × 210 mm</td>
+                            <td>5.83 × 8.27 in</td>
+                            <td>420 × 595 px</td>
                         </tr>
                         <tr class="<%= width === '8.5in' && height === '11in' ? 'current-size' : '' %>">
                             <td>Letter</td>
-                            <td>8.5in</td>
-                            <td>11in</td>
-                            <td>1:1.29</td>
+                            <td>216 × 279 mm</td>
+                            <td>8.5 × 11 in</td>
+                            <td>612 × 792 px</td>
                         </tr>
                         <tr class="<%= width === '8.5in' && height === '14in' ? 'current-size' : '' %>">
                             <td>Legal</td>
-                            <td>8.5in</td>
-                            <td>14in</td>
-                            <td>1:1.65</td>
+                            <td>216 × 356 mm</td>
+                            <td>8.5 × 14 in</td>
+                            <td>612 × 1008 px</td>
                         </tr>
                         <tr class="current-size">
-                            <td><strong>Custom</strong></td>
-                            <td><strong><%= width %></strong></td>
-                            <td><strong><%= height %></strong></td>
-                            <td><strong>Custom</strong></td>
+                            <td>Custom</td>
+                            <td><%= width %> × <%= height %></td>
+                            <td>
+                                <%= width.includes('mm') ? (parseInt(width) / 25.4).toFixed(2) : width %> × 
+                                <%= height.includes('mm') ? (parseInt(height) / 25.4).toFixed(2) : height %>
+                                <%= width.includes('mm') ? 'in' : '' %>
+                            </td>
+                            <td>
+                                <%= width.includes('mm') ? Math.round(parseInt(width) * 2.83) : Math.round(parseFloat(width) * 72) %> × 
+                                <%= height.includes('mm') ? Math.round(parseInt(height) * 2.83) : Math.round(parseFloat(height) * 72) %> px
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             
-            <div class="info-box">
-                <h3>CLI Usage</h3>
-                <p><strong>Custom size format:</strong></p>
-                <code>--custom-size "<%= width %>,<%= height %>"</code>
+            <div>
+                <h3>CLI Testing Instructions</h3>
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px;">
+                    <p><strong>Current page size command:</strong></p>
+                    <code style="background: #e9ecef; padding: 5px; border-radius: 3px;">
+                        --page-size "<%= width %>,<%= height %>"
+                    </code>
+                    
+                    <p style="margin-top: 15px;"><strong>Alternative formats:</strong></p>
+                    <ul style="font-family: monospace; font-size: 14px;">
+                        <li>--format A4</li>
+                        <li>--format A3</li>
+                        <li>--format Letter</li>
+                        <li>--format Legal</li>
+                        <li>--custom-size "210mm,297mm"</li>
+                        <li>--custom-size "8.5in,11in"</li>
+                    </ul>
+                </div>
                 
-                <p style="margin-top: 15px;"><strong>Alternative formats:</strong></p>
-                <ul>
-                    <li><code>--page-width <%= width %> --page-height <%= height %></code></li>
-                    <li><code>--format custom --width <%= width %> --height <%= height %></code></li>
-                </ul>
-                
-                <p style="margin-top: 15px;"><strong>Supported units:</strong></p>
-                <ul>
-                    <li><strong>mm</strong> - Millimeters (e.g., 210mm)</li>
-                    <li><strong>in</strong> - Inches (e.g., 8.5in)</li>
-                    <li><strong>px</strong> - Pixels (e.g., 800px)</li>
-                    <li><strong>pt</strong> - Points (e.g., 612pt)</li>
-                </ul>
-            </div>
-            
-            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
-                <h4>Testing Instructions</h4>
-                <ol>
-                    <li>Generate PDF with custom size settings</li>
-                    <li>Verify the PDF dimensions match <%= width %> × <%= height %></li>
-                    <li>Check that content fits within the page boundaries</li>
-                    <li>Ensure corner markers appear at page edges</li>
-                    <li>Validate that rulers help measure the actual size</li>
-                </ol>
-            </div>
-            
-            <div style="margin-top: 20px;">
-                <h3>Content Fitting Test</h3>
-                <p>This content tests how text and elements fit within the custom page size. The content should not overflow the page boundaries marked by the blue border.</p>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 15px 0;">
-                    <% for (let i = 1; i <= 6; i++) { %>
-                    <div style="background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px; text-align: center;">
-                        <strong>Block <%= i %></strong>
-                        <br>
-                        <small>Content <%= i %></small>
-                    </div>
-                    <% } %>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; margin-top: 15px;">
+                    <h4>Expected Behavior</h4>
+                    <ul>
+                        <li>PDF output should match the specified dimensions exactly</li>
+                        <li>Content should fit within the custom page size</li>
+                        <li>Corner markers should align with page boundaries</li>
+                        <li>Dimension indicators should be accurate</li>
+                    </ul>
                 </div>
             </div>
         </div>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+        }
+        .compression-info {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .content-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 2em;
+            margin: 2em 0;
+            border-radius: 5px;
+            word-wrap: break-word;
+        }
+        .stats {
+            font-family: monospace;
+            background: #fffbf0;
+            border: 1px solid #ffeaa7;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="compression-info">
+        <h2>Compression Testing</h2>
+        <p>This page contains repetitive text content designed to test compression algorithms.</p>
+        <div class="stats">
+            <strong>Content Stats:</strong><br>
+            Original Size: <%= originalSize %> bytes<br>
+            Compression Ratio: <%= compressionRatio %><br>
+            Content Length: <%= content.length %> characters
+        </div>
+    </div>
+
+    <div class="compression-info">
+        <h2>Testing Notes</h2>
+        <p>Use this page to test:</p>
+        <ul>
+            <li>How Printeer handles large compressed content</li>
+            <li>Whether compression affects PDF generation speed</li>
+            <li>Memory usage with large text content</li>
+        </ul>
+        <p>The server should compress this content using gzip/deflate if compression is enabled.</p>
+    </div>
+
+    <div class="content-block">
+        <h2>Large Text Content (for Compression Testing)</h2>
+        <div style="font-size: 0.9em; color: #666;">
+            <%= content %>
+        </div>
+    </div>
+
+    <div class="compression-info">
+        <h2>Compression Analysis</h2>
+        <p>Check the response headers for compression information:</p>
+        <ul>
+            <li><code>Content-Encoding</code> - Should show gzip, deflate, or br</li>
+            <li><code>Content-Length</code> - Should be smaller than original size</li>
+            <li><code>Vary: Accept-Encoding</code> - Should be present</li>
+        </ul>
+    </div>
+</body>
+</html>

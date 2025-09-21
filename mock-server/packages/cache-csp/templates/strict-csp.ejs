@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+        }
+        .csp-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .csp-policy {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1em;
+            margin: 1em 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .test-section {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .warning {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        /* This should work with strict CSP */
+        .safe-style {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="csp-info">
+        <h2>Content Security Policy</h2>
+        <p>This page implements a strict CSP policy to test security headers:</p>
+        <div class="csp-policy"><%= csp %></div>
+    </div>
+
+    <div class="test-section">
+        <h2>CSP Tests</h2>
+        <p class="safe-style">✓ This text uses safe inline styles that should work with CSP</p>
+
+        <script>
+            // This inline script should work because we allow 'unsafe-inline' for scripts
+            console.log('CSP Test: Inline script executed successfully');
+            document.addEventListener('DOMContentLoaded', function() {
+                const testResults = document.getElementById('csp-test-results');
+                testResults.innerHTML = '<span class="safe-style">✓ JavaScript execution successful</span>';
+            });
+        </script>
+
+        <div id="csp-test-results">Testing JavaScript...</div>
+
+        <h3>Security Headers Present:</h3>
+        <ul>
+            <li><code>Content-Security-Policy</code></li>
+            <li><code>X-Content-Type-Options: nosniff</code></li>
+            <li><code>X-Frame-Options: DENY</code></li>
+            <li><code>X-XSS-Protection: 1; mode=block</code></li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Testing Notes</h2>
+        <p>Use this page to test that Printeer properly handles pages with strict Content Security Policy headers.</p>
+        <p>The CSP should not interfere with PDF generation while still providing security.</p>
+    </div>
+
+    <div class="warning">
+        <h3>⚠️ CSP Violations</h3>
+        <p>Check the browser console for any CSP violations. In a strict CSP environment, any violations should be logged but not block PDF generation.</p>
+    </div>
+</body>
+</html>

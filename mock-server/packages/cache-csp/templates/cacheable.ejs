@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .cache-info {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-left: 4px solid #28a745;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .headers-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        .testing-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>This page demonstrates cacheable content with appropriate cache headers for testing cache behavior and bypass options.</p>
+        
+        <div class="cache-info">
+            <h3>✅ Cacheable Content</h3>
+            <p><strong>Cache Settings:</strong></p>
+            <ul>
+                <li>Max Age: <%= maxAge %> seconds</li>
+                <li>Cache Control: Public</li>
+                <li>ETag: <%= etag %></li>
+                <li>Generated: <%= timestamp %></li>
+            </ul>
+        </div>
+        
+        <div class="headers-display">
+<strong>Response Headers:</strong>
+Cache-Control: public, max-age=<%= maxAge %>
+ETag: <%= etag %>
+Last-Modified: <%= new Date().toUTCString() %>
+        </div>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; margin: 20px 0;">
+            <h4>📊 Cache Test Data</h4>
+            <p><strong>Request Timestamp:</strong> <%= timestamp %></p>
+            <p><strong>Random ID:</strong> <%= Math.random().toString(36).substring(7) %></p>
+            <p><strong>Server Time:</strong> <%= new Date().toISOString() %></p>
+        </div>
+        
+        <div class="testing-info">
+            <h3>🧪 Cache Testing Instructions</h3>
+            <p><strong>CLI Testing:</strong></p>
+            <ul>
+                <li><code>--cache</code> - Enable caching (should use cached version on repeat)</li>
+                <li><code>--no-cache</code> - Disable caching (always fetch fresh)</li>
+                <li><code>--bypass-cache</code> - Bypass existing cache</li>
+            </ul>
+            
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li><strong>With caching:</strong> Subsequent requests within <%= maxAge %> seconds should be faster</li>
+                <li><strong>Without caching:</strong> Each request should show different timestamps</li>
+                <li><strong>Cache bypass:</strong> Should ignore cached version and fetch fresh</li>
+            </ul>
+            
+            <p><strong>Testing Steps:</strong></p>
+            <ol>
+                <li>First request: Note the timestamp and random ID</li>
+                <li>Second request with cache: Should show same timestamp/ID</li>
+                <li>Request with --no-cache: Should show new timestamp/ID</li>
+                <li>Wait <%= maxAge %> seconds: Cache should expire naturally</li>
+            </ol>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #e9ecef; border-radius: 6px; text-align: center;">
+            <h4>🎯 Cache Test Summary</h4>
+            <p style="font-weight: bold; margin: 10px 0;">
+                Max Age: <%= maxAge %>s | ETag: <%= etag %>
+            </p>
+            <p style="color: #6c757d; font-style: italic;">
+                This content is cacheable for <%= maxAge %> seconds.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

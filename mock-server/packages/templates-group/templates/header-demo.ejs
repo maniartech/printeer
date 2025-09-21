@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header-preview {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .variable-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .variable-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .variable-name {
+            font-family: monospace;
+            color: #007bff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .variable-value {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .template-code {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .testing-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>This page demonstrates header template variables and their values. Use this to test header template rendering with dynamic content.</p>
+        
+        <div class="header-preview">
+            <h2>📄 Header Template Preview</h2>
+            <div style="border: 1px dashed #007bff; padding: 15px; margin: 15px 0; background: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                    <div>
+                        <strong><%= variables.company %></strong><br>
+                        <small><%= variables.date %></small>
+                    </div>
+                    <div style="text-align: center;">
+                        <strong><%= variables.title %></strong><br>
+                        <small>by <%= variables.author %></small>
+                    </div>
+                    <div style="text-align: right;">
+                        <small>Page <span style="background: #ffc107; padding: 2px 4px;">{{pageNumber}}</span></small><br>
+                        <small>of <span style="background: #ffc107; padding: 2px 4px;">{{totalPages}}</span></small>
+                    </div>
+                </div>
+            </div>
+            <p><em>This is how your header template would appear with the current variables</em></p>
+        </div>
+        
+        <div class="variable-showcase">
+            <div class="variable-box">
+                <div class="variable-name">{{company}}</div>
+                <div class="variable-value"><%= variables.company %></div>
+                <small>Company name from query parameter</small>
+            </div>
+            
+            <div class="variable-box">
+                <div class="variable-name">{{date}}</div>
+                <div class="variable-value"><%= variables.date %></div>
+                <small>Current date or custom date</small>
+            </div>
+            
+            <div class="variable-box">
+                <div class="variable-name">{{title}}</div>
+                <div class="variable-value"><%= variables.title %></div>
+                <small>Document title</small>
+            </div>
+            
+            <div class="variable-box">
+                <div class="variable-name">{{author}}</div>
+                <div class="variable-value"><%= variables.author %></div>
+                <small>Document author</small>
+            </div>
+            
+            <div class="variable-box">
+                <div class="variable-name">{{pageNumber}}</div>
+                <div class="variable-value">1, 2, 3...</div>
+                <small>Current page number (automatic)</small>
+            </div>
+            
+            <div class="variable-box">
+                <div class="variable-name">{{totalPages}}</div>
+                <div class="variable-value">Total</div>
+                <small>Total page count (automatic)</small>
+            </div>
+        </div>
+        
+        <h3>📝 Sample Header Templates</h3>
+        
+        <h4>Simple Header Template:</h4>
+        <div class="template-code">
+&lt;div style="font-size: 10px; text-align: center; width: 100%; padding: 5px 0;"&gt;
+  &lt;span style="float: left;"&gt;<%= variables.company %>&lt;/span&gt;
+  &lt;span style="float: right;"&gt;Page &lt;span class="pageNumber"&gt;&lt;/span&gt; of &lt;span class="totalPages"&gt;&lt;/span&gt;&lt;/span&gt;
+&lt;/div&gt;
+        </div>
+        
+        <h4>Company Header Template:</h4>
+        <div class="template-code">
+&lt;div style="font-size: 11px; width: 100%; padding: 10px 0; border-bottom: 1px solid #ccc;"&gt;
+  &lt;div style="float: left;"&gt;
+    &lt;strong&gt;<%= variables.company %>&lt;/strong&gt;&lt;br&gt;
+    &lt;small&gt;<%= variables.date %>&lt;/small&gt;
+  &lt;/div&gt;
+  &lt;div style="float: right; text-align: right;"&gt;
+    &lt;strong&gt;<%= variables.title %>&lt;/strong&gt;&lt;br&gt;
+    &lt;small&gt;by <%= variables.author %>&lt;/small&gt;
+  &lt;/div&gt;
+  &lt;div style="clear: both;"&gt;&lt;/div&gt;
+&lt;/div&gt;
+        </div>
+        
+        <h4>Minimal Header Template:</h4>
+        <div class="template-code">
+&lt;div style="font-size: 9px; text-align: center; padding: 3px 0; border-bottom: 1px solid #ddd;"&gt;
+  <%= variables.title %> - Page &lt;span class="pageNumber"&gt;&lt;/span&gt;
+&lt;/div&gt;
+        </div>
+        
+        <div class="testing-info">
+            <h3>🧪 Header Template Testing</h3>
+            <p><strong>CLI Usage Examples:</strong></p>
+            <div class="template-code">
+# Using inline template
+printeer convert \
+  --url "http://localhost:4000/template/header?company=Acme&title=Report&author=John" \
+  --header-template "&lt;div style='text-align:center;font-size:10px;'&gt;{{company}} - {{title}}&lt;/div&gt;" \
+  --display-header-footer \
+  --output header-test.pdf
+
+# Using template file
+printeer convert \
+  --url "http://localhost:4000/template/header?company=Acme&title=Report&author=John" \
+  --header-template-file "./templates/company-header.html" \
+  --display-header-footer \
+  --output header-file-test.pdf
+            </div>
+            
+            <p><strong>Variable Substitution:</strong></p>
+            <ul>
+                <li>Use <code>{{variableName}}</code> syntax in templates</li>
+                <li>Page numbers use special classes: <code>&lt;span class="pageNumber"&gt;&lt;/span&gt;</code></li>
+                <li>Total pages use: <code>&lt;span class="totalPages"&gt;&lt;/span&gt;</code></li>
+                <li>Custom variables come from query parameters</li>
+            </ul>
+            
+            <p><strong>Testing Different Variables:</strong></p>
+            <ul>
+                <li><code>?company=YourCompany</code> - Change company name</li>
+                <li><code>?title=CustomTitle</code> - Change document title</li>
+                <li><code>?author=AuthorName</code> - Change author name</li>
+                <li><code>?date=2024-03-15</code> - Change date</li>
+            </ul>
+            
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li>Variables should be replaced with actual values</li>
+                <li>Page numbers should increment correctly</li>
+                <li>Styling should be preserved</li>
+                <li>Headers should appear on every page</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #e9ecef; border-radius: 6px; text-align: center;">
+            <h4>🎯 Header Template Test</h4>
+            <p style="font-weight: bold; margin: 10px 0;">
+                Company: <%= variables.company %> | Title: <%= variables.title %>
+            </p>
+            <p style="color: #6c757d; font-style: italic;">
+                Use this page to test header template variable substitution and rendering.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

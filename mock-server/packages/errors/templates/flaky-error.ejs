@@ -46,6 +46,36 @@
             width: <%= (attempt / maxAttempts) * 100 %>%;
             transition: width 0.3s ease;
         }
+        .error-details {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #dc3545;
+            font-family: monospace;
+        }
+        .success-preview {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #155724;
+        }
         .retry-info {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -53,80 +83,87 @@
             padding: 15px;
             margin: 20px 0;
             color: #856404;
-        }
-        .error-details {
-            background: white;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 15px 0;
             text-align: left;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            background: #dc3545;
         }
     </style>
 </head>
 <body>
     <div class="error-container">
-        <div class="error-icon">🔄❌</div>
+        <div class="error-icon">🔄💥</div>
         <h1><%= title %></h1>
-        <p>This request failed as part of the flaky endpoint testing. It will succeed after <%= maxAttempts %> failed attempts.</p>
+        <p>This endpoint fails the first <%= maxAttempts %> requests, then succeeds. Perfect for testing retry logic!</p>
         
         <div class="attempt-counter">
             <h3>Attempt Progress</h3>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span><strong>Current Attempt:</strong> <%= attempt %> of <%= maxAttempts %></span>
-                <span class="status-badge">FAILED</span>
+                <span style="color: <%= willSucceed ? '#28a745' : '#dc3545' %>; font-weight: bold;">
+                    <%= willSucceed ? '✅ Will succeed next time!' : '❌ Will fail' %>
+                </span>
             </div>
-            
             <div class="progress-bar">
                 <div class="progress-fill"></div>
             </div>
-            
-            <p style="margin: 10px 0 0 0;">
-                <% if (willSucceed) { %>
-                    ✅ <strong>Next attempt will succeed!</strong>
-                <% } else { %>
-                    ⏳ <%= maxAttempts - attempt %> more failures expected
-                <% } %>
-            </p>
+            <small style="color: #6c757d;">
+                <%= maxAttempts - attempt %> more failure(s) before success
+            </small>
         </div>
         
         <div class="error-details">
-            <h3>Error Information</h3>
-            <p><strong>Status:</strong> <%= errorStatus %> - <%= errorMessage %></p>
-            <p><strong>Attempt:</strong> <%= attempt %> / <%= maxAttempts %></p>
-            <p><strong>Will Succeed:</strong> <%= willSucceed ? 'Yes (next attempt)' : 'No (more failures needed)' %></p>
+            <h3>Current Error Details</h3>
+            <div class="detail-row">
+                <span class="detail-label">Status Code:</span>
+                <span class="detail-value"><%= errorStatus %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Error Message:</span>
+                <span class="detail-value"><%= errorMessage %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Attempt Number:</span>
+                <span class="detail-value"><%= attempt %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Max Attempts:</span>
+                <span class="detail-value"><%= maxAttempts %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Timestamp:</span>
+                <span class="detail-value"><%= new Date().toISOString() %></span>
+            </div>
         </div>
+        
+        <% if (willSucceed) { %>
+        <div class="success-preview">
+            <h4>🎉 Next Request Will Succeed!</h4>
+            <p>The next request to this endpoint will return a successful response. This tests whether your retry logic works correctly.</p>
+        </div>
+        <% } %>
         
         <div class="retry-info">
-            <h4>🔄 Retry Testing</h4>
-            <p>This endpoint is designed to test retry logic in HTTP clients and CLI tools:</p>
+            <h4>🔄 Retry Testing Information</h4>
+            <p><strong>How this endpoint works:</strong></p>
             <ul>
-                <li>First <%= maxAttempts %> requests will fail with different error codes</li>
-                <li>Request <%= maxAttempts + 1 %> and beyond will succeed</li>
-                <li>Each client (IP + User-Agent) has its own failure counter</li>
-                <li>Use this to test exponential backoff and retry strategies</li>
-            </ul>
-        </div>
-        
-        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; padding: 15px; margin: 20px 0;">
-            <h4>CLI Testing</h4>
-            <p><strong>Test retry behavior with:</strong></p>
-            <ul>
-                <li><code>--retry-attempts 3</code> - Set number of retry attempts</li>
-                <li><code>--retry-delay 1000</code> - Set delay between retries</li>
-                <li><code>--continue-on-error</code> - Continue batch processing on errors</li>
+                <li>Fails the first <strong><%= maxAttempts %></strong> requests with different error types</li>
+                <li>Succeeds on request <strong><%= maxAttempts + 1 %></strong> and beyond</li>
+                <li>Tracks attempts per client (IP + User-Agent)</li>
+                <li>Resets counter after successful response</li>
             </ul>
             
-            <p><strong>Expected behavior:</strong> CLI should retry this request and eventually succeed.</p>
+            <p><strong>CLI Testing:</strong></p>
+            <ul>
+                <li>Use <code>--retry <%= maxAttempts + 1 %></code> to ensure success</li>
+                <li>Test with fewer retries to verify failure handling</li>
+                <li>Use in batch processing to test error continuation</li>
+            </ul>
+            
+            <p><strong>Reset Counter:</strong> POST to <code>/error/flaky/reset</code> to reset all counters</p>
         </div>
+        
+        <p style="color: #6c757d; font-style: italic; margin-top: 30px;">
+            This is attempt <%= attempt %> of <%= maxAttempts %>. 
+            <%= willSucceed ? 'The next request will succeed!' : 'Keep trying!' %>
+        </p>
     </div>
 </body>
 </html>

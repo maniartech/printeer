@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Template Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; line-height: 1.6; }
+        .template-section { background: #f8f9fa; border: 1px solid #dee2e6; padding: 1.5em; margin: 1em 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Content Template Demo</h1>
+
+    <div class="template-section">
+        <h2>Template Variables</h2>
+        <p>This page demonstrates content template functionality with dynamic variables.</p>
+        <ul>
+            <li><strong>Current Date:</strong> <%= new Date().toLocaleDateString() %></li>
+            <li><strong>Current Time:</strong> <%= new Date().toLocaleTimeString() %></li>
+            <li><strong>Template Type:</strong> Content Template</li>
+        </ul>
+    </div>
+
+    <div class="template-section">
+        <h2>Content Area</h2>
+        <p>This is the main content area that would be populated with dynamic content in a real template system.</p>
+        <p>Templates allow for consistent formatting while allowing dynamic content insertion.</p>
+    </div>
+</body>
+</html>

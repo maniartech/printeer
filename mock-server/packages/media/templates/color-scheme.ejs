@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Scheme Testing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .light-theme { background: white; color: black; }
+        .dark-theme { background: #333; color: white; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #333; color: white; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Scheme Testing</h1>
+    <div class="light-theme" style="padding: 1em; margin: 1em 0;">
+        <h2>Light Theme</h2>
+        <p>This section uses light colors.</p>
+    </div>
+    <div class="dark-theme" style="padding: 1em; margin: 1em 0;">
+        <h2>Dark Theme</h2>
+        <p>This section uses dark colors.</p>
+    </div>
+</body>
+</html>

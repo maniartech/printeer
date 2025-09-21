@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Quality Testing Grid</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 1em 0;
+        }
+        .quality-cell {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: center;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .fine-lines {
+            background: repeating-linear-gradient(
+                90deg,
+                #000,
+                #000 1px,
+                #fff 1px,
+                #fff 2px
+            );
+        }
+        .diagonal-lines {
+            background: repeating-linear-gradient(
+                45deg,
+                #000,
+                #000 1px,
+                #fff 1px,
+                #fff 2px
+            );
+        }
+        .small-text { font-size: 6px; line-height: 1.2; }
+        .gradient { background: linear-gradient(45deg, #000, #fff); color: #666; }
+        .circles {
+            background-image: radial-gradient(circle at 50% 50%, #000 1px, transparent 1px);
+            background-size: 5px 5px;
+        }
+        .color-bars {
+            background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            color: white;
+            text-shadow: 1px 1px 1px black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Quality Testing Grid</h1>
+
+    <p>This grid contains various patterns to test image quality, sharpness, and detail preservation:</p>
+
+    <div class="quality-grid">
+        <div class="quality-cell fine-lines">Fine Vertical Lines</div>
+        <div class="quality-cell diagonal-lines">Diagonal Lines</div>
+        <div class="quality-cell gradient">Gradient</div>
+        <div class="quality-cell circles">Dot Pattern</div>
+
+        <div class="quality-cell small-text">
+            Small Text
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.
+        </div>
+        <div class="quality-cell" style="background: #f0f0f0; border: 2px solid #999;">
+            Border
+            Detail
+        </div>
+        <div class="quality-cell color-bars">Color Spectrum</div>
+        <div class="quality-cell" style="background: repeating-conic-gradient(from 0deg, #000 0deg 45deg, #fff 45deg 90deg);">
+            Radial
+            Pattern
+        </div>
+
+        <div class="quality-cell" style="font-family: serif; font-size: 8px;">
+            Serif Font
+            The quick brown fox jumps over the lazy dog.
+        </div>
+        <div class="quality-cell" style="font-family: monospace; font-size: 8px;">
+            Monospace
+            1234567890
+            abcdefghijk
+        </div>
+        <div class="quality-cell" style="background: #000; color: #fff;">
+            High
+            Contrast
+            White on Black
+        </div>
+        <div class="quality-cell" style="background: #ddd; color: #999;">
+            Low
+            Contrast
+            Gray on Gray
+        </div>
+    </div>
+
+    <h2>Testing Notes</h2>
+    <ul>
+        <li>Check fine line rendering and aliasing</li>
+        <li>Verify text clarity at small sizes</li>
+        <li>Test gradient smoothness</li>
+        <li>Examine color reproduction accuracy</li>
+        <li>Assess detail preservation in patterns</li>
+    </ul>
+</body>
+</html>

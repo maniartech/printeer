@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+        }
+        .orientation-info {
+            background: #f0f8ff;
+            border: 1px solid #ccc;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .orientation-demo {
+            background: #fff;
+            border: 2px solid #333;
+            padding: 2em;
+            margin: 2em 0;
+            text-align: center;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+            <% if (landscape) { %>
+            @page {
+                size: landscape;
+            }
+            <% } else { %>
+            @page {
+                size: portrait;
+            }
+            <% } %>
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="orientation-info">
+        <h2>Page Orientation Test</h2>
+        <p><strong>Current orientation:</strong> <%= landscape ? 'Landscape' : 'Portrait' %></p>
+        <p>This page is configured to print in <strong><%= landscape ? 'landscape' : 'portrait' %></strong> mode.</p>
+    </div>
+
+    <div class="orientation-demo">
+        <h2>Orientation Visualization</h2>
+        <% if (landscape) { %>
+        <p>📄 ↔️ This page should be wider than it is tall (landscape)</p>
+        <p>The page width should be greater than the page height.</p>
+        <% } else { %>
+        <p>📄 ↕️ This page should be taller than it is wide (portrait)</p>
+        <p>The page height should be greater than the page width.</p>
+        <% } %>
+
+        <div style="margin: 2em 0;">
+            <div style="display: inline-block; width: 100px; height: 50px; background: #ddd; border: 1px solid #999; margin: 10px;">
+                Width: 100px<br>Height: 50px<br><small>(Landscape box)</small>
+            </div>
+            <div style="display: inline-block; width: 50px; height: 100px; background: #ddd; border: 1px solid #999; margin: 10px;">
+                <div style="writing-mode: vertical-lr; text-align: center; padding: 10px; font-size: 10px;">
+                    Width: 50px Height: 100px (Portrait box)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="orientation-info">
+        <h2>Testing Notes</h2>
+        <p>Use this page to test:</p>
+        <ul>
+            <li>CSS @page orientation directives</li>
+            <li>How Printeer handles landscape vs portrait orientation</li>
+            <li>Whether the orientation parameter is properly applied</li>
+        </ul>
+        <p><strong>Expected behavior:</strong> The generated PDF should respect the specified orientation.</p>
+    </div>
+</body>
+</html>

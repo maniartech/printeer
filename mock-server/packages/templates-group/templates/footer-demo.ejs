@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Footer Template Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; min-height: 100vh; display: flex; flex-direction: column; }
+        main { flex: 1; }
+        footer { background: #f0f8ff; border-top: 2px solid #ccc; padding: 1em; margin-top: 2em; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Footer Template Demo</h1>
+        <p>This page demonstrates footer template functionality.</p>
+        <p>The footer should appear at the bottom of the page in the generated PDF.</p>
+    </main>
+    <footer>
+        <p><strong>Footer Content:</strong> Page footer with template variables</p>
+        <p>© 2024 Printeer Mock Server | Generated at: <%= new Date().toISOString() %></p>
+    </footer>
+</body>
+</html>

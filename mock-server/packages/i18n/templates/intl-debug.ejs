@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .current-settings {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-left: 4px solid #007bff;
+        }
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .format-box {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        .format-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .format-table th,
+        .format-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .format-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .locale-header {
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .testing-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
+        .sample-data {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>This page displays internationalization debug information including locale-specific date, number, and currency formatting for testing timezone and locale settings.</p>
+        
+        <div class="info-section current-settings">
+            <h2>🌐 Current Request Settings</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>Accept-Language:</strong><br>
+                    <code><%= acceptLanguage %></code>
+                </div>
+                <div>
+                    <strong>Timezone:</strong><br>
+                    <code><%= timezone %></code>
+                </div>
+                <div>
+                    <strong>Locale:</strong><br>
+                    <code><%= locale %></code>
+                </div>
+                <div>
+                    <strong>Current Date:</strong><br>
+                    <code><%= currentDate %></code>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sample-data">
+            <h3>📊 Sample Data for Formatting</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>Sample Number:</strong><br>
+                    <code><%= sampleNumber.toLocaleString() %></code>
+                </div>
+                <div>
+                    <strong>Current Date:</strong><br>
+                    <code><%= new Date().toISOString() %></code>
+                </div>
+                <div>
+                    <strong>Test Timestamp:</strong><br>
+                    <code><%= Date.now() %></code>
+                </div>
+            </div>
+        </div>
+        
+        <div class="format-grid">
+            <div class="format-box">
+                <h3>📅 Date Formatting</h3>
+                <table class="format-table">
+                    <thead>
+                        <tr>
+                            <th>Locale</th>
+                            <th>Formatted Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% locales.forEach(loc => { %>
+                        <tr>
+                            <td><%= loc %></td>
+                            <td><%= formattedDates[loc] %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="format-box">
+                <h3>🔢 Number Formatting</h3>
+                <table class="format-table">
+                    <thead>
+                        <tr>
+                            <th>Locale</th>
+                            <th>Formatted Number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% locales.forEach(loc => { %>
+                        <tr>
+                            <td><%= loc %></td>
+                            <td><%= formattedNumbers[loc] %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="format-box">
+                <h3>💰 Currency Formatting</h3>
+                <table class="format-table">
+                    <thead>
+                        <tr>
+                            <th>Locale</th>
+                            <th>Formatted Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% locales.forEach(loc => { %>
+                        <tr>
+                            <td><%= loc %></td>
+                            <td><%= formattedCurrency[loc] %></td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>🕐 Timezone Examples</h2>
+            <div class="format-grid">
+                <div class="format-box">
+                    <h4>Major Timezones</h4>
+                    <table class="format-table">
+                        <tr><th>Timezone</th><th>Current Time</th></tr>
+                        <tr><td>UTC</td><td><%= new Date().toLocaleString('en-US', {timeZone: 'UTC'}) %></td></tr>
+                        <tr><td>America/New_York</td><td><%= new Date().toLocaleString('en-US', {timeZone: 'America/New_York'}) %></td></tr>
+                        <tr><td>Europe/London</td><td><%= new Date().toLocaleString('en-GB', {timeZone: 'Europe/London'}) %></td></tr>
+                        <tr><td>Asia/Tokyo</td><td><%= new Date().toLocaleString('ja-JP', {timeZone: 'Asia/Tokyo'}) %></td></tr>
+                        <tr><td>Australia/Sydney</td><td><%= new Date().toLocaleString('en-AU', {timeZone: 'Australia/Sydney'}) %></td></tr>
+                    </table>
+                </div>
+                
+                <div class="format-box">
+                    <h4>Date Format Styles</h4>
+                    <table class="format-table">
+                        <tr><th>Style</th><th>Example (en-US)</th></tr>
+                        <tr><td>short</td><td><%= new Date().toLocaleDateString('en-US', {dateStyle: 'short'}) %></td></tr>
+                        <tr><td>medium</td><td><%= new Date().toLocaleDateString('en-US', {dateStyle: 'medium'}) %></td></tr>
+                        <tr><td>long</td><td><%= new Date().toLocaleDateString('en-US', {dateStyle: 'long'}) %></td></tr>
+                        <tr><td>full</td><td><%= new Date().toLocaleDateString('en-US', {dateStyle: 'full'}) %></td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>🌍 Locale-Specific Examples</h2>
+            
+            <div class="locale-header">🇺🇸 English (United States)</div>
+            <p><strong>Date:</strong> <%= new Date().toLocaleDateString('en-US') %></p>
+            <p><strong>Time:</strong> <%= new Date().toLocaleTimeString('en-US') %></p>
+            <p><strong>Number:</strong> <%= sampleNumber.toLocaleString('en-US') %></p>
+            <p><strong>Currency:</strong> <%= sampleNumber.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) %></p>
+            
+            <div class="locale-header">🇩🇪 German (Germany)</div>
+            <p><strong>Date:</strong> <%= new Date().toLocaleDateString('de-DE') %></p>
+            <p><strong>Time:</strong> <%= new Date().toLocaleTimeString('de-DE') %></p>
+            <p><strong>Number:</strong> <%= sampleNumber.toLocaleString('de-DE') %></p>
+            <p><strong>Currency:</strong> <%= sampleNumber.toLocaleString('de-DE', {style: 'currency', currency: 'EUR'}) %></p>
+            
+            <div class="locale-header">🇫🇷 French (France)</div>
+            <p><strong>Date:</strong> <%= new Date().toLocaleDateString('fr-FR') %></p>
+            <p><strong>Time:</strong> <%= new Date().toLocaleTimeString('fr-FR') %></p>
+            <p><strong>Number:</strong> <%= sampleNumber.toLocaleString('fr-FR') %></p>
+            <p><strong>Currency:</strong> <%= sampleNumber.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'}) %></p>
+            
+            <div class="locale-header">🇯🇵 Japanese (Japan)</div>
+            <p><strong>Date:</strong> <%= new Date().toLocaleDateString('ja-JP') %></p>
+            <p><strong>Time:</strong> <%= new Date().toLocaleTimeString('ja-JP') %></p>
+            <p><strong>Number:</strong> <%= sampleNumber.toLocaleString('ja-JP') %></p>
+            <p><strong>Currency:</strong> <%= sampleNumber.toLocaleString('ja-JP', {style: 'currency', currency: 'JPY'}) %></p>
+        </div>
+        
+        <div class="testing-info">
+            <h3>🧪 Internationalization Testing</h3>
+            <p><strong>This page tests:</strong></p>
+            <ul>
+                <li><strong>Locale Detection:</strong> Accept-Language header parsing</li>
+                <li><strong>Date Formatting:</strong> Locale-specific date representations</li>
+                <li><strong>Number Formatting:</strong> Decimal separators and grouping</li>
+                <li><strong>Currency Formatting:</strong> Currency symbols and positioning</li>
+                <li><strong>Timezone Handling:</strong> Time zone conversion and display</li>
+            </ul>
+            
+            <p><strong>CLI Testing:</strong></p>
+            <ul>
+                <li><code>--locale en-US</code> - Test US English formatting</li>
+                <li><code>--locale de-DE</code> - Test German formatting</li>
+                <li><code>--timezone "America/New_York"</code> - Test timezone conversion</li>
+                <li><code>--timezone "Europe/London"</code> - Test different timezone</li>
+                <li><code>--header "Accept-Language: fr-FR,fr;q=0.9"</code> - Test language preference</li>
+            </ul>
+            
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li>Dates should format according to specified locale</li>
+                <li>Numbers should use correct decimal separators</li>
+                <li>Currency should display appropriate symbols</li>
+                <li>Times should reflect specified timezone</li>
+                <li>Text direction should be correct for RTL locales</li>
+            </ul>
+            
+            <p><strong>URL Parameters for Testing:</strong></p>
+            <ul>
+                <li><code>?locale=de-DE</code> - Override locale</li>
+                <li><code>?tz=Europe/Berlin</code> - Override timezone</li>
+                <li><code>?locale=ar-SA&tz=Asia/Riyadh</code> - Test Arabic locale</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #e9ecef; border-radius: 6px; text-align: center;">
+            <h4>🌐 Internationalization Test Summary</h4>
+            <p style="font-weight: bold; margin: 10px 0;">
+                Current: <%= locale %> | <%= timezone %>
+            </p>
+            <p style="color: #6c757d; font-style: italic;">
+                Verify that formatting matches your locale and timezone settings!
+            </p>
+        </div>
+    </div>
+</body>
+</html>

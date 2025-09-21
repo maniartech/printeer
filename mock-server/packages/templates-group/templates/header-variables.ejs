@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Variables Template</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        header { background: #007bff; color: white; padding: 1.5em; margin: -2em -2em 2em -2em; }
+        .variable-section { background: #e9ecef; border: 1px solid #ced4da; padding: 1em; margin: 1em 0; border-radius: 5px; }
+        .variable-list { font-family: monospace; background: #f8f9fa; padding: 1em; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Document Title: Header Variables Demo</h1>
+        <p>Generated: <%= new Date().toLocaleString() %></p>
+        <p>Document ID: DOC-<%= Math.random().toString(36).substring(7).toUpperCase() %></p>
+    </header>
+
+    <main>
+        <div class="variable-section">
+            <h2>Header Template Variables</h2>
+            <p>This page demonstrates how header templates can use variables for dynamic content:</p>
+
+            <div class="variable-list">
+                <strong>Available Variables:</strong><br>
+                • {title} - Document title<br>
+                • {date} - Current date<br>
+                • {time} - Current time<br>
+                • {pageNumber} - Current page number<br>
+                • {totalPages} - Total page count<br>
+                • {url} - Source URL<br>
+                • {customField} - Custom field data
+            </div>
+        </div>
+
+        <div class="variable-section">
+            <h2>Testing Notes</h2>
+            <p>Use this page to test:</p>
+            <ul>
+                <li>Header template variable substitution</li>
+                <li>Dynamic content in PDF headers</li>
+                <li>Variable formatting and display</li>
+            </ul>
+        </div>
+    </main>
+</body>
+</html>

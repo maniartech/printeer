@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20mm;
+            background: white;
+        }
+        .ruler {
+            border: 1px solid #333;
+            position: relative;
+        }
+        .horizontal-ruler {
+            height: 10mm;
+            width: 100mm;
+            margin: 10mm 0;
+        }
+        .vertical-ruler {
+            width: 10mm;
+            height: 100mm;
+            display: inline-block;
+            margin-right: 20mm;
+        }
+        .marker {
+            position: absolute;
+            background: #333;
+        }
+        .h-marker {
+            width: 1px;
+            height: 5mm;
+            top: 0;
+        }
+        .v-marker {
+            height: 1px;
+            width: 5mm;
+            left: 0;
+        }
+        .scale-info {
+            background: #f0f8ff;
+            border: 1px solid #ccc;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="scale-info">
+        <h2>Scale Validation Rulers</h2>
+        <p>These rulers help validate that the PDF maintains correct scale and measurements.</p>
+    </div>
+
+    <h2>Horizontal Scale (100mm)</h2>
+    <div class="ruler horizontal-ruler">
+        <div class="marker h-marker" style="left: 0mm;"></div>
+        <div class="marker h-marker" style="left: 10mm;"></div>
+        <div class="marker h-marker" style="left: 20mm;"></div>
+        <div class="marker h-marker" style="left: 30mm;"></div>
+        <div class="marker h-marker" style="left: 40mm;"></div>
+        <div class="marker h-marker" style="left: 50mm;"></div>
+        <div class="marker h-marker" style="left: 60mm;"></div>
+        <div class="marker h-marker" style="left: 70mm;"></div>
+        <div class="marker h-marker" style="left: 80mm;"></div>
+        <div class="marker h-marker" style="left: 90mm;"></div>
+        <div class="marker h-marker" style="left: 100mm;"></div>
+    </div>
+
+    <h2>Vertical Scale (100mm)</h2>
+    <div class="ruler vertical-ruler">
+        <div class="marker v-marker" style="top: 0mm;"></div>
+        <div class="marker v-marker" style="top: 10mm;"></div>
+        <div class="marker v-marker" style="top: 20mm;"></div>
+        <div class="marker v-marker" style="top: 30mm;"></div>
+        <div class="marker v-marker" style="top: 40mm;"></div>
+        <div class="marker v-marker" style="top: 50mm;"></div>
+        <div class="marker v-marker" style="top: 60mm;"></div>
+        <div class="marker v-marker" style="top: 70mm;"></div>
+        <div class="marker v-marker" style="top: 80mm;"></div>
+        <div class="marker v-marker" style="top: 90mm;"></div>
+        <div class="marker v-marker" style="top: 100mm;"></div>
+    </div>
+
+    <div class="scale-info">
+        <h2>Testing Notes</h2>
+        <p>Measure the rulers in the generated PDF:</p>
+        <ul>
+            <li>Horizontal ruler should be exactly 100mm wide</li>
+            <li>Vertical ruler should be exactly 100mm tall</li>
+            <li>Each marker should be 10mm apart</li>
+        </ul>
+    </div>
+</body>
+</html>

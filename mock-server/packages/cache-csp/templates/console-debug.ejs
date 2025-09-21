@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+        }
+        .console-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .error-count {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .warn-count {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .info-count {
+            background: #d1ecf1;
+            border: 1px solid #b8daff;
+            color: #0c5460;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .log-count {
+            background: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="console-section">
+        <h2>Console Message Testing</h2>
+        <p>This page will emit various console messages to test how Printeer handles console output during PDF generation.</p>
+
+        <h3>Configured Message Counts:</h3>
+        <ul>
+            <li>Errors: <%= errorCount %></li>
+            <li>Warnings: <%= warnCount %></li>
+            <li>Info: <%= infoCount %></li>
+            <li>Logs: <%= logCount %></li>
+        </ul>
+    </div>
+
+    <% if (errorCount > 0) { %>
+    <div class="error-count">
+        <strong>Error Messages: <%= errorCount %></strong>
+        <p>Check the console for <%= errorCount %> error message(s).</p>
+    </div>
+    <% } %>
+
+    <% if (warnCount > 0) { %>
+    <div class="warn-count">
+        <strong>Warning Messages: <%= warnCount %></strong>
+        <p>Check the console for <%= warnCount %> warning message(s).</p>
+    </div>
+    <% } %>
+
+    <% if (infoCount > 0) { %>
+    <div class="info-count">
+        <strong>Info Messages: <%= infoCount %></strong>
+        <p>Check the console for <%= infoCount %> info message(s).</p>
+    </div>
+    <% } %>
+
+    <% if (logCount > 0) { %>
+    <div class="log-count">
+        <strong>Log Messages: <%= logCount %></strong>
+        <p>Check the console for <%= logCount %> log message(s).</p>
+    </div>
+    <% } %>
+
+    <div class="console-section">
+        <h2>Testing Notes</h2>
+        <p>Use this page to test:</p>
+        <ul>
+            <li>How Printeer captures and handles console messages</li>
+            <li>Whether console errors affect PDF generation</li>
+            <li>Console message filtering and reporting</li>
+        </ul>
+        <p><strong>Expected behavior:</strong> Console messages should be captured but not prevent PDF generation unless they're critical errors.</p>
+    </div>
+
+    <script>
+        // Generate the requested number of console messages
+        <%
+        for (let i = 0; i < errorCount; i++) {
+        %>
+        console.error('Test Error #<%= i + 1 %>: This is a test error message for debugging purposes');
+        <%
+        }
+
+        for (let i = 0; i < warnCount; i++) {
+        %>
+        console.warn('Test Warning #<%= i + 1 %>: This is a test warning message for debugging purposes');
+        <%
+        }
+
+        for (let i = 0; i < infoCount; i++) {
+        %>
+        console.info('Test Info #<%= i + 1 %>: This is a test info message for debugging purposes');
+        <%
+        }
+
+        for (let i = 0; i < logCount; i++) {
+        %>
+        console.log('Test Log #<%= i + 1 %>: This is a test log message for debugging purposes');
+        <%
+        }
+        %>
+
+        // Add a summary message
+        const totalMessages = <%= errorCount + warnCount + infoCount + logCount %>;
+        if (totalMessages > 0) {
+            console.log(`Console test complete: Generated ${totalMessages} total messages`);
+        }
+    </script>
+</body>
+</html>

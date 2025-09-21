@@ -21,7 +21,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .success-icon {
-            font-size: 48px;
+            font-size: 64px;
             color: #28a745;
             margin-bottom: 20px;
         }
@@ -32,55 +32,66 @@
             margin: 20px 0;
             text-align: left;
         }
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e9ecef;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 15px 0;
+        .success-details {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
         }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745, #20c997);
-            width: 100%;
-            transition: width 0.3s ease;
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
         }
-        .retry-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #28a745;
+            font-family: monospace;
+        }
+        .retry-timeline {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
             margin: 20px 0;
         }
-        .stat-box {
-            background: white;
-            border: 1px solid #28a745;
-            border-radius: 6px;
-            padding: 15px;
-            text-align: center;
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 5px 0;
         }
-        .stat-number {
-            font-size: 24px;
-            font-weight: bold;
-            color: #28a745;
-        }
-        .stat-label {
+        .timeline-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 12px;
-            color: #6c757d;
-            text-transform: uppercase;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: bold;
             color: white;
+            font-weight: bold;
+        }
+        .timeline-fail {
+            background: #dc3545;
+        }
+        .timeline-success {
             background: #28a745;
         }
-        .celebration {
-            font-size: 24px;
+        .testing-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
             margin: 20px 0;
+            text-align: left;
         }
     </style>
 </head>
@@ -88,85 +99,90 @@
     <div class="success-container">
         <div class="success-icon">🎉</div>
         <h1><%= title %></h1>
-        <div class="celebration">🎊 Retry Logic Successful! 🎊</div>
         <p><%= message %></p>
         
         <div class="attempt-summary">
-            <h3>Retry Summary</h3>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span><strong>Final Attempt:</strong> <%= attempt %></span>
-                <span class="status-badge">SUCCESS</span>
-            </div>
-            
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-            
-            <p style="margin: 10px 0 0 0;">
-                ✅ <strong>Request succeeded after <%= failedAttempts %> failed attempts</strong>
-            </p>
-        </div>
-        
-        <div class="retry-stats">
-            <div class="stat-box">
-                <div class="stat-number"><%= failedAttempts %></div>
-                <div class="stat-label">Failed Attempts</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">1</div>
-                <div class="stat-label">Successful Attempt</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number"><%= attempt %></div>
-                <div class="stat-label">Total Attempts</div>
+            <h3>Retry Success Summary</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+                <div style="background: #f8d7da; padding: 15px; border-radius: 4px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #dc3545;"><%= failedAttempts %></div>
+                    <div style="font-size: 12px; color: #721c24;">Failed Attempts</div>
+                </div>
+                <div style="background: #d4edda; padding: 15px; border-radius: 4px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #28a745;"><%= attempt %></div>
+                    <div style="font-size: 12px; color: #155724;">Total Attempts</div>
+                </div>
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 4px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #007bff;">100%</div>
+                    <div style="font-size: 12px; color: #004085;">Success Rate</div>
+                </div>
             </div>
         </div>
         
-        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 15px; margin: 20px 0;">
-            <h4>✅ Retry Test Results</h4>
-            <ul style="text-align: left;">
-                <li><strong>Resilience:</strong> Your client successfully handled <%= failedAttempts %> consecutive failures</li>
-                <li><strong>Persistence:</strong> Retry logic continued until success was achieved</li>
-                <li><strong>Recovery:</strong> System recovered gracefully from temporary failures</li>
-                <li><strong>Reliability:</strong> Final request completed successfully</li>
-            </ul>
+        <div class="success-details">
+            <h3>Success Details</h3>
+            <div class="detail-row">
+                <span class="detail-label">Final Status:</span>
+                <span class="detail-value">200 OK</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Attempts:</span>
+                <span class="detail-value"><%= attempt %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Failed Attempts:</span>
+                <span class="detail-value"><%= failedAttempts %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Success Timestamp:</span>
+                <span class="detail-value"><%= new Date().toISOString() %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Counter Status:</span>
+                <span class="detail-value">Reset after success</span>
+            </div>
         </div>
         
-        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; padding: 15px; margin: 20px 0;">
-            <h4>🧪 Testing Validation</h4>
+        <div class="retry-timeline">
+            <h4>Retry Timeline</h4>
+            <% for (let i = 1; i <= attempt; i++) { %>
+                <div class="timeline-item">
+                    <div class="timeline-icon <%= i <= failedAttempts ? 'timeline-fail' : 'timeline-success' %>">
+                        <%= i <= failedAttempts ? '✗' : '✓' %>
+                    </div>
+                    <span>
+                        Attempt <%= i %>: 
+                        <%= i <= failedAttempts ? 'Failed' : 'Success' %>
+                        <%= i <= failedAttempts ? '(HTTP ' + (500 + (i % 3)) + ')' : '(HTTP 200)' %>
+                    </span>
+                </div>
+            <% } %>
+        </div>
+        
+        <div class="testing-info">
+            <h4>✅ Retry Logic Validation</h4>
             <p><strong>This success confirms:</strong></p>
-            <ul style="text-align: left;">
+            <ul>
                 <li>Retry mechanism is working correctly</li>
-                <li>Error handling doesn't give up too early</li>
-                <li>Exponential backoff (if implemented) allowed recovery</li>
-                <li>Final success was properly detected and processed</li>
+                <li>CLI persisted through <%= failedAttempts %> failures</li>
+                <li>Error handling allowed continuation</li>
+                <li>Final success was properly detected</li>
             </ul>
             
-            <p><strong>Next steps:</strong></p>
-            <ul style="text-align: left;">
-                <li>Test with different failure counts using <code>?fail=N</code></li>
-                <li>Verify retry delays are appropriate</li>
-                <li>Test batch processing with mixed success/failure</li>
-                <li>Reset counters with <code>POST /error/flaky/reset</code></li>
+            <p><strong>Next Steps:</strong></p>
+            <ul>
+                <li>Test with different retry counts</li>
+                <li>Verify batch processing continues after retries</li>
+                <li>Check error logging and reporting</li>
+                <li>Test timeout behavior with retries</li>
             </ul>
+            
+            <p><strong>Reset for new test:</strong> The counter has been automatically reset. The next request will start failing again from attempt 1.</p>
         </div>
         
-        <div style="background: #f8f9fa; border-radius: 4px; padding: 15px; margin: 20px 0;">
-            <h4>Content for PDF Generation</h4>
-            <p>This successful page can now be converted to PDF, demonstrating that the retry logic allowed the conversion to complete despite initial failures.</p>
-            
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;">
-                <div style="background: #28a745; color: white; padding: 10px; border-radius: 4px; text-align: center;">
-                    <strong>Resilient</strong>
-                </div>
-                <div style="background: #17a2b8; color: white; padding: 10px; border-radius: 4px; text-align: center;">
-                    <strong>Reliable</strong>
-                </div>
-                <div style="background: #ffc107; color: #212529; padding: 10px; border-radius: 4px; text-align: center;">
-                    <strong>Robust</strong>
-                </div>
-            </div>
-        </div>
+        <p style="color: #155724; font-weight: bold; margin-top: 30px;">
+            🎯 Retry logic test completed successfully!
+        </p>
     </div>
 </body>
 </html>

@@ -6,7 +6,8 @@
   "type": "module",
   "license": "ISC",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "health-check": "node scripts/health-check.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",

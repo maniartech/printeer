@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans CJK', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans CJK', sans-serif;
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f8f9fa;
             line-height: 1.8;
-            background: #f8f9fa;
         }
         .container {
             background: white;
@@ -23,235 +23,254 @@
             background: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 6px;
-            padding: 20px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .chinese-section {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        }
+        .japanese-section {
+            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+        .korean-section {
+            border-left: 4px solid #007bff;
+            background: linear-gradient(135deg, #e7f3ff 0%, #bee5eb 100%);
+        }
+        .script-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
             margin: 20px 0;
         }
-        .chinese-text {
+        .script-box {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+        }
+        .large-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #495057;
+        }
+        .medium-text {
             font-size: 18px;
-            line-height: 2;
-        }
-        .japanese-text {
-            font-size: 16px;
-            line-height: 1.8;
-        }
-        .korean-text {
-            font-size: 16px;
-            line-height: 1.8;
+            margin: 10px 0;
+            color: #6c757d;
         }
         .character-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
             gap: 10px;
-            margin: 15px 0;
+            margin: 20px 0;
+            text-align: center;
         }
         .character-item {
-            text-align: center;
-            font-size: 24px;
-            padding: 15px 10px;
             background: white;
             border: 1px solid #dee2e6;
             border-radius: 4px;
-        }
-        .script-comparison {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
-        }
-        .script-box {
-            background: #e7f3ff;
-            border: 1px solid #b3d9ff;
-            border-radius: 4px;
-            padding: 15px;
-        }
-        .large-text {
+            padding: 10px;
             font-size: 20px;
-            margin: 10px 0;
+            font-weight: bold;
         }
-        .ruby-text {
-            ruby-align: center;
+        .testing-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 25px 0;
+            color: #0c5460;
         }
-        .ruby-text rt {
-            font-size: 0.6em;
-            color: #6c757d;
+        .mixed-text {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 16px;
+            line-height: 2;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1><%= title %></h1>
-        <p>This page demonstrates Chinese, Japanese, and Korean (CJK) character rendering for testing international typography and font support.</p>
+        <p>This page demonstrates Chinese, Japanese, and Korean (CJK) character support for testing international typography and font rendering in PDF generation.</p>
         
-        <div class="language-section">
+        <div class="language-section chinese-section">
             <h2>🇨🇳 Chinese (中文)</h2>
             
-            <h3>Simplified Chinese (简体中文)</h3>
-            <div class="chinese-text">
-                <p><strong>标题：</strong>中文字符测试页面</p>
-                <p>这是一个用于测试中文字符渲染的示例页面。我们使用简体中文来验证字体支持和文本布局。</p>
-                <p>常用汉字：人、大、小、中、国、文、字、测、试、页、面、支、持、系、统</p>
+            <div class="script-showcase">
+                <div class="script-box">
+                    <h4>Simplified Chinese (简体中文)</h4>
+                    <div class="large-text">你好世界</div>
+                    <div class="medium-text">欢迎使用打印测试系统</div>
+                    <p>这是一个用于测试中文字符渲染的页面。包含了常用的汉字、标点符号和数字。</p>
+                    <p><strong>常用词汇：</strong>学习、工作、生活、技术、开发、测试、文档、系统</p>
+                </div>
+                
+                <div class="script-box">
+                    <h4>Traditional Chinese (繁體中文)</h4>
+                    <div class="large-text">你好世界</div>
+                    <div class="medium-text">歡迎使用列印測試系統</div>
+                    <p>這是一個用於測試中文字符渲染的頁面。包含了常用的漢字、標點符號和數字。</p>
+                    <p><strong>常用詞彙：</strong>學習、工作、生活、技術、開發、測試、文檔、系統</p>
+                </div>
             </div>
             
-            <h3>Traditional Chinese (繁體中文)</h3>
-            <div class="chinese-text">
-                <p><strong>標題：</strong>中文字符測試頁面</p>
-                <p>這是一個用於測試中文字符渲染的示例頁面。我們使用繁體中文來驗證字體支持和文本佈局。</p>
-                <p>常用漢字：人、大、小、中、國、文、字、測、試、頁、面、支、持、系、統</p>
-            </div>
-            
+            <h4>Chinese Characters by Category</h4>
             <div class="character-grid">
-                <div class="character-item">中</div>
-                <div class="character-item">文</div>
-                <div class="character-item">测</div>
-                <div class="character-item">试</div>
-                <div class="character-item">页</div>
-                <div class="character-item">面</div>
-                <div class="character-item">字</div>
-                <div class="character-item">体</div>
+                <div class="character-item" title="Numbers">一二三四五</div>
+                <div class="character-item" title="Elements">金木水火土</div>
+                <div class="character-item" title="Directions">东南西北中</div>
+                <div class="character-item" title="Colors">红橙黄绿蓝</div>
+                <div class="character-item" title="Family">父母子女孙</div>
+                <div class="character-item" title="Time">年月日时分</div>
             </div>
+            
+            <p><strong>Sample Text:</strong> 中华人民共和国成立于1949年10月1日。北京是中国的首都，拥有悠久的历史和丰富的文化遗产。</p>
         </div>
         
-        <div class="language-section">
+        <div class="language-section japanese-section">
             <h2>🇯🇵 Japanese (日本語)</h2>
             
-            <h3>Hiragana (ひらがな)</h3>
-            <div class="japanese-text">
-                <p>あいうえお かきくけこ さしすせそ たちつてと なにぬねの</p>
-                <p>はひふへほ まみむめも やゆよ らりるれろ わをん</p>
-                <p class="large-text">こんにちは、世界！これは日本語のテストページです。</p>
+            <div class="script-showcase">
+                <div class="script-box">
+                    <h4>Hiragana (ひらがな)</h4>
+                    <div class="large-text">こんにちは世界</div>
+                    <div class="medium-text">ようこそ印刷テストシステムへ</div>
+                    <p>あいうえお かきくけこ さしすせそ たちつてと なにぬねの</p>
+                    <p>はひふへほ まみむめも やゆよ らりるれろ わをん</p>
+                </div>
+                
+                <div class="script-box">
+                    <h4>Katakana (カタカナ)</h4>
+                    <div class="large-text">コンニチハ世界</div>
+                    <div class="medium-text">ヨウコソ印刷テストシステムヘ</div>
+                    <p>アイウエオ カキクケコ サシスセソ タチツテト ナニヌネノ</p>
+                    <p>ハヒフヘホ マミムメモ ヤユヨ ラリルレロ ワヲン</p>
+                </div>
             </div>
             
-            <h3>Katakana (カタカナ)</h3>
-            <div class="japanese-text">
-                <p>アイウエオ カキクケコ サシスセソ タチツテト ナニヌネノ</p>
-                <p>ハヒフヘホ マミムメモ ヤユヨ ラリルレロ ワヲン</p>
-                <p class="large-text">コンピュータ、インターネット、プログラミング</p>
-            </div>
-            
-            <h3>Kanji (漢字) with Furigana</h3>
-            <div class="japanese-text ruby-text">
-                <p>
-                    <ruby>日本語<rt>にほんご</rt></ruby>の
-                    <ruby>文字<rt>もじ</rt></ruby>
-                    <ruby>体系<rt>たいけい</rt></ruby>は
-                    <ruby>複雑<rt>ふくざつ</rt></ruby>です。
+            <h4>Mixed Japanese Scripts</h4>
+            <div style="background: white; padding: 20px; border-radius: 6px; margin: 15px 0;">
+                <p style="font-size: 18px; line-height: 2;">
+                    <strong>Kanji + Hiragana:</strong> 日本語の文字は漢字、ひらがな、カタカナの三つの文字体系から構成されています。
                 </p>
-                <p>
-                    <ruby>漢字<rt>かんじ</rt></ruby>、
-                    <ruby>平仮名<rt>ひらがな</rt></ruby>、
-                    <ruby>片仮名<rt>カタカナ</rt></ruby>を
-                    <ruby>組<rt>く</rt></ruby>み
-                    <ruby>合<rt>あ</rt></ruby>わせて
-                    <ruby>使<rt>つか</rt></ruby>います。
+                <p style="font-size: 18px; line-height: 2;">
+                    <strong>Common Words:</strong> 学校（がっこう）、先生（せんせい）、学生（がくせい）、勉強（べんきょう）
+                </p>
+                <p style="font-size: 18px; line-height: 2;">
+                    <strong>Katakana Words:</strong> コンピューター、インターネット、プリンター、システム、テスト
                 </p>
             </div>
             
+            <h4>Japanese Characters by Type</h4>
             <div class="character-grid">
-                <div class="character-item">日</div>
-                <div class="character-item">本</div>
-                <div class="character-item">語</div>
-                <div class="character-item">文</div>
-                <div class="character-item">字</div>
-                <div class="character-item">あ</div>
-                <div class="character-item">カ</div>
-                <div class="character-item">漢</div>
+                <div class="character-item" title="Basic Kanji">日本語文字</div>
+                <div class="character-item" title="Hiragana">あいうえお</div>
+                <div class="character-item" title="Katakana">アイウエオ</div>
+                <div class="character-item" title="Numbers">一二三四五</div>
+                <div class="character-item" title="Particles">はがをに</div>
+                <div class="character-item" title="Verbs">見る聞く話す</div>
             </div>
         </div>
         
-        <div class="language-section">
+        <div class="language-section korean-section">
             <h2>🇰🇷 Korean (한국어)</h2>
             
-            <h3>Hangul (한글)</h3>
-            <div class="korean-text">
-                <p><strong>기본 자음:</strong> ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ</p>
-                <p><strong>기본 모음:</strong> ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ</p>
-                <p class="large-text">안녕하세요! 이것은 한국어 테스트 페이지입니다.</p>
-                <p>한글은 세종대왕이 창제한 우리나라의 고유 문자입니다.</p>
-            </div>
-            
-            <h3>Hanja (한자)</h3>
-            <div class="korean-text">
-                <p>韓國語 漢字 測試: 大韓民國, 首爾特別市, 釜山廣域市</p>
-                <p>學校, 學生, 先生, 圖書館, 大學校, 高等學校</p>
-            </div>
-            
-            <div class="character-grid">
-                <div class="character-item">한</div>
-                <div class="character-item">국</div>
-                <div class="character-item">어</div>
-                <div class="character-item">문</div>
-                <div class="character-item">자</div>
-                <div class="character-item">테</div>
-                <div class="character-item">스</div>
-                <div class="character-item">트</div>
-            </div>
-        </div>
-        
-        <div class="language-section">
-            <h2>📊 Script Comparison</h2>
-            <div class="script-comparison">
+            <div class="script-showcase">
                 <div class="script-box">
-                    <h4>Numbers (1-10)</h4>
-                    <p><strong>Chinese:</strong> 一二三四五六七八九十</p>
-                    <p><strong>Japanese:</strong> 一二三四五六七八九十</p>
-                    <p><strong>Korean:</strong> 일이삼사오육칠팔구십</p>
+                    <h4>Hangul (한글)</h4>
+                    <div class="large-text">안녕하세요 세계</div>
+                    <div class="medium-text">인쇄 테스트 시스템에 오신 것을 환영합니다</div>
+                    <p><strong>Basic Consonants:</strong> ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ</p>
+                    <p><strong>Basic Vowels:</strong> ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ</p>
                 </div>
-                <div class="script-box">
-                    <h4>Common Words</h4>
-                    <p><strong>Hello:</strong></p>
-                    <p>Chinese: 你好 (nǐ hǎo)</p>
-                    <p>Japanese: こんにちは (konnichiwa)</p>
-                    <p>Korean: 안녕하세요 (annyeonghaseyo)</p>
-                </div>
-                <div class="script-box">
-                    <h4>Thank You</h4>
-                    <p><strong>Chinese:</strong> 谢谢 (xiè xiè)</p>
-                    <p><strong>Japanese:</strong> ありがとう (arigatou)</p>
-                    <p><strong>Korean:</strong> 감사합니다 (gamsahamnida)</p>
-                </div>
-                <div class="script-box">
-                    <h4>Country Names</h4>
-                    <p><strong>China:</strong> 中国 / 中國</p>
-                    <p><strong>Japan:</strong> 日本</p>
-                    <p><strong>Korea:</strong> 한국 / 韓國</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="language-section">
-            <h2>🔤 Mixed CJK Text</h2>
-            <div style="font-size: 16px; line-height: 2;">
-                <p>This paragraph mixes different CJK scripts: 中文 (Chinese), 日本語 (Japanese), and 한국어 (Korean) characters together to test font fallback and rendering consistency.</p>
                 
-                <p>技術用語 / テクノロジー / 기술 용어:</p>
-                <ul>
-                    <li>计算机 / コンピュータ / 컴퓨터 (Computer)</li>
-                    <li>互联网 / インターネット / 인터넷 (Internet)</li>
-                    <li>软件 / ソフトウェア / 소프트웨어 (Software)</li>
-                    <li>数据库 / データベース / 데이터베이스 (Database)</li>
-                </ul>
+                <div class="script-box">
+                    <h4>Korean Text Sample</h4>
+                    <div class="large-text">대한민국</div>
+                    <div class="medium-text">한글은 세계에서 가장 과학적인 문자입니다</div>
+                    <p>한국어는 한글이라는 독특한 표음문자를 사용합니다. 한글은 자음과 모음을 조합하여 음절을 만듭니다.</p>
+                </div>
             </div>
+            
+            <h4>Korean Syllable Examples</h4>
+            <div class="character-grid">
+                <div class="character-item" title="Family">가족</div>
+                <div class="character-item" title="School">학교</div>
+                <div class="character-item" title="Friend">친구</div>
+                <div class="character-item" title="Teacher">선생님</div>
+                <div class="character-item" title="Student">학생</div>
+                <div class="character-item" title="Book">책</div>
+                <div class="character-item" title="Computer">컴퓨터</div>
+                <div class="character-item" title="Internet">인터넷</div>
+                <div class="character-item" title="Technology">기술</div>
+                <div class="character-item" title="Test">테스트</div>
+            </div>
+            
+            <p><strong>Sample Sentence:</strong> 한국은 아시아 동북부에 위치한 반도 국가로, 서울이 수도입니다. 한국어는 약 7천만 명이 사용하는 언어입니다.</p>
         </div>
         
-        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 20px; margin: 20px 0;">
-            <h3>🧪 CJK Testing Instructions</h3>
-            <h4>Expected Behavior:</h4>
+        <div class="mixed-text">
+            <h3>🌏 Mixed CJK Text Example</h3>
+            <p style="font-size: 18px;">
+                <strong>Chinese:</strong> 这是一个多语言测试页面。<br>
+                <strong>Japanese:</strong> これは多言語テストページです。<br>
+                <strong>Korean:</strong> 이것은 다국어 테스트 페이지입니다。<br>
+                <strong>English:</strong> This is a multilingual test page.
+            </p>
+            
+            <p style="font-size: 16px; margin-top: 20px;">
+                <strong>Numbers in CJK:</strong><br>
+                Chinese: 一、二、三、四、五、六、七、八、九、十<br>
+                Japanese: 一、二、三、四、五、六、七、八、九、十<br>
+                Korean: 일、이、삼、사、오、육、칠、팔、구、십
+            </p>
+        </div>
+        
+        <div class="testing-info">
+            <h3>🧪 CJK Testing Information</h3>
+            <p><strong>This page tests:</strong></p>
             <ul>
-                <li>All CJK characters should render with appropriate fonts</li>
-                <li>Text should maintain proper line height and spacing</li>
-                <li>Ruby text (furigana) should display correctly above kanji</li>
-                <li>Mixed scripts should have consistent baseline alignment</li>
-                <li>Complex characters should not appear broken or incomplete</li>
+                <li><strong>Font Support:</strong> CJK font rendering and fallback mechanisms</li>
+                <li><strong>Character Encoding:</strong> Proper UTF-8 handling for complex characters</li>
+                <li><strong>Typography:</strong> Line spacing, character spacing, and alignment</li>
+                <li><strong>Mixed Scripts:</strong> Rendering multiple writing systems together</li>
+                <li><strong>Vertical Text:</strong> Support for traditional vertical writing (if implemented)</li>
             </ul>
             
-            <h4>CLI Testing:</h4>
+            <p><strong>Expected Behavior:</strong></p>
             <ul>
-                <li>Generate PDF and verify all CJK characters are preserved</li>
-                <li>Test with different page sizes to ensure text wrapping</li>
-                <li>Verify that font embedding works for CJK characters</li>
-                <li>Check that ruby text maintains proper positioning</li>
-                <li>Test both simplified and traditional Chinese variants</li>
+                <li>All CJK characters should render clearly without distortion</li>
+                <li>Proper font fallback for missing characters</li>
+                <li>Consistent character spacing and alignment</li>
+                <li>No broken or missing character boxes</li>
+                <li>Proper line breaks for CJK text</li>
             </ul>
+            
+            <p><strong>CLI Testing:</strong></p>
+            <ul>
+                <li>Test with different CJK fonts (Noto Sans CJK, Microsoft YaHei, etc.)</li>
+                <li>Verify character encoding preservation</li>
+                <li>Test mixed CJK and Latin text rendering</li>
+                <li>Compare screen vs print output quality</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 25px; background: #e9ecef; border-radius: 6px; text-align: center;">
+            <h4>🎯 CJK Rendering Test</h4>
+            <div style="font-size: 24px; font-weight: bold; margin: 15px 0;">
+                中文 • 日本語 • 한국어
+            </div>
+            <p style="font-style: italic; color: #6c757d;">
+                If all three scripts above render correctly, CJK support is working properly!
+            </p>
         </div>
     </div>
 </body>

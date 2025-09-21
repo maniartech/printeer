@@ -25,18 +25,18 @@
             color: #dc3545;
             margin-bottom: 20px;
         }
+        .error-code {
+            font-size: 48px;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 20px 0;
+        }
         .error-details {
             background: white;
             border-radius: 6px;
             padding: 20px;
             margin: 20px 0;
             text-align: left;
-        }
-        .error-code {
-            font-size: 48px;
-            font-weight: bold;
-            color: #dc3545;
-            margin: 20px 0;
         }
         .detail-row {
             display: flex;
@@ -53,6 +53,14 @@
             color: #dc3545;
             font-family: monospace;
         }
+        .testing-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -60,13 +68,17 @@
         <div class="error-icon">💥</div>
         <div class="error-code">500</div>
         <h1><%= title %></h1>
-        <p>The server encountered an internal error and was unable to complete your request.</p>
+        <p>This endpoint always returns an HTTP 500 Internal Server Error for testing error handling and retry logic.</p>
         
         <div class="error-details">
             <h3>Error Details</h3>
             <div class="detail-row">
                 <span class="detail-label">Status Code:</span>
-                <span class="detail-value">500 Internal Server Error</span>
+                <span class="detail-value">500</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Error Type:</span>
+                <span class="detail-value">Internal Server Error</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Request ID:</span>
@@ -77,17 +89,33 @@
                 <span class="detail-value"><%= timestamp %></span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">Error Type:</span>
-                <span class="detail-value">Simulated Server Error</span>
+                <span class="detail-label">Behavior:</span>
+                <span class="detail-value">Always fails</span>
             </div>
         </div>
         
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; margin: 20px 0;">
+        <div class="testing-info">
             <h4>🧪 Testing Purpose</h4>
-            <p>This is a simulated 500 error for testing error handling in the Printeer CLI. This endpoint always returns a 500 status code.</p>
+            <p>This endpoint is designed to test:</p>
+            <ul>
+                <li><strong>Error Handling:</strong> How the CLI handles HTTP 500 errors</li>
+                <li><strong>Retry Logic:</strong> Whether retry mechanisms work correctly</li>
+                <li><strong>Batch Processing:</strong> Error handling in batch operations</li>
+                <li><strong>Logging:</strong> Error reporting and logging functionality</li>
+            </ul>
+            
+            <h4>CLI Testing</h4>
+            <p><strong>Expected Behavior:</strong> CLI should report the error and handle it according to configured retry/error policies.</p>
+            <ul>
+                <li>Single conversion: Should fail with error message</li>
+                <li>Batch processing: Should continue with other URLs (if configured)</li>
+                <li>Retry enabled: Should attempt retries before final failure</li>
+            </ul>
         </div>
         
-        <p><strong>Use this endpoint to test error handling and retry logic in your CLI implementation.</strong></p>
+        <p style="color: #6c757d; font-style: italic; margin-top: 30px;">
+            This is a simulated error for testing purposes. The server is functioning normally.
+        </p>
     </div>
 </body>
 </html>

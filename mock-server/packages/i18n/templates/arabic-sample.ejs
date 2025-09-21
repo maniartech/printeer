@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: 'Noto Sans Arabic', 'Arial Unicode MS', 'Tahoma', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            line-height: 2;
+            direction: rtl;
+            text-align: right;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .arabic-section {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border: 1px solid #f5c6cb;
+            border-right: 4px solid #dc3545;
+            border-radius: 6px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .mixed-section {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-right: 4px solid #007bff;
+            border-radius: 6px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .large-text {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #495057;
+            text-align: center;
+        }
+        .medium-text {
+            font-size: 20px;
+            margin: 15px 0;
+            color: #6c757d;
+        }
+        .verse-text {
+            font-size: 22px;
+            line-height: 2.5;
+            text-align: center;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #495057;
+        }
+        .alphabet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .letter-box {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .numbers-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-box {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        .ltr-text {
+            direction: ltr;
+            text-align: left;
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .testing-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
+        .punctuation-demo {
+            font-size: 18px;
+            line-height: 2;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>هذه الصفحة تُظهر نموذجاً شاملاً للنص العربي لاختبار دعم الكتابة من اليمين إلى اليسار (RTL) وعرض الخطوط العربية في ملفات PDF.</p>
+        
+        <div class="arabic-section">
+            <h2>🇸🇦 النص العربي الأساسي</h2>
+            
+            <div class="large-text">
+                مرحباً بالعالم
+            </div>
+            
+            <div class="medium-text">
+                أهلاً وسهلاً بكم في نظام اختبار الطباعة
+            </div>
+            
+            <p>اللغة العربية هي إحدى أكثر اللغات انتشاراً في العالم، ويتحدث بها أكثر من 400 مليون شخص. تُكتب العربية من اليمين إلى اليسار وتحتوي على 28 حرفاً أساسياً.</p>
+            
+            <div class="verse-text">
+                "وَمِنْ آيَاتِهِ خَلْقُ السَّمَاوَاتِ وَالْأَرْضِ وَاخْتِلَافُ أَلْسِنَتِكُمْ وَأَلْوَانِكُمْ ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِّلْعَالِمِينَ"
+            </div>
+        </div>
+        
+        <div class="arabic-section">
+            <h2>🔤 الأبجدية العربية</h2>
+            <p>الحروف العربية الـ 28 مع أشكالها المختلفة:</p>
+            
+            <div class="alphabet-grid">
+                <div class="letter-box">أ</div>
+                <div class="letter-box">ب</div>
+                <div class="letter-box">ت</div>
+                <div class="letter-box">ث</div>
+                <div class="letter-box">ج</div>
+                <div class="letter-box">ح</div>
+                <div class="letter-box">خ</div>
+                <div class="letter-box">د</div>
+                <div class="letter-box">ذ</div>
+                <div class="letter-box">ر</div>
+                <div class="letter-box">ز</div>
+                <div class="letter-box">س</div>
+                <div class="letter-box">ش</div>
+                <div class="letter-box">ص</div>
+                <div class="letter-box">ض</div>
+                <div class="letter-box">ط</div>
+                <div class="letter-box">ظ</div>
+                <div class="letter-box">ع</div>
+                <div class="letter-box">غ</div>
+                <div class="letter-box">ف</div>
+                <div class="letter-box">ق</div>
+                <div class="letter-box">ك</div>
+                <div class="letter-box">ل</div>
+                <div class="letter-box">م</div>
+                <div class="letter-box">ن</div>
+                <div class="letter-box">ه</div>
+                <div class="letter-box">و</div>
+                <div class="letter-box">ي</div>
+            </div>
+        </div>
+        
+        <div class="numbers-section">
+            <h3>🔢 الأرقام العربية والهندية</h3>
+            <div class="comparison-grid">
+                <div class="comparison-box">
+                    <h4>الأرقام العربية (المستخدمة في المغرب العربي)</h4>
+                    <div style="font-size: 24px; text-align: center; margin: 15px 0;">
+                        ٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩
+                    </div>
+                    <p>التاريخ: ١٥ / ٠٣ / ٢٠٢٤</p>
+                    <p>الوقت: ١٤:٣٠</p>
+                </div>
+                
+                <div class="comparison-box">
+                    <h4>الأرقام الهندية (المستخدمة في المشرق العربي)</h4>
+                    <div style="font-size: 24px; text-align: center; margin: 15px 0;">
+                        0 1 2 3 4 5 6 7 8 9
+                    </div>
+                    <p>التاريخ: 15 / 03 / 2024</p>
+                    <p>الوقت: 14:30</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arabic-section">
+            <h2>📝 أشكال الحروف والتشكيل</h2>
+            
+            <h4>الحروف في مواضع مختلفة:</h4>
+            <div style="font-size: 20px; line-height: 2.5; text-align: center;">
+                <p><strong>منفصلة:</strong> ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ي</p>
+                <p><strong>متصلة:</strong> ابتثجحخدذرزسشصضطظعغفقكلمنهوي</p>
+                <p><strong>في كلمات:</strong> الكتابة - المدرسة - الطالب - المعلم - الدرس</p>
+            </div>
+            
+            <h4>التشكيل (الحركات):</h4>
+            <div style="font-size: 22px; text-align: center; line-height: 2.5;">
+                <p>الفَتْحَة - الضَّمَّة - الكَسْرَة - السُّكُون - الشَّدَّة - التَّنْوِين</p>
+                <p>كَتَبَ - يَكْتُبُ - مَكْتُوبٌ - كِتَابٌ - مَكْتَبَةٌ</p>
+            </div>
+        </div>
+        
+        <div class="punctuation-demo">
+            <h3>علامات الترقيم العربية</h3>
+            <p>الفاصلة، والفاصلة المنقوطة؛ وعلامة الاستفهام؟ وعلامة التعجب! والنقطة.</p>
+            <p>الأقواس (هكذا) والأقواس المربعة [هكذا] وعلامات التنصيص "هكذا" والشرطة - والشرطة الطويلة —</p>
+            <p>النقاط الثلاث... والنجمة * والرقم # والنسبة المئوية %</p>
+        </div>
+        
+        <div class="mixed-section">
+            <h2>🌍 النص المختلط (عربي + إنجليزي)</h2>
+            
+            <p>هذا نص مختلط يحتوي على كلمات عربية و English words في نفس الجملة. يجب أن يظهر النص العربي من اليمين إلى اليسار والإنجليزي من اليسار إلى اليمين.</p>
+            
+            <div class="comparison-grid">
+                <div class="comparison-box">
+                    <h4>النص العربي (RTL)</h4>
+                    <p>هذا النص يُكتب من اليمين إلى اليسار. الكلمات العربية تبدأ من الجانب الأيمن وتنتهي في الجانب الأيسر من الصفحة.</p>
+                </div>
+                
+                <div class="comparison-box ltr-text">
+                    <h4>English Text (LTR)</h4>
+                    <p>This text is written from left to right. English words start from the left side and end on the right side of the page.</p>
+                </div>
+            </div>
+            
+            <h4>أمثلة على النص المختلط:</h4>
+            <ul>
+                <li>موقع Google الإلكتروني</li>
+                <li>نظام التشغيل Windows 11</li>
+                <li>برنامج Microsoft Word</li>
+                <li>شبكة Facebook الاجتماعية</li>
+                <li>متصفح Chrome من Google</li>
+            </ul>
+        </div>
+        
+        <div class="arabic-section">
+            <h2>📚 نص طويل للاختبار</h2>
+            <p>في قديم الزمان، كان هناك مملكة جميلة تقع بين الجبال والبحار. كانت هذه المملكة مشهورة بحدائقها الخضراء وقصورها الذهبية. عاش في هذه المملكة ملك حكيم وعادل، أحبه شعبه كثيراً لأنه كان يهتم بهم ويسعى لسعادتهم.</p>
+            
+            <p>كان للملك ابنة جميلة تُدعى ياسمين، وكانت معروفة بذكائها وطيبة قلبها. أحبت الأميرة ياسمين القراءة والتعلم، وكانت تقضي ساعات طويلة في مكتبة القصر الكبيرة تقرأ الكتب وتتعلم عن العالم.</p>
+            
+            <p>في يوم من الأيام، وصل إلى المملكة تاجر مسافر من بلاد بعيدة. حمل معه قصصاً مذهلة عن أراضٍ لم يرها أحد من قبل، وعن شعوب مختلفة بثقافات متنوعة. استمعت الأميرة ياسمين إلى هذه القصص بشغف كبير، وقررت أن تسافر لاستكشاف العالم.</p>
+        </div>
+        
+        <div class="testing-info">
+            <h3>🧪 معلومات اختبار النص العربي</h3>
+            
+            <div class="ltr-text">
+                <p><strong>This page tests:</strong></p>
+                <ul>
+                    <li><strong>RTL Text Direction:</strong> Right-to-left text flow</li>
+                    <li><strong>Arabic Font Support:</strong> Proper rendering of Arabic characters</li>
+                    <li><strong>Character Shaping:</strong> Contextual letter forms</li>
+                    <li><strong>Diacritics:</strong> Arabic vowel marks and diacritical signs</li>
+                    <li><strong>Mixed Text:</strong> Arabic and Latin script combination</li>
+                    <li><strong>Punctuation:</strong> Arabic-specific punctuation marks</li>
+                </ul>
+                
+                <p><strong>Expected Behavior:</strong></p>
+                <ul>
+                    <li>Text should flow from right to left</li>
+                    <li>Arabic characters should connect properly</li>
+                    <li>Mixed Arabic/English text should display correctly</li>
+                    <li>Punctuation should appear in correct positions</li>
+                    <li>Page layout should be mirrored (RTL layout)</li>
+                </ul>
+                
+                <p><strong>CLI Testing:</strong></p>
+                <ul>
+                    <li>Test with Arabic-supporting fonts</li>
+                    <li>Verify RTL text direction in PDF output</li>
+                    <li>Check character rendering quality</li>
+                    <li>Test mixed-script text handling</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 25px; background: #e9ecef; border-radius: 6px; text-align: center;">
+            <h4>🎯 اختبار النص العربي</h4>
+            <div style="font-size: 24px; font-weight: bold; margin: 15px 0;">
+                العربية • الإنجليزية • Mixed Text
+            </div>
+            <p style="color: #6c757d; font-style: italic;">
+                إذا كان بإمكانك قراءة هذا النص بوضوح، فإن دعم اللغة العربية يعمل بشكل صحيح!
+            </p>
+            <div class="ltr-text" style="margin-top: 15px;">
+                <p style="color: #6c757d; font-style: italic;">
+                    If you can read the Arabic text above clearly, RTL support is working correctly!
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

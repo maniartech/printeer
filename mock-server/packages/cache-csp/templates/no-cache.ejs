@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+        }
+        .cache-info {
+            background: #f0f8ff;
+            border: 1px solid #ccc;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .random-id {
+            font-weight: bold;
+            color: #0066cc;
+        }
+    </style>
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="cache-info">
+        <h2>Cache Headers</h2>
+        <p>This page has cache-control headers set to prevent caching:</p>
+        <ul>
+            <li><code>Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate</code></li>
+            <li><code>Pragma: no-cache</code></li>
+            <li><code>Expires: 0</code></li>
+        </ul>
+    </div>
+
+    <div class="cache-info">
+        <h2>Dynamic Content</h2>
+        <p class="timestamp">Generated at: <%= timestamp %></p>
+        <p>Random ID: <span class="random-id"><%= randomId %></span></p>
+        <p>This content should be different on each request due to no-cache headers.</p>
+    </div>
+
+    <div class="cache-info">
+        <h2>Testing Notes</h2>
+        <p>Use this page to test that Printeer respects no-cache headers and doesn't cache responses that shouldn't be cached.</p>
+        <p>Each request should generate a new timestamp and random ID.</p>
+    </div>
+</body>
+</html>

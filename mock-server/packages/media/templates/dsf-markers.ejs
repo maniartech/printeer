@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Scale Factor Testing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .dsf-test { border: 1px solid #333; padding: 1em; margin: 1em 0; }
+        .pixel-test { width: 100px; height: 100px; background: #ddd; border: 1px solid #999; }
+    </style>
+</head>
+<body>
+    <h1>Device Scale Factor Testing</h1>
+    <div class="dsf-test">
+        <h2>100px × 100px Box</h2>
+        <div class="pixel-test"></div>
+        <p>This box should maintain its size regardless of device scale factor.</p>
+    </div>
+</body>
+</html>

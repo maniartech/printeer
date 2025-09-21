@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            line-height: 1.6;
+        }
+        .page-info {
+            background: #f0f8ff;
+            border: 1px solid #ccc;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 5px;
+        }
+        @page {
+            size: <%= pageSize %>;
+            margin: 1in;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1><%= title %></h1>
+
+    <div class="page-info">
+        <h2>CSS @page Size Testing</h2>
+        <p><strong>Page Size:</strong> <%= pageSize %></p>
+        <p>This page uses CSS @page directive to set the page size.</p>
+        <code>@page { size: <%= pageSize %>; }</code>
+    </div>
+
+    <div class="page-info">
+        <h2>Common Page Sizes</h2>
+        <ul>
+            <li><strong>A4:</strong> 210mm × 297mm (8.27" × 11.69")</li>
+            <li><strong>Letter:</strong> 8.5" × 11" (215.9mm × 279.4mm)</li>
+            <li><strong>Legal:</strong> 8.5" × 14" (215.9mm × 355.6mm)</li>
+            <li><strong>A3:</strong> 297mm × 420mm (11.69" × 16.54")</li>
+            <li><strong>A5:</strong> 148mm × 210mm (5.83" × 8.27")</li>
+        </ul>
+    </div>
+
+    <div class="page-info">
+        <h2>Testing Notes</h2>
+        <p>Use this page to test:</p>
+        <ul>
+            <li>CSS @page size directives</li>
+            <li>How Printeer handles different page sizes</li>
+            <li>Whether the specified page size is applied correctly</li>
+        </ul>
+        <p><strong>Expected behavior:</strong> The generated PDF should use the specified page size: <strong><%= pageSize %></strong></p>
+    </div>
+</body>
+</html>
