@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dee2e6;
+        }
+        .ready-indicator {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .ready-waiting {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            color: #856404;
+        }
+        .ready-complete {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .countdown-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: conic-gradient(#007bff 0deg, #e9ecef 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            transition: background 0.1s ease;
+        }
+        .progress-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .step {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .step.active {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        .step.complete {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .step-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .window-ready-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        .cli-example {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><%= title %></h1>
+        <p>This page sets <code>window.__ready = true</code> after a <%= delay %>ms delay. Use this to test custom wait functions.</p>
+        
+        <div id="ready-indicator" class="ready-indicator ready-waiting">
+            ⏳ Preparing custom ready state...
+        </div>
+        
+        <div class="countdown-circle" id="countdown-circle">
+            <span id="countdown-text"><%= Math.ceil(delay / 1000) %></span>
+        </div>
+        
+        <div class="progress-steps">
+            <div id="step-1" class="step active">
+                <div class="step-icon">🚀</div>
+                <div>Initializing</div>
+            </div>
+            <div id="step-2" class="step">
+                <div class="step-icon">⚙️</div>
+                <div>Processing</div>
+            </div>
+            <div id="step-3" class="step">
+                <div class="step-icon">🔄</div>
+                <div>Loading Data</div>
+            </div>
+            <div id="step-4" class="step">
+                <div class="step-icon">✅</div>
+                <div>Ready</div>
+            </div>
+        </div>
+        
+        <div class="window-ready-display">
+            <strong>window.__ready:</strong> <span id="ready-value">false</span>
+        </div>
+        
+        <div class="cli-example">
+            <h4>CLI Testing Example</h4>
+            <p><strong>Wait for custom function:</strong></p>
+            <code>--wait-for-function "() => window.__ready === true"</code>
+            
+            <p style="margin-top: 15px;"><strong>Alternative wait conditions:</strong></p>
+            <ul>
+                <li><code>--wait-for-function "() => window.__ready"</code></li>
+                <li><code>--wait-for-selector ".ready-complete"</code></li>
+                <li><code>--wait-timeout <%= delay + 1000 %></code> (with safety margin)</li>
+            </ul>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+            <h4>How This Test Works</h4>
+            <ol>
+                <li>Page loads with <code>window.__ready = false</code></li>
+                <li>Simulated processing steps execute over <%= delay %>ms</li>
+                <li>After delay, <code>window.__ready = true</code> is set</li>
+                <li>CLI should detect this condition and proceed with conversion</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const delay = <%= delay %>;
+        const readyIndicator = document.getElementById('ready-indicator');
+        const countdownCircle = document.getElementById('countdown-circle');
+        const countdownText = document.getElementById('countdown-text');
+        const readyValue = document.getElementById('ready-value');
+        
+        // Initialize window.__ready
+        window.__ready = false;
+        
+        let remainingTime = delay;
+        let currentStep = 1;
+        
+        // Update countdown and progress
+        const interval = setInterval(() => {
+            remainingTime -= 100;
+            
+            // Update countdown display
+            const seconds = Math.ceil(remainingTime / 1000);
+            countdownText.textContent = seconds;
+            
+            // Update circular progress
+            const progress = ((delay - remainingTime) / delay) * 360;
+            countdownCircle.style.background = `conic-gradient(#007bff ${progress}deg, #e9ecef ${progress}deg)`;
+            
+            // Update steps
+            const stepProgress = Math.floor(((delay - remainingTime) / delay) * 4) + 1;
+            if (stepProgress > currentStep) {
+                // Complete previous step
+                const prevStep = document.getElementById(`step-${currentStep}`);
+                if (prevStep) {
+                    prevStep.classList.remove('active');
+                    prevStep.classList.add('complete');
+                }
+                
+                // Activate next step
+                currentStep = stepProgress;
+                const nextStep = document.getElementById(`step-${currentStep}`);
+                if (nextStep && currentStep <= 4) {
+                    nextStep.classList.add('active');
+                }
+            }
+            
+            if (remainingTime <= 0) {
+                clearInterval(interval);
+                setReady();
+            }
+        }, 100);
+        
+        function setReady() {
+            // Set the ready state
+            window.__ready = true;
+            
+            // Update UI
+            readyIndicator.className = 'ready-indicator ready-complete';
+            readyIndicator.innerHTML = '✅ Custom ready state achieved!';
+            
+            countdownCircle.style.background = 'conic-gradient(#28a745 360deg, #28a745 360deg)';
+            countdownText.textContent = '✓';
+            countdownText.style.color = '#28a745';
+            
+            readyValue.textContent = 'true';
+            readyValue.style.color = '#28a745';
+            readyValue.style.fontWeight = 'bold';
+            
+            // Complete final step
+            const finalStep = document.getElementById('step-4');
+            if (finalStep) {
+                finalStep.classList.remove('active');
+                finalStep.classList.add('complete');
+            }
+            
+            console.log('window.__ready set to true after ' + delay + 'ms');
+            
+            // Dispatch custom event for additional testing
+            window.dispatchEvent(new CustomEvent('customReady', {
+                detail: { delay: delay, timestamp: Date.now() }
+            }));
+        }
+        
+        console.log('Custom ready test initialized - window.__ready will be set to true in ' + delay + 'ms');
+    </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dee2e6;
+        }
+        .status-indicator {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status-loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status-complete {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .request-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            font-family: monospace;
+            font-size: 12px;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .log-start {
+            background: #e7f3ff;
+            color: #0c5460;
+        }
+        .log-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        .log-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><%= title %></h1>
+        <p>This page triggers <strong><%= requests %></strong> network requests and then becomes idle. Use this to test <code>--wait-until networkidle0</code> or <code>--wait-until networkidle2</code>.</p>
+        
+        <div id="status" class="status-indicator status-loading">
+            🔄 Preparing to make <%= requests %> network requests...
+        </div>
+        
+        <div class="progress-bar">
+            <div id="progress" class="progress-fill"></div>
+        </div>
+        
+        <div class="request-log" id="log">
+            <div class="log-entry">Network idle test initialized</div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 4px;">
+            <h4>Testing Instructions</h4>
+            <p><strong>CLI Usage:</strong></p>
+            <ul>
+                <li><code>--wait-until networkidle0</code> - Wait until no network requests for 500ms</li>
+                <li><code>--wait-until networkidle2</code> - Wait until ≤2 network requests for 500ms</li>
+            </ul>
+            <p><strong>Expected Behavior:</strong> Page will make <%= requests %> requests, then become idle.</p>
+        </div>
+    </div>
+
+    <script>
+        const requestCount = <%= requests %>;
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        const progress = document.getElementById('progress');
+        
+        let completedRequests = 0;
+        
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toISOString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateProgress() {
+            const percentage = (completedRequests / requestCount) * 100;
+            progress.style.width = percentage + '%';
+        }
+        
+        function makeRequest(index) {
+            return new Promise((resolve, reject) => {
+                addLog(`Starting request ${index + 1}/${requestCount}`, 'start');
+                
+                // Use a random endpoint to simulate real network activity
+                const endpoints = [
+                    '/debug/echo?request=' + index,
+                    '/__health',
+                    '/static/simple',
+                    '/debug/ua'
+                ];
+                
+                const endpoint = endpoints[index % endpoints.length];
+                
+                fetch(endpoint + '&timestamp=' + Date.now())
+                    .then(response => {
+                        completedRequests++;
+                        updateProgress();
+                        addLog(`Completed request ${index + 1}/${requestCount} (${response.status})`, 'complete');
+                        
+                        // Add random delay between requests
+                        setTimeout(resolve, Math.random() * 200 + 100);
+                    })
+                    .catch(error => {
+                        completedRequests++;
+                        updateProgress();
+                        addLog(`Failed request ${index + 1}/${requestCount}: ${error.message}`, 'error');
+                        setTimeout(resolve, 100);
+                    });
+            });
+        }
+        
+        async function runNetworkTest() {
+            addLog(`Starting network idle test with ${requestCount} requests`);
+            status.textContent = `🔄 Making ${requestCount} network requests...`;
+            
+            // Make all requests with some concurrency
+            const batchSize = Math.min(3, requestCount);
+            for (let i = 0; i < requestCount; i += batchSize) {
+                const batch = [];
+                for (let j = 0; j < batchSize && (i + j) < requestCount; j++) {
+                    batch.push(makeRequest(i + j));
+                }
+                await Promise.all(batch);
+                
+                // Small delay between batches
+                if (i + batchSize < requestCount) {
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                }
+            }
+            
+            addLog('All requests completed - network should now be idle', 'complete');
+            status.className = 'status-indicator status-complete';
+            status.textContent = `✅ Network idle achieved after ${requestCount} requests`;
+            
+            // Mark the page as ready for any additional wait conditions
+            window.__networkIdle = true;
+        }
+        
+        // Start the test after a short delay
+        setTimeout(runNetworkTest, 1000);
+    </script>
+</body>
+</html>

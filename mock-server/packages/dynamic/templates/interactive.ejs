@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dee2e6;
+        }
+        .interaction-section {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .click-target {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .click-target:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .click-target:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .hidden-content {
+            display: none;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 15px 0;
+            animation: fadeIn 0.5s ease-in;
+        }
+        .hidden-content.visible {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .intersection-target {
+            height: 200px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px dashed #6c757d;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #6c757d;
+        }
+        .intersection-target.visible {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-color: #28a745;
+            color: #155724;
+        }
+        .status-log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+        .log-click { color: #007bff; }
+        .log-intersection { color: #28a745; }
+        .log-ready { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><%= title %></h1>
+        <p>This page demonstrates interactive content loading that requires user interaction or visibility detection.</p>
+        
+        <div class="interaction-section">
+            <h3>Click Interaction Test</h3>
+            <p>Click the button to reveal hidden content:</p>
+            <button id="click-btn" class="click-target">Click Me to Load Content</button>
+            
+            <div id="click-content" class="hidden-content">
+                <h4>✅ Click-Triggered Content Loaded!</h4>
+                <p>This content was loaded after user interaction. In headless mode, this content won't appear unless JavaScript triggers the click event.</p>
+            </div>
+        </div>
+        
+        <div class="interaction-section">
+            <h3>Intersection Observer Test</h3>
+            <p>Scroll down to make this element visible:</p>
+            
+            <div style="height: 300px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin: 20px 0;">
+                <p>Scroll down to trigger intersection observer...</p>
+            </div>
+            
+            <div id="intersection-target" class="intersection-target">
+                Waiting to become visible...
+            </div>
+            
+            <div id="intersection-content" class="hidden-content">
+                <h4>👁️ Intersection-Triggered Content Loaded!</h4>
+                <p>This content appeared when the target element became visible in the viewport.</p>
+            </div>
+        </div>
+        
+        <div class="status-log" id="log">
+            <div class="log-entry">Interactive content test initialized</div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 4px;">
+            <h4>Testing with CLI</h4>
+            <p><strong>Headless Mode:</strong> Interactive content won't load without JavaScript simulation</p>
+            <p><strong>Wait Strategies:</strong></p>
+            <ul>
+                <li><code>--wait-for-selector "#click-content.visible"</code> - Wait for click content</li>
+                <li><code>--wait-for-selector "#intersection-content.visible"</code> - Wait for intersection content</li>
+                <li><code>--wait-for-function "() => window.__allContentLoaded"</code> - Wait for all content</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        const clickBtn = document.getElementById('click-btn');
+        const clickContent = document.getElementById('click-content');
+        const intersectionTarget = document.getElementById('intersection-target');
+        const intersectionContent = document.getElementById('intersection-content');
+        
+        let clickLoaded = false;
+        let intersectionLoaded = false;
+        
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toISOString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function checkAllLoaded() {
+            if (clickLoaded && intersectionLoaded) {
+                window.__allContentLoaded = true;
+                addLog('All interactive content loaded - page ready', 'ready');
+            }
+        }
+        
+        // Click interaction
+        clickBtn.addEventListener('click', () => {
+            clickContent.classList.add('visible');
+            clickBtn.disabled = true;
+            clickBtn.textContent = 'Content Loaded!';
+            clickLoaded = true;
+            
+            addLog('Click interaction completed', 'click');
+            checkAllLoaded();
+        });
+        
+        // Intersection Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !intersectionLoaded) {
+                    intersectionTarget.classList.add('visible');
+                    intersectionTarget.textContent = '✅ Now Visible!';
+                    intersectionContent.classList.add('visible');
+                    intersectionLoaded = true;
+                    
+                    addLog('Intersection observer triggered', 'intersection');
+                    checkAllLoaded();
+                }
+            });
+        }, {
+            threshold: 0.5
+        });
+        
+        observer.observe(intersectionTarget);
+        
+        // Auto-trigger interactions after delay for testing
+        setTimeout(() => {
+            if (!clickLoaded) {
+                addLog('Auto-triggering click interaction for testing', 'click');
+                clickBtn.click();
+            }
+        }, 3000);
+        
+        // Simulate scroll to trigger intersection observer
+        setTimeout(() => {
+            if (!intersectionLoaded) {
+                addLog('Auto-scrolling to trigger intersection observer', 'intersection');
+                intersectionTarget.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 5000);
+        
+        addLog('Interactive content handlers initialized');
+    </script>
+</body>
+</html>
