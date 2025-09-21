@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .success-container {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .success-icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .session-info {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .next-steps {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .test-link {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 5px;
+        }
+        .test-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">🎉</div>
+        <h1><%= title %></h1>
+        <p>Welcome, <strong><%= username %></strong>! You have successfully logged in.</p>
+        
+        <div class="session-info">
+            <h3>Session Information</h3>
+            <p><strong>Username:</strong> <%= username %></p>
+            <p><strong>Session Token:</strong> <code><%= sessionToken %></code></p>
+            <p><strong>Login Time:</strong> <%= new Date().toISOString() %></p>
+        </div>
+        
+        <div class="next-steps">
+            <h4>Next Steps for Testing:</h4>
+            <p>Your session cookie has been set. You can now access protected resources:</p>
+            <a href="/auth/protected" class="test-link">Test Protected Page</a>
+            <a href="/debug/cookies" class="test-link">View Cookies</a>
+        </div>
+        
+        <p><em>This session will be used for cookie-based authentication testing.</em></p>
+    </div>
+</body>
+</html>

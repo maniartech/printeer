@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .debug-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dee2e6;
+        }
+        .cookies-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .cookies-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .cookies-table th,
+        .cookies-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .cookies-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        .cookies-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .cookie-name {
+            font-family: monospace;
+            color: #007bff;
+            font-weight: 600;
+        }
+        .cookie-value {
+            font-family: monospace;
+            color: #495057;
+            word-break: break-all;
+        }
+        .raw-header {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+        .no-cookies {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            color: #856404;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .test-links {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .test-link {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1><%= title %></h1>
+        <p>This page displays all cookies sent with your request for debugging cookie-based authentication.</p>
+        
+        <div class="cookies-info">
+            <h3>Cookie Information</h3>
+            <p><strong>Timestamp:</strong> <%= new Date().toISOString() %></p>
+            <p><strong>Total Cookies:</strong> <%= Object.keys(cookies).length %></p>
+        </div>
+        
+        <h3>Raw Cookie Header</h3>
+        <div class="raw-header">
+            <%= rawCookieHeader %>
+        </div>
+        
+        <% if (Object.keys(cookies).length > 0) { %>
+        <h3>Parsed Cookies</h3>
+        <table class="cookies-table">
+            <thead>
+                <tr>
+                    <th>Cookie Name</th>
+                    <th>Value</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% Object.entries(cookies).forEach(([name, value]) => { %>
+                <tr>
+                    <td class="cookie-name"><%= name %></td>
+                    <td class="cookie-value"><%= value %></td>
+                    <td>
+                        <% if (name === 'session') { %>
+                            <span style="color: #28a745;">🔐 Session Cookie</span>
+                        <% } else if (name === 'csrf-token') { %>
+                            <span style="color: #ffc107;">🛡️ CSRF Token</span>
+                        <% } else { %>
+                            <span style="color: #6c757d;">Custom Cookie</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+        <% } else { %>
+        <div class="no-cookies">
+            <h3>🍪 No Cookies Found</h3>
+            <p>No cookies were sent with this request. Try logging in first or setting cookies manually.</p>
+        </div>
+        <% } %>
+        
+        <div class="test-links">
+            <h4>Cookie Testing Links</h4>
+            <a href="/auth/login" class="test-link">Login (Set Session Cookie)</a>
+            <a href="/auth/csrf-login" class="test-link">CSRF Login (Set CSRF Cookie)</a>
+            <a href="/auth/protected" class="test-link">Test Protected Page</a>
+            <a href="/debug/headers" class="test-link">View Headers</a>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+            <h4>Testing Cookies with CLI</h4>
+            <p>Use these CLI options to test cookie authentication:</p>
+            <ul>
+                <li><code>--cookie "session=valid-session-token"</code></li>
+                <li><code>--cookie-file ./cookies.txt</code> (after saving cookies from login)</li>
+                <li><code>curl -c cookies.txt -X POST -d "username=user&password=pass" /auth/login</code></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

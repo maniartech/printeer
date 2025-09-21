@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .protected-container {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .lock-icon {
+            font-size: 48px;
+            color: #856404;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .session-details {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .content-section {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-links {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .test-link {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="protected-container">
+        <div class="lock-icon">🔒</div>
+        <h1><%= title %></h1>
+        <p>This is a protected page that requires authentication. You have successfully accessed it!</p>
+        
+        <div class="session-details">
+            <h3>Session Information</h3>
+            <p><strong>Session Token:</strong> <code><%= sessionToken %></code></p>
+            <p><strong>Access Time:</strong> <%= new Date().toISOString() %></p>
+            <p><strong>Status:</strong> <span style="color: #28a745;">✅ Authenticated</span></p>
+        </div>
+        
+        <div class="content-section">
+            <h3>Protected Content</h3>
+            <p>This content is only visible to authenticated users. It demonstrates that cookie-based authentication is working correctly for the Printeer CLI testing.</p>
+            
+            <ul>
+                <li>Session validation: ✅ Passed</li>
+                <li>Cookie authentication: ✅ Working</li>
+                <li>Protected route access: ✅ Granted</li>
+            </ul>
+        </div>
+        
+        <div class="test-links">
+            <h4>Additional Tests:</h4>
+            <a href="/debug/cookies" class="test-link">View All Cookies</a>
+            <a href="/debug/headers" class="test-link">View Headers</a>
+            <a href="/auth/login" class="test-link">Login Again</a>
+        </div>
+        
+        <p style="text-align: center; color: #856404; font-style: italic;">
+            This page confirms that authentication and session management are working correctly.
+        </p>
+    </div>
+</body>
+</html>

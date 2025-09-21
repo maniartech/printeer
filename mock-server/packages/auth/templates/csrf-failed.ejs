@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .error-container {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .error-icon {
+            font-size: 48px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .csrf-details {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .token-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .token-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .token-box.invalid {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .token-box.valid {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .retry-link {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 5px;
+        }
+        .retry-link:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">🛡️❌</div>
+        <h1><%= title %></h1>
+        <p>CSRF token validation failed. This is a security measure to prevent cross-site request forgery attacks.</p>
+        
+        <div class="csrf-details">
+            <h3>CSRF Validation Details</h3>
+            <p><strong>Validation Time:</strong> <%= new Date().toISOString() %></p>
+            
+            <div class="token-comparison">
+                <div class="token-box invalid">
+                    <strong>Provided Token:</strong><br>
+                    <code><%= provided || 'None' %></code>
+                </div>
+                <div class="token-box valid">
+                    <strong>Expected Token:</strong><br>
+                    <code><%= expected || 'Not available' %></code>
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 15px; margin: 15px 0;">
+                <strong>⚠️ Security Note:</strong><br>
+                CSRF tokens must match exactly and are tied to your session. Get a fresh token by visiting the login form again.
+            </div>
+        </div>
+        
+        <a href="/auth/csrf-login" class="retry-link">Get New CSRF Token</a>
+        <a href="/auth/login" class="retry-link">Regular Login</a>
+    </div>
+</body>
+</html>

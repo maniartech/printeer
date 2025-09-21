@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .error-container {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .error-icon {
+            font-size: 48px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .auth-details {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #dc3545;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">❌</div>
+        <h1><%= title %></h1>
+        <p>Authentication failed. Please check your credentials and try again.</p>
+        
+        <div class="auth-details">
+            <h3>Authentication Attempt Details</h3>
+            <div class="detail-row">
+                <span class="detail-label">Auth Type:</span>
+                <span class="detail-value"><%= authType %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Provided:</span>
+                <span class="detail-value"><%= provided %></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Expected:</span>
+                <span class="detail-value">user:pass (for Basic) or test-token (for Bearer)</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Timestamp:</span>
+                <span class="detail-value"><%= new Date().toISOString() %></span>
+            </div>
+        </div>
+        
+        <p><strong>Use correct credentials to test successful authentication.</strong></p>
+    </div>
+</body>
+</html>

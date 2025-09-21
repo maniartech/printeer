@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .debug-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dee2e6;
+        }
+        .request-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .headers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .headers-table th,
+        .headers-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .headers-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        .headers-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .header-name {
+            font-family: monospace;
+            color: #007bff;
+            font-weight: 600;
+        }
+        .header-value {
+            font-family: monospace;
+            color: #495057;
+            word-break: break-all;
+        }
+        .auth-headers {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1><%= title %></h1>
+        <p>This page displays all HTTP headers sent with your request for debugging authentication and custom headers.</p>
+        
+        <div class="request-info">
+            <h3>Request Information</h3>
+            <p><strong>Method:</strong> <%= method %></p>
+            <p><strong>URL:</strong> <%= url %></p>
+            <p><strong>Timestamp:</strong> <%= new Date().toISOString() %></p>
+        </div>
+        
+        <% if (headers.authorization) { %>
+        <div class="auth-headers">
+            <h4>🔐 Authentication Headers Detected</h4>
+            <p><strong>Authorization:</strong> <code><%= headers.authorization %></code></p>
+        </div>
+        <% } %>
+        
+        <h3>All Request Headers</h3>
+        <table class="headers-table">
+            <thead>
+                <tr>
+                    <th>Header Name</th>
+                    <th>Value</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% Object.entries(headers).forEach(([name, value]) => { %>
+                <tr>
+                    <td class="header-name"><%= name %></td>
+                    <td class="header-value"><%= value %></td>
+                    <td>
+                        <button class="copy-btn" onclick="copyToClipboard('<%= name %>: <%= value %>')">Copy</button>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+            <h4>Testing Custom Headers</h4>
+            <p>Use the CLI option <code>--header "Header-Name: Header-Value"</code> to test custom headers.</p>
+            <p><strong>Examples:</strong></p>
+            <ul>
+                <li><code>--header "Authorization: Bearer your-token"</code></li>
+                <li><code>--header "X-Custom-Header: test-value"</code></li>
+                <li><code>--header "User-Agent: Custom-Agent/1.0"</code></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                console.log('Copied to clipboard: ' + text);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
