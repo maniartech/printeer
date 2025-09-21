@@ -23,9 +23,11 @@ Additionally, all endpoint groups are designed to live as dedicated sub-packages
 
 ```
 mock-server/
-	package.json         # standalone dev package (private)
+	package.json         # standalone dev package (private) - includes health-check script
 	server.js            # Express app with grouped launcher and routes
 	README.md            # Quick usage
+	scripts/
+		health-check.js      # Comprehensive URL testing system
 	packages/            # (Recommended) one subpackage per feature group
 		basic/
 			routes.js        # exports an Express.Router and group metadata
@@ -59,6 +61,8 @@ This package is not published and is intended for local development/testing only
 
 ```bash
 cd mock-server
+yarn install
+yarn start
 ```
 
 Optional root convenience (no changes made by default):
@@ -70,6 +74,59 @@ Optional root convenience (no changes made by default):
 		"mock:server": "npm --prefix ./mock-server start"
 	}
 ```
+
+## Health Check System
+
+The mock server includes a comprehensive health check system to validate that all URLs are working correctly.
+
+### Running Health Checks
+
+```bash
+# Start the mock server first
+yarn start
+
+# In another terminal, run the health check
+yarn health-check
+```
+
+### Health Check Features
+
+- **Comprehensive URL Testing**: Tests all 69 routes defined in `catalog.json`
+- **Smart Error Categorization**: Distinguishes between:
+  - ✅ Working routes (200 OK responses)
+  - 🔒 Expected auth errors (401/403 for `/auth/*` routes requiring authentication)
+  - 💥 Intentional error pages (500, 404, 408 for `/error/*` routes)
+  - 🔄 Expected connection failures (infinite redirects, timeouts)
+- **Detailed Reporting**: Shows success rates per feature group and overall statistics
+- **CI/CD Ready**: Exits with code 0 on success, code 1 on failure for automated testing
+
+### Expected vs Unexpected Errors
+
+The health check correctly identifies **10 expected errors**:
+- **4 Auth routes** (`/auth/basic`, `/auth/bearer`, `/auth/login`, `/auth/protected`) - Return 401 when no credentials provided
+- **4 Error test routes** (`/error/500`, `/error/timeout`, `/error/reset`, `/error/flaky`) - Intentionally fail for testing error handling
+- **1 Redirect test** (`/redirect/loop`) - Infinite redirect for testing redirect handling
+- **1 Missing resource** (`/assets/missing`) - 404 for testing missing asset handling
+
+All other routes should return 200 OK. Any unexpected failures indicate broken templates or missing implementations.
+
+### Health Check Output
+
+```
+📊 HEALTH CHECK SUMMARY
+========================
+Total routes tested: 69
+✅ Passed: 69
+❌ Failed: 0
+⚠️  Expected errors: 10
+📈 Success rate: 100.0%
+```
+
+The health check validates that:
+- All templates are present and render correctly
+- Routes handle parameters properly (query strings, URL parameters)
+- Expected error conditions work as designed
+- No unintended 500 errors exist
 
 ## Launcher & catalog
 
@@ -531,6 +588,7 @@ npm run printeer -- convert \
 
 Use this as a guide to build automated or manual runs:
 
+- **Health Check First**: Always run `npm run health-check` before testing to verify all mock server URLs are functional
 - Multi-URL convert with mixed outputs (PDF/PNG/WebP) using `/static/simple`, `/static/images`, and `/media/print-vs-screen`.
 - Batch with redirects and one error (`/redirect/chain`, `/error/500`). Ensure retry works as expected.
 - Dynamic waits: `/spa/delay-content` with `--wait-for-selector`, `/spa/network-idle` with `--wait-until networkidle`.
