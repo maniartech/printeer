@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Screen-only elements */
+        .screen-only {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        /* Print-only elements */
+        .print-only {
+            display: none;
+            background: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        /* Navigation and interactive elements */
+        .navigation {
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .navigation a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        
+        /* Sidebar content */
+        .sidebar {
+            background: #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        /* Advertisement placeholder */
+        .advertisement {
+            background: #dc3545;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        /* Main content that should always print */
+        .main-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            /* Hide screen-only elements */
+            .screen-only,
+            .navigation,
+            .sidebar,
+            .advertisement {
+                display: none !important;
+            }
+            
+            /* Show print-only elements */
+            .print-only {
+                display: block !important;
+            }
+            
+            /* Ensure main content is visible */
+            .main-content {
+                background: white;
+                border: 1px solid #000;
+            }
+            
+            /* Add print-specific styling */
+            .container {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+            
+            h1, h2, h3 {
+                color: #000 !important;
+            }
+        }
+        
+        .legend {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>This page demonstrates elements that should be hidden or shown only in print mode using CSS <code>@media print</code> rules.</p>
+        
+        <div class="legend">
+            <h3>Element Legend (Screen View)</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e7f3ff; border: 2px solid #007bff;"></div>
+                <span>Screen Only - Hidden in print</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #28a745;"></div>
+                <span>Navigation - Hidden in print</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffc107;"></div>
+                <span>Sidebar - Hidden in print</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #dc3545;"></div>
+                <span>Advertisement - Hidden in print</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f8f9fa; border: 1px solid #dee2e6;"></div>
+                <span>Main Content - Always visible</span>
+            </div>
+        </div>
+        
+        <div class="screen-only">
+            <h3>🖥️ Screen Only Content</h3>
+            <p>This section is only visible on screen and will be hidden when printing. It's useful for interactive elements, navigation aids, or screen-specific information.</p>
+            <button>Interactive Button (Screen Only)</button>
+        </div>
+        
+        <div class="print-only">
+            <h3>🖨️ Print Only Content</h3>
+            <p>This section is only visible when printing. It might contain print-specific instructions, disclaimers, or formatting information.</p>
+            <p><strong>Print Date:</strong> <%= new Date().toLocaleDateString() %></p>
+        </div>
+        
+        <div class="navigation">
+            <h3>🧭 Navigation Menu</h3>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <p>This navigation will be hidden in print mode as it's not useful in printed documents.</p>
+        </div>
+        
+        <div class="main-content">
+            <h3>📄 Main Content</h3>
+            <p>This is the primary content that should always be visible, both on screen and in print. It contains the essential information that users need.</p>
+            
+            <h4>Article Content</h4>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+            
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </div>
+        
+        <div class="sidebar">
+            <h3>📋 Sidebar Content</h3>
+            <p>This sidebar contains supplementary information that's useful on screen but not essential for printing.</p>
+            <ul>
+                <li>Related Articles</li>
+                <li>Social Media Links</li>
+                <li>Newsletter Signup</li>
+            </ul>
+        </div>
+        
+        <div class="advertisement">
+            <h3>📢 Advertisement</h3>
+            <p>This is an advertisement that should not appear in printed versions of the page.</p>
+            <p><strong>Special Offer!</strong> Get 50% off our premium service!</p>
+        </div>
+        
+        <div class="main-content">
+            <h3>Testing Instructions</h3>
+            <p><strong>Expected Print Behavior:</strong></p>
+            <ul>
+                <li>Screen-only content should be hidden</li>
+                <li>Navigation menu should be hidden</li>
+                <li>Sidebar should be hidden</li>
+                <li>Advertisement should be hidden</li>
+                <li>Print-only content should appear</li>
+                <li>Main content should remain visible with print styling</li>
+            </ul>
+            
+            <p><strong>CLI Testing:</strong></p>
+            <ul>
+                <li>Use <code>--media-type print</code> to emulate print media</li>
+                <li>Compare output with <code>--media-type screen</code></li>
+                <li>Verify that hidden elements don't appear in the PDF</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .page-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .clip-target {
+            position: absolute;
+            left: <%= clipRegion.x %>px;
+            top: <%= clipRegion.y %>px;
+            width: <%= clipRegion.width %>px;
+            height: <%= clipRegion.height %>px;
+            border: 3px solid #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+            z-index: 10;
+        }
+        
+        .clip-target::before {
+            content: "CLIP REGION";
+            position: absolute;
+            top: -25px;
+            left: 0;
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+        
+        .coordinates {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 5px 8px;
+            font-size: 11px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .ruler-horizontal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(90deg, 
+                #007bff 0px, 
+                #007bff 2px, 
+                transparent 2px, 
+                transparent 10px
+            );
+            background-size: 10px 100%;
+            border-bottom: 1px solid #007bff;
+            z-index: 5;
+        }
+        
+        .ruler-vertical {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(0deg, 
+                #007bff 0px, 
+                #007bff 2px, 
+                transparent 2px, 
+                transparent 10px
+            );
+            background-size: 100% 10px;
+            border-right: 1px solid #007bff;
+            z-index: 5;
+        }
+        
+        .content-area {
+            margin: 30px 0 0 30px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .sample-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .content-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .content-box:nth-child(2n) {
+            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+            border-color: #9c27b0;
+        }
+        
+        .content-box:nth-child(3n) {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c8);
+            border-color: #4caf50;
+        }
+        
+        .info-panel {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .coordinates-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .coordinates-table th,
+        .coordinates-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .coordinates-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .highlight-value {
+            background: #fff3cd;
+            font-weight: bold;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Grid overlay for measurement -->
+        <div class="grid-overlay"></div>
+        
+        <!-- Rulers -->
+        <div class="ruler-horizontal"></div>
+        <div class="ruler-vertical"></div>
+        
+        <!-- Clip target region -->
+        <div class="clip-target">
+            <div class="coordinates">
+                x:<%= clipRegion.x %> y:<%= clipRegion.y %><br>
+                w:<%= clipRegion.width %> h:<%= clipRegion.height %>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <h1><%= title %></h1>
+            <p>This page demonstrates image clipping functionality. The red rectangle shows the exact region that should be captured when using the <code>--clip</code> option.</p>
+            
+            <div class="info-panel">
+                <h3>🎯 Clip Region Information</h3>
+                <table class="coordinates-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>X Position</td>
+                            <td class="highlight-value"><%= clipRegion.x %>px</td>
+                            <td>Distance from left edge</td>
+                        </tr>
+                        <tr>
+                            <td>Y Position</td>
+                            <td class="highlight-value"><%= clipRegion.y %>px</td>
+                            <td>Distance from top edge</td>
+                        </tr>
+                        <tr>
+                            <td>Width</td>
+                            <td class="highlight-value"><%= clipRegion.width %>px</td>
+                            <td>Horizontal size of clip region</td>
+                        </tr>
+                        <tr>
+                            <td>Height</td>
+                            <td class="highlight-value"><%= clipRegion.height %>px</td>
+                            <td>Vertical size of clip region</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h2>Sample Content for Clipping</h2>
+            <p>The content below is positioned to demonstrate how clipping works. Only the content within the red rectangle should appear in the clipped image.</p>
+            
+            <div class="sample-content">
+                <div class="content-box">
+                    <h4>Box 1</h4>
+                    <p>This content may be partially or fully clipped depending on its position relative to the clip region.</p>
+                </div>
+                
+                <div class="content-box">
+                    <h4>Box 2</h4>
+                    <p>Use this to verify that clipping boundaries are accurate and precise.</p>
+                </div>
+                
+                <div class="content-box">
+                    <h4>Box 3</h4>
+                    <p>Different colored boxes help identify which parts are included in the clip.</p>
+                </div>
+                
+                <div class="content-box">
+                    <h4>Box 4</h4>
+                    <p>The grid overlay helps measure exact pixel positions for validation.</p>
+                </div>
+                
+                <div class="content-box">
+                    <h4>Box 5</h4>
+                    <p>Rulers at the top and left provide additional measurement references.</p>
+                </div>
+                
+                <div class="content-box">
+                    <h4>Box 6</h4>
+                    <p>This systematic layout makes it easy to verify clipping accuracy.</p>
+                </div>
+            </div>
+            
+            <div style="margin: 30px 0; padding: 20px; background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px;">
+                <h3>🧪 CLI Testing Instructions</h3>
+                
+                <h4>Basic Clipping:</h4>
+                <code>--clip "<%= clipRegion.x %>,<%= clipRegion.y %>,<%= clipRegion.width %>,<%= clipRegion.height %>"</code>
+                
+                <h4>Alternative Syntax:</h4>
+                <ul>
+                    <li><code>--clip-x <%= clipRegion.x %> --clip-y <%= clipRegion.y %> --clip-width <%= clipRegion.width %> --clip-height <%= clipRegion.height %></code></li>
+                    <li><code>--clip-region "x:<%= clipRegion.x %>,y:<%= clipRegion.y %>,width:<%= clipRegion.width %>,height:<%= clipRegion.height %>"</code></li>
+                </ul>
+                
+                <h4>Validation Steps:</h4>
+                <ol>
+                    <li>Generate image with clipping enabled</li>
+                    <li>Verify image dimensions match <%= clipRegion.width %>×<%= clipRegion.height %></li>
+                    <li>Check that only content within red rectangle is captured</li>
+                    <li>Ensure clipping boundaries are pixel-perfect</li>
+                    <li>Test with different image formats (PNG, JPEG, WebP)</li>
+                </ol>
+                
+                <h4>Expected Result:</h4>
+                <p>The output image should be exactly <%= clipRegion.width %>×<%= clipRegion.height %> pixels and contain only the content that falls within the red rectangle boundary.</p>
+            </div>
+            
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <h4>🔧 Customization</h4>
+                <p>You can customize the clip region by modifying the URL parameters:</p>
+                <ul>
+                    <li><code>?x=150&y=150&width=500&height=400</code></li>
+                    <li><code>?x=0&y=0&width=800&height=600</code> (full width capture)</li>
+                    <li><code>?x=200&y=300&width=300&height=200</code> (small region)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

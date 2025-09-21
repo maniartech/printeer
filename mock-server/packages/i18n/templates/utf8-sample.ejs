@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .character-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .emoji-item {
+            text-align: center;
+            font-size: 24px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .accent-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .accent-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .symbol-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .symbol-table th,
+        .symbol-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        .symbol-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .large-text {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .unicode-info {
+            font-family: monospace;
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>This page demonstrates UTF-8 character encoding support with various accented characters, symbols, and emoji for testing international text rendering.</p>
+        
+        <div class="character-section">
+            <h2>🌍 Accented Characters</h2>
+            <div class="accent-examples">
+                <div class="accent-box">
+                    <h4>French</h4>
+                    <p class="large-text">Café, naïve, résumé, Noël</p>
+                    <p>àáâãäåæçèéêëìíîïñòóôõöøùúûüý</p>
+                </div>
+                <div class="accent-box">
+                    <h4>German</h4>
+                    <p class="large-text">Müller, Größe, Weiß, Straße</p>
+                    <p>äöüÄÖÜß</p>
+                </div>
+                <div class="accent-box">
+                    <h4>Spanish</h4>
+                    <p class="large-text">Niño, señor, corazón, piñata</p>
+                    <p>áéíóúüñ¿¡</p>
+                </div>
+                <div class="accent-box">
+                    <h4>Nordic</h4>
+                    <p class="large-text">Åse, Øyvind, Bjørn, Åland</p>
+                    <p>åæøÅÆØ</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="character-section">
+            <h2>😀 Emoji & Symbols</h2>
+            <div class="emoji-grid">
+                <div class="emoji-item">😀</div>
+                <div class="emoji-item">🌟</div>
+                <div class="emoji-item">🚀</div>
+                <div class="emoji-item">💡</div>
+                <div class="emoji-item">🎉</div>
+                <div class="emoji-item">🔥</div>
+                <div class="emoji-item">⚡</div>
+                <div class="emoji-item">🌈</div>
+                <div class="emoji-item">🎯</div>
+                <div class="emoji-item">💎</div>
+                <div class="emoji-item">🏆</div>
+                <div class="emoji-item">🎨</div>
+                <div class="emoji-item">🔧</div>
+                <div class="emoji-item">📊</div>
+                <div class="emoji-item">🌍</div>
+                <div class="emoji-item">🔒</div>
+            </div>
+        </div>
+        
+        <div class="character-section">
+            <h2>⚡ Special Symbols & Mathematical</h2>
+            <table class="symbol-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Symbols</th>
+                        <th>Unicode Info</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Currency</td>
+                        <td class="large-text">$ € £ ¥ ₹ ₽ ₿ ¢</td>
+                        <td class="unicode-info">U+0024, U+20AC, U+00A3, U+00A5...</td>
+                    </tr>
+                    <tr>
+                        <td>Mathematical</td>
+                        <td class="large-text">± × ÷ ∞ ∑ ∏ √ ∫ ∂ ∆</td>
+                        <td class="unicode-info">U+00B1, U+00D7, U+00F7, U+221E...</td>
+                    </tr>
+                    <tr>
+                        <td>Arrows</td>
+                        <td class="large-text">← → ↑ ↓ ↔ ↕ ⇐ ⇒ ⇑ ⇓</td>
+                        <td class="unicode-info">U+2190, U+2192, U+2191, U+2193...</td>
+                    </tr>
+                    <tr>
+                        <td>Punctuation</td>
+                        <td class="large-text">" " ' ' « » „ " ‚ '</td>
+                        <td class="unicode-info">U+201C, U+201D, U+2018, U+2019...</td>
+                    </tr>
+                    <tr>
+                        <td>Dashes</td>
+                        <td class="large-text">- – — ―</td>
+                        <td class="unicode-info">U+002D, U+2013, U+2014, U+2015</td>
+                    </tr>
+                    <tr>
+                        <td>Bullets</td>
+                        <td class="large-text">• ◦ ▪ ▫ ‣ ⁃</td>
+                        <td class="unicode-info">U+2022, U+25E6, U+25AA, U+25AB...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="character-section">
+            <h2>🔤 Extended Latin Characters</h2>
+            <div class="accent-examples">
+                <div class="accent-box">
+                    <h4>Eastern European</h4>
+                    <p class="large-text">Čeština, Română, Ελληνικά</p>
+                    <p>čďěňřšťžČĎĚŇŘŠŤŽ</p>
+                    <p>ăâîșțĂÂÎȘȚ</p>
+                </div>
+                <div class="accent-box">
+                    <h4>Turkish</h4>
+                    <p class="large-text">Türkçe, İstanbul, Göztepe</p>
+                    <p>çğıöşüÇĞIİÖŞÜ</p>
+                </div>
+                <div class="accent-box">
+                    <h4>Polish</h4>
+                    <p class="large-text">Kraków, Gdańsk, Łódź</p>
+                    <p>ąćęłńóśźżĄĆĘŁŃÓŚŹŻ</p>
+                </div>
+                <div class="accent-box">
+                    <h4>Icelandic</h4>
+                    <p class="large-text">Reykjavík, Þórshöfn</p>
+                    <p>áéíóúýþæðÁÉÍÓÚÝÞÆÐ</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="character-section">
+            <h2>📝 Sample Text Paragraphs</h2>
+            
+            <h3>French</h3>
+            <p>Le cœur de l'été était arrivé avec ses journées ensoleillées et ses soirées fraîches. Les café-terrasses étaient bondés de gens qui profitaient de cette atmosphère détendue.</p>
+            
+            <h3>German</h3>
+            <p>Die Größe des Problems war größer als ursprünglich gedacht. Müller's Straße führte durch das schönste Viertel der Stadt, wo die Bäckerei täglich frisches Brot verkaufte.</p>
+            
+            <h3>Spanish</h3>
+            <p>El niño pequeño corrió hacia su mamá con una sonrisa en el corazón. La piñata colgaba del árbol mientras los invitados esperaban con emoción.</p>
+            
+            <h3>Mixed Characters</h3>
+            <p>This is a "test" of various punctuation marks—including em-dashes, en–dashes, and 'smart quotes'. We also have mathematical symbols like ±5°, €100, and £50.</p>
+        </div>
+        
+        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 20px; margin: 20px 0;">
+            <h3>🧪 UTF-8 Testing Instructions</h3>
+            <h4>Expected Behavior:</h4>
+            <ul>
+                <li>All accented characters should render correctly</li>
+                <li>Emoji should display properly (may vary by system)</li>
+                <li>Special symbols should not show as boxes or question marks</li>
+                <li>Text should maintain proper spacing and alignment</li>
+                <li>PDF output should preserve all character encodings</li>
+            </ul>
+            
+            <h4>CLI Testing:</h4>
+            <ul>
+                <li>Generate PDF and verify all characters are preserved</li>
+                <li>Test with different fonts to ensure character support</li>
+                <li>Compare screen vs print output for consistency</li>
+                <li>Validate that emoji render appropriately in PDF</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

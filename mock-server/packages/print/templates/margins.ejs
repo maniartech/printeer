@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        
+        .page-container {
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            border: 2px solid #007bff;
+        }
+        
+        /* Visual margin indicators */
+        .margin-ruler {
+            position: absolute;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px dashed #dc3545;
+            font-size: 10px;
+            color: #dc3545;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .margin-top {
+            top: 0;
+            left: 0;
+            right: 0;
+            height: <%= margins.top === '1in' ? '72px' : margins.top.replace('in', '') * 72 + 'px' %>;
+        }
+        
+        .margin-bottom {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: <%= margins.bottom === '1in' ? '72px' : margins.bottom.replace('in', '') * 72 + 'px' %>;
+        }
+        
+        .margin-left {
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: <%= margins.left === '1in' ? '72px' : margins.left.replace('in', '') * 72 + 'px' %>;
+            writing-mode: vertical-lr;
+        }
+        
+        .margin-right {
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: <%= margins.right === '1in' ? '72px' : margins.right.replace('in', '') * 72 + 'px' %>;
+            writing-mode: vertical-lr;
+        }
+        
+        /* Content area */
+        .content-area {
+            margin-top: <%= margins.top === '1in' ? '72px' : margins.top.replace('in', '') * 72 + 'px' %>;
+            margin-bottom: <%= margins.bottom === '1in' ? '72px' : margins.bottom.replace('in', '') * 72 + 'px' %>;
+            margin-left: <%= margins.left === '1in' ? '72px' : margins.left.replace('in', '') * 72 + 'px' %>;
+            margin-right: <%= margins.right === '1in' ? '72px' : margins.right.replace('in', '') * 72 + 'px' %>;
+            padding: 20px;
+            background: rgba(40, 167, 69, 0.05);
+            border: 1px solid #28a745;
+            min-height: 500px;
+        }
+        
+        /* Measurement grid */
+        .measurement-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        .grid-line {
+            position: absolute;
+            background: #6c757d;
+        }
+        
+        .grid-line.horizontal {
+            left: 0;
+            right: 0;
+            height: 1px;
+        }
+        
+        .grid-line.vertical {
+            top: 0;
+            bottom: 0;
+            width: 1px;
+        }
+        
+        /* Rulers */
+        .ruler {
+            position: absolute;
+            background: rgba(0, 123, 255, 0.1);
+            border: 1px solid #007bff;
+            font-size: 8px;
+            color: #007bff;
+        }
+        
+        .ruler-horizontal {
+            height: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ruler-vertical {
+            width: 20px;
+            top: 0;
+            bottom: 0;
+            writing-mode: vertical-lr;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ruler-top {
+            top: -25px;
+        }
+        
+        .ruler-left {
+            left: -25px;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .page-container {
+                border: none;
+            }
+            
+            .measurement-grid,
+            .ruler {
+                display: none;
+            }
+            
+            .margin-ruler {
+                background: rgba(220, 53, 69, 0.2);
+            }
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .margin-values {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .margin-value {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Margin rulers -->
+        <div class="margin-ruler margin-top">TOP: <%= margins.top %></div>
+        <div class="margin-ruler margin-bottom">BOTTOM: <%= margins.bottom %></div>
+        <div class="margin-ruler margin-left">LEFT: <%= margins.left %></div>
+        <div class="margin-ruler margin-right">RIGHT: <%= margins.right %></div>
+        
+        <!-- Measurement rulers -->
+        <div class="ruler ruler-horizontal ruler-top">
+            <% for (let i = 0; i <= 8; i++) { %>
+                <span style="position: absolute; left: <%= i * 72 %>px;"><%= i %>"</span>
+            <% } %>
+        </div>
+        <div class="ruler ruler-vertical ruler-left">
+            <% for (let i = 0; i <= 10; i++) { %>
+                <span style="position: absolute; top: <%= i * 72 %>px;"><%= i %>"</span>
+            <% } %>
+        </div>
+        
+        <!-- Measurement grid -->
+        <div class="measurement-grid">
+            <% for (let i = 0; i <= 10; i++) { %>
+                <div class="grid-line horizontal" style="top: <%= i * 72 %>px;"></div>
+            <% } %>
+            <% for (let i = 0; i <= 8; i++) { %>
+                <div class="grid-line vertical" style="left: <%= i * 72 %>px;"></div>
+            <% } %>
+        </div>
+        
+        <!-- Content area -->
+        <div class="content-area">
+            <h1><%= title %></h1>
+            <p>This page demonstrates margin testing with visual rulers and measurement guides.</p>
+            
+            <div class="info-box">
+                <h3>Current Margin Settings</h3>
+                <div class="margin-values">
+                    <div class="margin-value">
+                        <strong>Top:</strong><br><%= margins.top %>
+                    </div>
+                    <div class="margin-value">
+                        <strong>Right:</strong><br><%= margins.right %>
+                    </div>
+                    <div class="margin-value">
+                        <strong>Bottom:</strong><br><%= margins.bottom %>
+                    </div>
+                    <div class="margin-value">
+                        <strong>Left:</strong><br><%= margins.left %>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h3>Visual Indicators</h3>
+                <ul>
+                    <li><span style="color: #dc3545;">Red dashed areas</span> - Margin zones (should be empty in print)</li>
+                    <li><span style="color: #28a745;">Green area</span> - Content area (printable region)</li>
+                    <li><span style="color: #007bff;">Blue rulers</span> - Measurement guides (hidden in print)</li>
+                    <li><span style="color: #6c757d;">Gray grid</span> - Inch markers (hidden in print)</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h3>Testing Instructions</h3>
+                <p><strong>CLI Usage:</strong></p>
+                <ul>
+                    <li><code>--margins "<%= margins.top %>,<%= margins.right %>,<%= margins.bottom %>,<%= margins.left %>"</code></li>
+                    <li><code>--margins "<%= margins.top %>"</code> (uniform margins)</li>
+                    <li><code>--print-background</code> to see margin indicators in PDF</li>
+                </ul>
+                
+                <p><strong>Expected Behavior:</strong></p>
+                <ul>
+                    <li>Content should not appear in red margin areas</li>
+                    <li>Green content area should be properly positioned</li>
+                    <li>Measurements should match specified margin values</li>
+                </ul>
+            </div>
+            
+            <div style="margin-top: 50px; padding: 20px; background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 4px;">
+                <h4>Sample Content for Margin Testing</h4>
+                <p>This content should appear within the defined margins. The red dashed areas around the page represent the margin zones where no content should appear in the final PDF output.</p>
+                
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

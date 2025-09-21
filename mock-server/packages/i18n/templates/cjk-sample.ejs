@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans CJK', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.8;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .language-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .chinese-text {
+            font-size: 18px;
+            line-height: 2;
+        }
+        .japanese-text {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        .korean-text {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .character-item {
+            text-align: center;
+            font-size: 24px;
+            padding: 15px 10px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .script-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .script-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .large-text {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        .ruby-text {
+            ruby-align: center;
+        }
+        .ruby-text rt {
+            font-size: 0.6em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <p>This page demonstrates Chinese, Japanese, and Korean (CJK) character rendering for testing international typography and font support.</p>
+        
+        <div class="language-section">
+            <h2>🇨🇳 Chinese (中文)</h2>
+            
+            <h3>Simplified Chinese (简体中文)</h3>
+            <div class="chinese-text">
+                <p><strong>标题：</strong>中文字符测试页面</p>
+                <p>这是一个用于测试中文字符渲染的示例页面。我们使用简体中文来验证字体支持和文本布局。</p>
+                <p>常用汉字：人、大、小、中、国、文、字、测、试、页、面、支、持、系、统</p>
+            </div>
+            
+            <h3>Traditional Chinese (繁體中文)</h3>
+            <div class="chinese-text">
+                <p><strong>標題：</strong>中文字符測試頁面</p>
+                <p>這是一個用於測試中文字符渲染的示例頁面。我們使用繁體中文來驗證字體支持和文本佈局。</p>
+                <p>常用漢字：人、大、小、中、國、文、字、測、試、頁、面、支、持、系、統</p>
+            </div>
+            
+            <div class="character-grid">
+                <div class="character-item">中</div>
+                <div class="character-item">文</div>
+                <div class="character-item">测</div>
+                <div class="character-item">试</div>
+                <div class="character-item">页</div>
+                <div class="character-item">面</div>
+                <div class="character-item">字</div>
+                <div class="character-item">体</div>
+            </div>
+        </div>
+        
+        <div class="language-section">
+            <h2>🇯🇵 Japanese (日本語)</h2>
+            
+            <h3>Hiragana (ひらがな)</h3>
+            <div class="japanese-text">
+                <p>あいうえお かきくけこ さしすせそ たちつてと なにぬねの</p>
+                <p>はひふへほ まみむめも やゆよ らりるれろ わをん</p>
+                <p class="large-text">こんにちは、世界！これは日本語のテストページです。</p>
+            </div>
+            
+            <h3>Katakana (カタカナ)</h3>
+            <div class="japanese-text">
+                <p>アイウエオ カキクケコ サシスセソ タチツテト ナニヌネノ</p>
+                <p>ハヒフヘホ マミムメモ ヤユヨ ラリルレロ ワヲン</p>
+                <p class="large-text">コンピュータ、インターネット、プログラミング</p>
+            </div>
+            
+            <h3>Kanji (漢字) with Furigana</h3>
+            <div class="japanese-text ruby-text">
+                <p>
+                    <ruby>日本語<rt>にほんご</rt></ruby>の
+                    <ruby>文字<rt>もじ</rt></ruby>
+                    <ruby>体系<rt>たいけい</rt></ruby>は
+                    <ruby>複雑<rt>ふくざつ</rt></ruby>です。
+                </p>
+                <p>
+                    <ruby>漢字<rt>かんじ</rt></ruby>、
+                    <ruby>平仮名<rt>ひらがな</rt></ruby>、
+                    <ruby>片仮名<rt>カタカナ</rt></ruby>を
+                    <ruby>組<rt>く</rt></ruby>み
+                    <ruby>合<rt>あ</rt></ruby>わせて
+                    <ruby>使<rt>つか</rt></ruby>います。
+                </p>
+            </div>
+            
+            <div class="character-grid">
+                <div class="character-item">日</div>
+                <div class="character-item">本</div>
+                <div class="character-item">語</div>
+                <div class="character-item">文</div>
+                <div class="character-item">字</div>
+                <div class="character-item">あ</div>
+                <div class="character-item">カ</div>
+                <div class="character-item">漢</div>
+            </div>
+        </div>
+        
+        <div class="language-section">
+            <h2>🇰🇷 Korean (한국어)</h2>
+            
+            <h3>Hangul (한글)</h3>
+            <div class="korean-text">
+                <p><strong>기본 자음:</strong> ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ</p>
+                <p><strong>기본 모음:</strong> ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ</p>
+                <p class="large-text">안녕하세요! 이것은 한국어 테스트 페이지입니다.</p>
+                <p>한글은 세종대왕이 창제한 우리나라의 고유 문자입니다.</p>
+            </div>
+            
+            <h3>Hanja (한자)</h3>
+            <div class="korean-text">
+                <p>韓國語 漢字 測試: 大韓民國, 首爾特別市, 釜山廣域市</p>
+                <p>學校, 學生, 先生, 圖書館, 大學校, 高等學校</p>
+            </div>
+            
+            <div class="character-grid">
+                <div class="character-item">한</div>
+                <div class="character-item">국</div>
+                <div class="character-item">어</div>
+                <div class="character-item">문</div>
+                <div class="character-item">자</div>
+                <div class="character-item">테</div>
+                <div class="character-item">스</div>
+                <div class="character-item">트</div>
+            </div>
+        </div>
+        
+        <div class="language-section">
+            <h2>📊 Script Comparison</h2>
+            <div class="script-comparison">
+                <div class="script-box">
+                    <h4>Numbers (1-10)</h4>
+                    <p><strong>Chinese:</strong> 一二三四五六七八九十</p>
+                    <p><strong>Japanese:</strong> 一二三四五六七八九十</p>
+                    <p><strong>Korean:</strong> 일이삼사오육칠팔구십</p>
+                </div>
+                <div class="script-box">
+                    <h4>Common Words</h4>
+                    <p><strong>Hello:</strong></p>
+                    <p>Chinese: 你好 (nǐ hǎo)</p>
+                    <p>Japanese: こんにちは (konnichiwa)</p>
+                    <p>Korean: 안녕하세요 (annyeonghaseyo)</p>
+                </div>
+                <div class="script-box">
+                    <h4>Thank You</h4>
+                    <p><strong>Chinese:</strong> 谢谢 (xiè xiè)</p>
+                    <p><strong>Japanese:</strong> ありがとう (arigatou)</p>
+                    <p><strong>Korean:</strong> 감사합니다 (gamsahamnida)</p>
+                </div>
+                <div class="script-box">
+                    <h4>Country Names</h4>
+                    <p><strong>China:</strong> 中国 / 中國</p>
+                    <p><strong>Japan:</strong> 日本</p>
+                    <p><strong>Korea:</strong> 한국 / 韓國</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="language-section">
+            <h2>🔤 Mixed CJK Text</h2>
+            <div style="font-size: 16px; line-height: 2;">
+                <p>This paragraph mixes different CJK scripts: 中文 (Chinese), 日本語 (Japanese), and 한국어 (Korean) characters together to test font fallback and rendering consistency.</p>
+                
+                <p>技術用語 / テクノロジー / 기술 용어:</p>
+                <ul>
+                    <li>计算机 / コンピュータ / 컴퓨터 (Computer)</li>
+                    <li>互联网 / インターネット / 인터넷 (Internet)</li>
+                    <li>软件 / ソフトウェア / 소프트웨어 (Software)</li>
+                    <li>数据库 / データベース / 데이터베이스 (Database)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 20px; margin: 20px 0;">
+            <h3>🧪 CJK Testing Instructions</h3>
+            <h4>Expected Behavior:</h4>
+            <ul>
+                <li>All CJK characters should render with appropriate fonts</li>
+                <li>Text should maintain proper line height and spacing</li>
+                <li>Ruby text (furigana) should display correctly above kanji</li>
+                <li>Mixed scripts should have consistent baseline alignment</li>
+                <li>Complex characters should not appear broken or incomplete</li>
+            </ul>
+            
+            <h4>CLI Testing:</h4>
+            <ul>
+                <li>Generate PDF and verify all CJK characters are preserved</li>
+                <li>Test with different page sizes to ensure text wrapping</li>
+                <li>Verify that font embedding works for CJK characters</li>
+                <li>Check that ruby text maintains proper positioning</li>
+                <li>Test both simplified and traditional Chinese variants</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

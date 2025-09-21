@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .error-container {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .error-icon {
+            font-size: 48px;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .attempt-counter {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #dc3545, #c82333);
+            width: <%= (attempt / maxAttempts) * 100 %>%;
+            transition: width 0.3s ease;
+        }
+        .retry-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .error-details {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">🔄❌</div>
+        <h1><%= title %></h1>
+        <p>This request failed as part of the flaky endpoint testing. It will succeed after <%= maxAttempts %> failed attempts.</p>
+        
+        <div class="attempt-counter">
+            <h3>Attempt Progress</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span><strong>Current Attempt:</strong> <%= attempt %> of <%= maxAttempts %></span>
+                <span class="status-badge">FAILED</span>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            
+            <p style="margin: 10px 0 0 0;">
+                <% if (willSucceed) { %>
+                    ✅ <strong>Next attempt will succeed!</strong>
+                <% } else { %>
+                    ⏳ <%= maxAttempts - attempt %> more failures expected
+                <% } %>
+            </p>
+        </div>
+        
+        <div class="error-details">
+            <h3>Error Information</h3>
+            <p><strong>Status:</strong> <%= errorStatus %> - <%= errorMessage %></p>
+            <p><strong>Attempt:</strong> <%= attempt %> / <%= maxAttempts %></p>
+            <p><strong>Will Succeed:</strong> <%= willSucceed ? 'Yes (next attempt)' : 'No (more failures needed)' %></p>
+        </div>
+        
+        <div class="retry-info">
+            <h4>🔄 Retry Testing</h4>
+            <p>This endpoint is designed to test retry logic in HTTP clients and CLI tools:</p>
+            <ul>
+                <li>First <%= maxAttempts %> requests will fail with different error codes</li>
+                <li>Request <%= maxAttempts + 1 %> and beyond will succeed</li>
+                <li>Each client (IP + User-Agent) has its own failure counter</li>
+                <li>Use this to test exponential backoff and retry strategies</li>
+            </ul>
+        </div>
+        
+        <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; padding: 15px; margin: 20px 0;">
+            <h4>CLI Testing</h4>
+            <p><strong>Test retry behavior with:</strong></p>
+            <ul>
+                <li><code>--retry-attempts 3</code> - Set number of retry attempts</li>
+                <li><code>--retry-delay 1000</code> - Set delay between retries</li>
+                <li><code>--continue-on-error</code> - Continue batch processing on errors</li>
+            </ul>
+            
+            <p><strong>Expected behavior:</strong> CLI should retry this request and eventually succeed.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            margin: 20px 0;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .page-break-before {
+            page-break-before: always;
+            background: #e7f3ff;
+            border-color: #007bff;
+        }
+        
+        .page-break-after {
+            page-break-after: always;
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        
+        .page-break-inside-avoid {
+            page-break-inside: avoid;
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .page-break-inside-auto {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        
+        .break-indicator {
+            background: #6c757d;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .content-block {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .long-content {
+            height: 400px;
+            overflow: hidden;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .section {
+                border: 1px solid #000;
+                margin: 10px 0;
+            }
+            
+            .break-indicator {
+                background: #000 !important;
+                color: white !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h1><%= title %></h1>
+        <p>This page demonstrates CSS page break controls for PDF generation. Each section shows different page break behaviors.</p>
+        
+        <div class="content-block">
+            <h3>Page Break Testing Guide</h3>
+            <ul>
+                <li><strong>page-break-before: always</strong> - Forces a page break before the element</li>
+                <li><strong>page-break-after: always</strong> - Forces a page break after the element</li>
+                <li><strong>page-break-inside: avoid</strong> - Prevents breaking inside the element</li>
+                <li><strong>page-break-inside: auto</strong> - Allows natural breaking (default)</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Section 1: Normal Flow</h2>
+        <p>This section has no special page break rules and will flow naturally across pages.</p>
+        
+        <div class="content-block">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+        
+        <div class="content-block">
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </div>
+    </div>
+    
+    <div class="break-indicator">
+        ⬇️ PAGE BREAK BEFORE: The next section will start on a new page
+    </div>
+    
+    <div class="section page-break-before">
+        <h2>Section 2: Page Break Before</h2>
+        <p>This section has <code>page-break-before: always</code> applied, so it will always start on a new page regardless of available space.</p>
+        
+        <div class="content-block">
+            <p>This demonstrates forced page breaks, useful for chapters, major sections, or when you want to ensure content starts fresh on a new page.</p>
+        </div>
+        
+        <div class="content-block">
+            <p>The blue background and border help identify this section in the output. In print mode, backgrounds may be disabled unless <code>--print-background</code> is used.</p>
+        </div>
+    </div>
+    
+    <div class="section page-break-after">
+        <h2>Section 3: Page Break After</h2>
+        <p>This section has <code>page-break-after: always</code> applied, so there will be a page break immediately after this section ends.</p>
+        
+        <div class="content-block">
+            <p>This is useful when you want to ensure that the next content starts on a fresh page, such as after a cover page or summary section.</p>
+        </div>
+        
+        <div class="content-block">
+            <p>The red background helps identify this section. Notice how the next section will be forced to start on a new page.</p>
+        </div>
+    </div>
+    
+    <div class="break-indicator">
+        ⬇️ PAGE BREAK AFTER: Previous section forces a page break here
+    </div>
+    
+    <div class="section page-break-inside-avoid">
+        <h2>Section 4: Avoid Breaking Inside</h2>
+        <p>This section has <code>page-break-inside: avoid</code> applied, which means the entire section should stay together on one page if possible.</p>
+        
+        <div class="content-block">
+            <p>This is particularly useful for:</p>
+            <ul>
+                <li>Tables that should not be split</li>
+                <li>Code blocks</li>
+                <li>Images with captions</li>
+                <li>Short sections that lose meaning when split</li>
+            </ul>
+        </div>
+        
+        <div class="content-block">
+            <p>If this section is too large to fit on the remaining space of a page, the entire section will move to the next page rather than being split.</p>
+        </div>
+        
+        <div class="long-content">
+            <h4>Long Content Block</h4>
+            <p>This is a longer content block that might cause the section to be quite tall. The page-break-inside: avoid rule will try to keep all of this content together on the same page.</p>
+            
+            <p>Additional content to make this section longer and test the avoid breaking behavior. This content should all stay together with the rest of the section.</p>
+            
+            <p>More content to ensure this section has substantial height and will test the page breaking behavior properly.</p>
+        </div>
+    </div>
+    
+    <div class="section page-break-inside-auto">
+        <h2>Section 5: Auto Breaking (Default)</h2>
+        <p>This section has the default <code>page-break-inside: auto</code> behavior, allowing natural page breaks within the content.</p>
+        
+        <div class="content-block">
+            <p>This section can be split across pages naturally. If the content is longer than the available space, it will break at appropriate points.</p>
+        </div>
+        
+        <div class="long-content">
+            <h4>Splittable Long Content</h4>
+            <p>This long content block can be split across pages. Unlike the previous section, this content is allowed to break naturally.</p>
+            
+            <p>Line 1 of content that can be split across pages.</p>
+            <p>Line 2 of content that can be split across pages.</p>
+            <p>Line 3 of content that can be split across pages.</p>
+            <p>Line 4 of content that can be split across pages.</p>
+            <p>Line 5 of content that can be split across pages.</p>
+            <p>Line 6 of content that can be split across pages.</p>
+            <p>Line 7 of content that can be split across pages.</p>
+            <p>Line 8 of content that can be split across pages.</p>
+            <p>Line 9 of content that can be split across pages.</p>
+            <p>Line 10 of content that can be split across pages.</p>
+        </div>
+        
+        <div class="content-block">
+            <p>This demonstrates natural page breaking behavior where content flows across page boundaries as needed.</p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Testing Instructions</h2>
+        <div class="content-block">
+            <h4>Expected PDF Output:</h4>
+            <ol>
+                <li>Section 1 should appear on the first page</li>
+                <li>Section 2 should start on a new page (page-break-before)</li>
+                <li>Section 3 should end with a page break (page-break-after)</li>
+                <li>Section 4 should stay together on one page if possible</li>
+                <li>Section 5 can be split naturally across pages</li>
+            </ol>
+        </div>
+        
+        <div class="content-block">
+            <h4>CLI Testing:</h4>
+            <ul>
+                <li>Generate PDF and check page breaks match expectations</li>
+                <li>Use <code>--print-background</code> to see section colors</li>
+                <li>Test with different page sizes to see break behavior</li>
+                <li>Compare with browser print preview</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

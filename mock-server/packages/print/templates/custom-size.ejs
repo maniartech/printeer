@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        
+        .page-container {
+            background: white;
+            width: <%= width %>;
+            height: <%= height %>;
+            margin: 20px auto;
+            border: 2px solid #007bff;
+            position: relative;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        
+        .size-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 123, 255, 0.1);
+            border: 1px solid #007bff;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .corner-markers {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #dc3545;
+        }
+        
+        .corner-tl {
+            top: 0;
+            left: 0;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .corner-tr {
+            top: 0;
+            right: 0;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .corner-bl {
+            bottom: 0;
+            left: 0;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .corner-br {
+            bottom: 0;
+            right: 0;
+            border-left: none;
+            border-top: none;
+        }
+        
+        .measurement-guides {
+            position: absolute;
+        }
+        
+        .width-guide {
+            top: -30px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(90deg, 
+                #007bff 0px, 
+                #007bff 2px, 
+                transparent 2px, 
+                transparent 10px
+            );
+            background-size: 10px 100%;
+            border: 1px solid #007bff;
+        }
+        
+        .height-guide {
+            left: -30px;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(0deg, 
+                #007bff 0px, 
+                #007bff 2px, 
+                transparent 2px, 
+                transparent 10px
+            );
+            background-size: 100% 10px;
+            border: 1px solid #007bff;
+        }
+        
+        .content-area {
+            height: calc(100% - 40px);
+            overflow: hidden;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .size-comparison {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .size-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        
+        .size-table th,
+        .size-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .size-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .current-size {
+            background: #d4edda;
+            font-weight: bold;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+            }
+            
+            .page-container {
+                margin: 0;
+                border: 1px solid #000;
+            }
+            
+            .size-indicator {
+                background: rgba(0, 0, 0, 0.1);
+                border-color: #000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Corner markers -->
+        <div class="corner-markers corner-tl"></div>
+        <div class="corner-markers corner-tr"></div>
+        <div class="corner-markers corner-bl"></div>
+        <div class="corner-markers corner-br"></div>
+        
+        <!-- Measurement guides -->
+        <div class="measurement-guides width-guide"></div>
+        <div class="measurement-guides height-guide"></div>
+        
+        <!-- Size indicator -->
+        <div class="size-indicator">
+            <%= width %> × <%= height %>
+        </div>
+        
+        <div class="content-area">
+            <h1><%= title %></h1>
+            <p>This page demonstrates custom page size settings. The page is sized to <strong><%= width %> × <%= height %></strong>.</p>
+            
+            <div class="info-grid">
+                <div class="info-box">
+                    <h3>Current Settings</h3>
+                    <ul>
+                        <li><strong>Width:</strong> <%= width %></li>
+                        <li><strong>Height:</strong> <%= height %></li>
+                        <li><strong>Aspect Ratio:</strong> Custom</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h3>Visual Indicators</h3>
+                    <ul>
+                        <li><strong>Blue border:</strong> Page boundary</li>
+                        <li><strong>Red corners:</strong> Page corners</li>
+                        <li><strong>Rulers:</strong> Measurement guides</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="size-comparison">
+                <h3>Standard Page Size Comparison</h3>
+                <table class="size-table">
+                    <thead>
+                        <tr>
+                            <th>Format</th>
+                            <th>Width</th>
+                            <th>Height</th>
+                            <th>Aspect Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="<%= width === '210mm' && height === '297mm' ? 'current-size' : '' %>">
+                            <td>A4</td>
+                            <td>210mm</td>
+                            <td>297mm</td>
+                            <td>1:√2</td>
+                        </tr>
+                        <tr class="<%= width === '297mm' && height === '420mm' ? 'current-size' : '' %>">
+                            <td>A3</td>
+                            <td>297mm</td>
+                            <td>420mm</td>
+                            <td>1:√2</td>
+                        </tr>
+                        <tr class="<%= width === '8.5in' && height === '11in' ? 'current-size' : '' %>">
+                            <td>Letter</td>
+                            <td>8.5in</td>
+                            <td>11in</td>
+                            <td>1:1.29</td>
+                        </tr>
+                        <tr class="<%= width === '8.5in' && height === '14in' ? 'current-size' : '' %>">
+                            <td>Legal</td>
+                            <td>8.5in</td>
+                            <td>14in</td>
+                            <td>1:1.65</td>
+                        </tr>
+                        <tr class="current-size">
+                            <td><strong>Custom</strong></td>
+                            <td><strong><%= width %></strong></td>
+                            <td><strong><%= height %></strong></td>
+                            <td><strong>Custom</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="info-box">
+                <h3>CLI Usage</h3>
+                <p><strong>Custom size format:</strong></p>
+                <code>--custom-size "<%= width %>,<%= height %>"</code>
+                
+                <p style="margin-top: 15px;"><strong>Alternative formats:</strong></p>
+                <ul>
+                    <li><code>--page-width <%= width %> --page-height <%= height %></code></li>
+                    <li><code>--format custom --width <%= width %> --height <%= height %></code></li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>Supported units:</strong></p>
+                <ul>
+                    <li><strong>mm</strong> - Millimeters (e.g., 210mm)</li>
+                    <li><strong>in</strong> - Inches (e.g., 8.5in)</li>
+                    <li><strong>px</strong> - Pixels (e.g., 800px)</li>
+                    <li><strong>pt</strong> - Points (e.g., 612pt)</li>
+                </ul>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+                <h4>Testing Instructions</h4>
+                <ol>
+                    <li>Generate PDF with custom size settings</li>
+                    <li>Verify the PDF dimensions match <%= width %> × <%= height %></li>
+                    <li>Check that content fits within the page boundaries</li>
+                    <li>Ensure corner markers appear at page edges</li>
+                    <li>Validate that rulers help measure the actual size</li>
+                </ol>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Content Fitting Test</h3>
+                <p>This content tests how text and elements fit within the custom page size. The content should not overflow the page boundaries marked by the blue border.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 15px 0;">
+                    <% for (let i = 1; i <= 6; i++) { %>
+                    <div style="background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; border-radius: 4px; text-align: center;">
+                        <strong>Block <%= i %></strong>
+                        <br>
+                        <small>Content <%= i %></small>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

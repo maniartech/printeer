@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Screen-specific styles */
+        @media screen {
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            
+            .screen-indicator {
+                background: #007bff;
+                color: white;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 20px 0;
+                text-align: center;
+                font-weight: bold;
+            }
+            
+            .print-indicator {
+                display: none;
+            }
+            
+            .screen-only {
+                display: block;
+                background: #e7f3ff;
+                border: 2px solid #007bff;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 15px 0;
+            }
+            
+            .print-only {
+                display: none;
+            }
+            
+            .interactive-elements {
+                display: block;
+            }
+            
+            .color-demo {
+                background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                text-align: center;
+                margin: 20px 0;
+            }
+            
+            .navigation {
+                background: #28a745;
+                color: white;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 15px 0;
+            }
+            
+            .navigation a {
+                color: white;
+                text-decoration: none;
+                margin: 0 10px;
+                padding: 5px 10px;
+                border: 1px solid white;
+                border-radius: 3px;
+            }
+            
+            .navigation a:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            
+            .container {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+            
+            .screen-indicator {
+                display: none;
+            }
+            
+            .print-indicator {
+                display: block;
+                background: white;
+                color: black;
+                border: 2px solid #000;
+                padding: 15px;
+                margin: 20px 0;
+                text-align: center;
+                font-weight: bold;
+            }
+            
+            .screen-only {
+                display: none !important;
+            }
+            
+            .print-only {
+                display: block !important;
+                background: #f0f0f0;
+                border: 1px solid #000;
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .interactive-elements {
+                display: none !important;
+            }
+            
+            .color-demo {
+                background: #f0f0f0 !important;
+                color: black !important;
+                border: 1px solid #000;
+            }
+            
+            .navigation {
+                display: none !important;
+            }
+            
+            /* Print-specific typography */
+            h1, h2, h3 {
+                color: black !important;
+                page-break-after: avoid;
+            }
+            
+            p {
+                orphans: 3;
+                widows: 3;
+            }
+            
+            /* Print-specific layout */
+            .print-layout {
+                display: block !important;
+            }
+            
+            .screen-layout {
+                display: none !important;
+            }
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .comparison-box {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .feature-table th,
+        .feature-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .feature-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        @media print {
+            .feature-table {
+                border: 1px solid #000;
+            }
+            
+            .feature-table th,
+            .feature-table td {
+                border: 1px solid #000;
+            }
+            
+            .feature-table th {
+                background: #f0f0f0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        
+        <div class="screen-indicator">
+            🖥️ SCREEN MODE: You are viewing this page on screen
+        </div>
+        
+        <div class="print-indicator">
+            🖨️ PRINT MODE: This page is being printed or converted to PDF
+        </div>
+        
+        <p>This page demonstrates different styling between screen and print media types. The appearance will change significantly when printed or when using <code>--media-type print</code>.</p>
+        
+        <div class="screen-only">
+            <h3>🖥️ Screen-Only Content</h3>
+            <p>This section is only visible when viewing on screen. It includes interactive elements, colorful backgrounds, and navigation that aren't suitable for print.</p>
+        </div>
+        
+        <div class="print-only">
+            <h3>🖨️ Print-Only Content</h3>
+            <p>This section only appears in print mode. It might contain print-specific instructions, disclaimers, or information that's only relevant for printed documents.</p>
+            <p><strong>Print Date:</strong> <%= new Date().toLocaleDateString() %></p>
+            <p><strong>Print Time:</strong> <%= new Date().toLocaleTimeString() %></p>
+        </div>
+        
+        <div class="navigation interactive-elements">
+            <h3>🧭 Navigation (Screen Only)</h3>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a href="/help">Help</a>
+        </div>
+        
+        <div class="color-demo">
+            <h3>🎨 Color Demonstration</h3>
+            <p>This colorful gradient background is perfect for screen viewing but will appear as grayscale or be removed in print mode for better readability and ink efficiency.</p>
+        </div>
+        
+        <div class="comparison-grid">
+            <div class="comparison-box">
+                <h4>Screen Optimizations</h4>
+                <ul>
+                    <li>Colorful backgrounds and gradients</li>
+                    <li>Interactive navigation elements</li>
+                    <li>Hover effects and animations</li>
+                    <li>Screen-specific typography</li>
+                    <li>Flexible layouts for different screen sizes</li>
+                </ul>
+            </div>
+            
+            <div class="comparison-box">
+                <h4>Print Optimizations</h4>
+                <ul>
+                    <li>High contrast black and white</li>
+                    <li>Removed interactive elements</li>
+                    <li>Print-friendly fonts and sizes</li>
+                    <li>Optimized for paper dimensions</li>
+                    <li>Page break controls</li>
+                </ul>
+            </div>
+        </div>
+        
+        <h2>Feature Comparison Table</h2>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Screen Mode</th>
+                    <th>Print Mode</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Background Colors</td>
+                    <td>✅ Colorful gradients</td>
+                    <td>❌ Removed or simplified</td>
+                </tr>
+                <tr>
+                    <td>Navigation</td>
+                    <td>✅ Interactive links</td>
+                    <td>❌ Hidden (not useful in print)</td>
+                </tr>
+                <tr>
+                    <td>Typography</td>
+                    <td>Screen-optimized fonts</td>
+                    <td>Print-optimized fonts</td>
+                </tr>
+                <tr>
+                    <td>Layout</td>
+                    <td>Flexible, responsive</td>
+                    <td>Fixed, page-oriented</td>
+                </tr>
+                <tr>
+                    <td>Colors</td>
+                    <td>Full color spectrum</td>
+                    <td>High contrast B&W</td>
+                </tr>
+                <tr>
+                    <td>Interactive Elements</td>
+                    <td>✅ Buttons, forms, hover</td>
+                    <td>❌ Removed or simplified</td>
+                </tr>
+                <tr>
+                    <td>Page Breaks</td>
+                    <td>❌ Not applicable</td>
+                    <td>✅ Controlled breaks</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="interactive-elements">
+            <h3>Interactive Elements (Screen Only)</h3>
+            <p>These elements demonstrate interactivity that's only meaningful on screen:</p>
+            <button style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Click Me</button>
+            <input type="text" placeholder="Type something..." style="padding: 8px; margin: 0 10px; border: 1px solid #ccc; border-radius: 4px;">
+            <select style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+            </select>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 6px;">
+            <h3>🧪 Testing Instructions</h3>
+            
+            <h4>CLI Testing:</h4>
+            <ul>
+                <li><strong>Screen Mode:</strong> <code>--media-type screen</code></li>
+                <li><strong>Print Mode:</strong> <code>--media-type print</code></li>
+                <li><strong>Compare outputs:</strong> Generate both versions and compare</li>
+            </ul>
+            
+            <h4>Expected Differences:</h4>
+            <ul>
+                <li>Screen version should show colorful backgrounds and navigation</li>
+                <li>Print version should be black & white with print-only content</li>
+                <li>Interactive elements should be hidden in print mode</li>
+                <li>Typography and layout should be optimized for each medium</li>
+            </ul>
+            
+            <h4>Validation Checklist:</h4>
+            <ul>
+                <li>✅ Screen indicator visible in screen mode only</li>
+                <li>✅ Print indicator visible in print mode only</li>
+                <li>✅ Navigation hidden in print mode</li>
+                <li>✅ Color demo appears different in each mode</li>
+                <li>✅ Print-only content appears in print mode</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
