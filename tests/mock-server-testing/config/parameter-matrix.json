@@ -1,0 +1,105 @@
+{
+  "basic": {
+    "format": ["A4", "Letter", "A3"],
+    "orientation": ["portrait", "landscape"],
+    "margins": ["1in", "2cm", "none"],
+    "scale": [1.0, 1.5],
+    "quality": ["medium", "high"],
+    "background": [true, false]
+  },
+  "print": {
+    "format": ["A4", "Letter", "A3", "A5", "Legal"],
+    "orientation": ["portrait", "landscape"],
+    "margins": ["none", "1in", "2cm", "1in,2cm,1in,2cm", "0.5in"],
+    "scale": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+    "quality": ["low", "medium", "high"],
+    "background": [true, false]
+  },
+  "dynamic": {
+    "format": ["A4", "Letter"],
+    "waitFor": [
+      "timeout:3000",
+      "timeout:5000",
+      "selector:#content",
+      "selector:#delayed-content",
+      "function:window.__ready",
+      "networkidle0",
+      "networkidle2"
+    ],
+    "timeout": [5000, 10000, 15000],
+    "viewport": ["800x600", "1024x768", "1280x720"]
+  },
+  "auth": {
+    "format": ["A4", "Letter"],
+    "headers": [
+      null,
+      {"Authorization": "Basic dXNlcjpwYXNz"},
+      {"Authorization": "Bearer test-token-123"},
+      {"X-API-Key": "secret-key-123"},
+      {"Custom-Header": "test-value"}
+    ],
+    "cookies": [
+      null,
+      {"session_id": "valid-session-123"},
+      {"auth_token": "cookie-token-456"}
+    ]
+  },
+  "errors": {
+    "format": ["A4"],
+    "retries": [0, 1, 2, 3, 5],
+    "timeout": [3000, 5000, 10000, 15000]
+  },
+  "i18n": {
+    "format": ["A4", "Letter"],
+    "quality": ["medium", "high"],
+    "waitFor": ["timeout:3000", "networkidle2"]
+  },
+  "media": {
+    "format": ["A4", "Letter"],
+    "viewport": ["800x600", "1024x768", "1280x720", "1920x1080"],
+    "background": [true, false]
+  },
+  "templates": {
+    "format": ["A4", "Letter", "A3"],
+    "orientation": ["portrait", "landscape"]
+  },
+  "cache-csp": {
+    "format": ["A4"],
+    "timeout": [5000, 8000]
+  },
+  "image": {
+    "viewport": ["800x600", "1024x768", "1280x720"],
+    "quality": ["low", "medium", "high"],
+    "background": [true, false]
+  },
+  "redirects": {
+    "format": ["A4"],
+    "timeout": [5000, 10000],
+    "waitFor": ["timeout:2000", "timeout:3000"]
+  },
+  "resources": {
+    "format": ["A4"],
+    "timeout": [5000, 8000, 15000],
+    "retries": [1, 2, 3],
+    "quality": ["medium", "high"],
+    "waitFor": ["networkidle2", "timeout:10000"]
+  },
+  "quick": {
+    "format": ["A4"],
+    "orientation": ["portrait"],
+    "margins": ["1in"],
+    "scale": [1.0],
+    "quality": ["medium"],
+    "background": [true],
+    "waitFor": ["timeout:5000"],
+    "timeout": [10000],
+    "retries": [2]
+  },
+  "smoke": {
+    "format": ["A4"],
+    "orientation": ["portrait"],
+    "margins": ["1in"],
+    "quality": ["medium"],
+    "timeout": [10000]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "mockServer": {
+    "url": "http://localhost:4000",
+    "healthCheckTimeout": 5000,
+    "startupDelay": 2000,
+    "maxStartupRetries": 30
+  },
+  "output": {
+    "baseDir": "./output",
+    "keepArtifacts": true,
+    "maxArtifactAge": "7d",
+    "organizeByGroup": true,
+    "generateThumbnails": false
+  },
+  "execution": {
+    "parallelism": 4,
+    "timeout": 30000,
+    "retries": 2,
+    "continueOnError": false,
+    "logLevel": "info"
+  },
+  "reporting": {
+    "formats": ["html", "json", "csv"],
+    "includeThumbnails": false,
+    "generateComparisons": true,
+    "detailedLogs": true
+  },
+  "validation": {
+    "minPdfSize": 1000,
+    "minImageSize": 500,
+    "validateHeaders": true,
+    "checkFileIntegrity": true
+  },
+  "cleanup": {
+    "cleanupOldFiles": true,
+    "maxFileAge": "24h",
+    "preserveReports": true
+  }
+}

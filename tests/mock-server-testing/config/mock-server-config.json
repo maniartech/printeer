@@ -1,0 +1,28 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 4000,
+    "protocol": "http"
+  },
+  "endpoints": {
+    "health": "/__health",
+    "catalog": "/__catalog.json"
+  },
+  "startup": {
+    "command": "yarn start",
+    "workingDirectory": "../../mock-server",
+    "maxWaitTime": 30000,
+    "healthCheckInterval": 1000
+  },
+  "validation": {
+    "requiredEndpoints": [
+      "/static/simple",
+      "/print/css-default",
+      "/spa/delay-content",
+      "/auth/basic",
+      "/error/500"
+    ],
+    "validateCatalog": true,
+    "checkAllRoutes": false
+  }
+}

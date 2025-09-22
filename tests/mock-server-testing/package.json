@@ -1,0 +1,70 @@
+{
+  "name": "printeer-mock-server-testing",
+  "version": "1.0.0",
+  "description": "Comprehensive testing framework for Printeer CLI using mock server",
+  "type": "module",
+  "main": "framework/test-runner.js",
+  "bin": {
+    "mockserver-test": "./scripts/run-all-tests.js"
+  },
+  "scripts": {
+    "mockserver-test:all": "node scripts/run-all-tests.js",
+    "mockserver-test:suite": "node scripts/run-suite.js",
+    "mockserver-test:single": "node scripts/run-single-test.js",
+    "mockserver-test:format": "node scripts/run-format-tests.js",
+    "mockserver-test:orientation": "node scripts/run-orientation-tests.js",
+    "mockserver-test:auth-only": "node scripts/run-suite.js auth",
+    "mockserver-test:errors-only": "node scripts/run-suite.js errors", 
+    "mockserver-test:quick": "node scripts/run-all-tests.js --quick",
+    "mockserver-test:smoke": "node scripts/run-all-tests.js --smoke",
+    "mockserver-test:clean": "node scripts/clean-outputs.js",
+    "mockserver-test:verify": "node scripts/verify-mock-server.js",
+    "mockserver:start": "cd ../mock-server && yarn start",
+    "mockserver:health": "cd ../mock-server && yarn health-check",
+    "test": "npm run mockserver-test:smoke",
+    "test:basic": "node scripts/run-suite.js basic",
+    "test:print": "node scripts/run-suite.js print", 
+    "test:dynamic": "node scripts/run-suite.js dynamic",
+    "test:auth": "node scripts/run-suite.js auth",
+    "test:errors": "node scripts/run-suite.js errors",
+    "test:i18n": "node scripts/run-suite.js i18n",
+    "test:media": "node scripts/run-suite.js media",
+    "test:templates": "node scripts/run-suite.js templates",
+    "test:cache-csp": "node scripts/run-suite.js cache-csp",
+    "test:image": "node scripts/run-suite.js image",
+    "test:redirects": "node scripts/run-suite.js redirects",
+    "test:resources": "node scripts/run-suite.js resources",
+    "clean": "node scripts/clean-outputs.js",
+    "clean:dry": "node scripts/clean-outputs.js --dry-run",
+    "verify": "node scripts/verify-mock-server.js --check-catalog --check-routes"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "printeer",
+    "testing",
+    "pdf",
+    "automation",
+    "mock-server",
+    "cli-testing"
+  ],
+  "author": "Printeer Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maniartech/printeer.git",
+    "directory": "tests/mock-server-testing"
+  },
+  "bugs": {
+    "url": "https://github.com/maniartech/printeer/issues"
+  },
+  "homepage": "https://github.com/maniartech/printeer/tree/master/tests/mock-server-testing#readme"
+}
