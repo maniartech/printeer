@@ -759,12 +759,498 @@ class PrinteerAPITester extends TestRunner {
 }
 ```
 
-## Implementation Roadmap
+## Standard Test Commands
 
-1. **Phase 1**: Core framework and basic test suites
-2. **Phase 2**: Advanced parameter matrix testing
-3. **Phase 3**: Comprehensive reporting and verification tools
-4. **Phase 4**: CI/CD integration
-5. **Phase 5**: API testing extension
+### Batch Testing Commands
 
-This framework provides comprehensive coverage of Printeer functionality while maintaining clear organization for manual verification and future extension to direct API testing.
+The framework provides standardized commands for comprehensive batch testing and selective test execution:
+
+#### 1. Complete Test Suite Execution
+
+```bash
+# Run all test suites with default parameters (auto-starts mock server if needed)
+yarn mockserver-test:all
+
+# Run all tests with custom mock server URL
+yarn mockserver-test:all --server=http://localhost:3000
+
+# Run all tests with specific output directory
+yarn mockserver-test:all --output=./custom-output
+
+# Run all tests with parallel execution
+yarn mockserver-test:all --parallel=8 --timeout=60000
+```
+
+#### 2. Feature Group Testing
+
+```bash
+# Run specific test suite (auto-starts mock server if needed)
+yarn mockserver-test:suite basic           # Basic pages and layout
+yarn mockserver-test:suite print           # Print CSS & formatting
+yarn mockserver-test:suite dynamic         # SPA & wait strategies
+yarn mockserver-test:suite auth            # Authentication & headers
+yarn mockserver-test:suite redirects       # Redirect handling
+yarn mockserver-test:suite resources       # Resource & performance
+yarn mockserver-test:suite errors          # Error handling
+yarn mockserver-test:suite i18n            # Internationalization
+yarn mockserver-test:suite media           # Media emulation
+yarn mockserver-test:suite templates       # Templates & variables
+yarn mockserver-test:suite cache-csp       # Cache & CSP
+yarn mockserver-test:suite image           # Image capture
+
+# Run multiple suites
+yarn mockserver-test:suite print,auth,dynamic
+```
+
+#### 3. Parameter-Specific Testing
+
+```bash
+# Test specific formats across all suites (auto-starts mock server if needed)
+yarn mockserver-test:format A4             # Test only A4 format
+yarn mockserver-test:format Letter,A3      # Test Letter and A3 formats
+
+# Test specific orientations
+yarn mockserver-test:orientation landscape # Test only landscape orientation
+
+# Test authentication scenarios
+yarn mockserver-test:auth-only             # Run only authentication tests
+
+# Test error scenarios
+yarn mockserver-test:errors-only           # Run only error handling tests
+```
+
+#### 4. Single Test Execution
+
+```bash
+# Run single test case (auto-starts mock server if needed)
+yarn mockserver-test:single basic/simple-html --format=A4 --orientation=portrait
+
+# Run single endpoint with custom parameters
+yarn mockserver-test:single print/margins --format=Letter --margins=2cm --scale=1.5
+
+# Run single test with all parameter combinations
+yarn mockserver-test:single auth/bearer --matrix
+
+# Run single test with custom output filename
+yarn mockserver-test:single dynamic/delay-content --output=custom-delay-test.pdf
+```
+
+### Command Implementation
+
+#### package.json Scripts
+
+```json
+{
+  "scripts": {
+    "mockserver-test:all": "node scripts/run-all-tests.js",
+    "mockserver-test:suite": "node scripts/run-suite.js",
+    "mockserver-test:single": "node scripts/run-single-test.js",
+    "mockserver-test:format": "node scripts/run-format-tests.js",
+    "mockserver-test:orientation": "node scripts/run-orientation-tests.js",
+    "mockserver-test:auth-only": "node scripts/run-suite.js auth",
+    "mockserver-test:errors-only": "node scripts/run-suite.js errors",
+    "mockserver-test:quick": "node scripts/run-quick-tests.js",
+    "mockserver-test:smoke": "node scripts/run-smoke-tests.js",
+    "mockserver-test:clean": "node scripts/clean-outputs.js",
+    "mockserver-test:report": "node scripts/generate-report.js",
+    "mockserver-test:verify": "node scripts/verify-mock-server.js",
+    "mockserver:start": "cd mock-server && yarn start",
+    "mockserver:health": "cd mock-server && yarn health-check"
+  }
+}
+```
+
+#### Command Line Interface
+
+```javascript
+// scripts/run-single-test.js
+import { Command } from 'commander';
+import { SingleTestRunner } from '../framework/single-test-runner.js';
+
+const program = new Command();
+
+program
+  .name('printeer-single-test')
+  .description('Run a single Printeer test case')
+  .argument('<testCase>', 'Test case in format: group/test-name')
+  .option('-s, --server <url>', 'Mock server URL', 'http://localhost:4000')
+  .option('-o, --output <path>', 'Output file path (optional)')
+  .option('-f, --format <format>', 'Page format', 'A4')
+  .option('--orientation <orientation>', 'Page orientation', 'portrait')
+  .option('--margins <margins>', 'Page margins', '1in')
+  .option('--scale <scale>', 'Scale factor', '1.0')
+  .option('--quality <quality>', 'Output quality', 'medium')
+  .option('--background', 'Include background graphics')
+  .option('--wait-for <strategy>', 'Wait strategy')
+  .option('--timeout <ms>', 'Timeout in milliseconds', '30000')
+  .option('--retries <count>', 'Retry count', '2')
+  .option('--headers <headers>', 'Custom headers (JSON)')
+  .option('--cookies <cookies>', 'Custom cookies (JSON)')
+  .option('--matrix', 'Run all parameter combinations')
+  .option('--verbose', 'Verbose output')
+  .action(async (testCase, options) => {
+    const runner = new SingleTestRunner(options);
+    await runner.runTest(testCase, options);
+  });
+
+program.parse();
+```
+
+#### Batch Test Runner Implementation
+
+```javascript
+// scripts/run-all-tests.js
+import { Command } from 'commander';
+import { BatchTestRunner } from '../framework/batch-test-runner.js';
+import { MockServerClient } from '../framework/mock-server-client.js';
+
+const program = new Command();
+
+program
+  .name('printeer-batch-tests')
+  .description('Run comprehensive Printeer test suite')
+  .option('-s, --server <url>', 'Mock server URL', 'http://localhost:4000')
+  .option('-o, --output <dir>', 'Output directory', './output')
+  .option('-p, --parallel <count>', 'Parallel execution count', '4')
+  .option('-t, --timeout <ms>', 'Test timeout', '30000')
+  .option('-r, --retries <count>', 'Retry count', '2')
+  .option('--suites <suites>', 'Comma-separated suite names')
+  .option('--skip-suites <suites>', 'Comma-separated suites to skip')
+  .option('--formats <formats>', 'Comma-separated formats to test')
+  .option('--quick', 'Run quick test subset')
+  .option('--smoke', 'Run smoke tests only')
+  .option('--continue-on-error', 'Continue testing after failures')
+  .option('--no-cleanup', 'Keep temporary files')
+  .option('--verbose', 'Verbose output')
+  .action(async (options) => {
+    // Auto-start mock server if needed
+    const mockServerManager = new MockServerManager();
+    await mockServerManager.ensureServerRunning(options.server);
+
+    console.log(`✅ Mock server is ready at ${options.server}`);
+
+    const runner = new BatchTestRunner(options);
+    const results = await runner.runBatchTests();    console.log(`\n📊 Test Results:`);
+    console.log(`   Total: ${results.total}`);
+    console.log(`   Passed: ${results.passed}`);
+    console.log(`   Failed: ${results.failed}`);
+    console.log(`   Duration: ${results.duration}ms`);
+
+    if (results.failed > 0) {
+      console.log(`\n❌ ${results.failed} tests failed. See detailed report.`);
+      process.exit(1);
+    } else {
+      console.log(`\n✅ All tests passed!`);
+    }
+  });
+
+program.parse();
+```
+
+#### Suite-Specific Runner
+
+```javascript
+// scripts/run-suite.js
+import { Command } from 'commander';
+import { SuiteTestRunner } from '../framework/suite-test-runner.js';
+
+const program = new Command();
+
+program
+  .name('printeer-suite-tests')
+  .description('Run specific Printeer test suite(s)')
+  .argument('<suites>', 'Comma-separated suite names')
+  .option('-s, --server <url>', 'Mock server URL', 'http://localhost:4000')
+  .option('-o, --output <dir>', 'Output directory', './output')
+  .option('-p, --parallel <count>', 'Parallel execution', '2')
+  .option('--formats <formats>', 'Test specific formats only')
+  .option('--orientations <orientations>', 'Test specific orientations')
+  .option('--quick', 'Run reduced parameter matrix')
+  .option('--verbose', 'Verbose output')
+  .action(async (suites, options) => {
+    const suiteNames = suites.split(',').map(s => s.trim());
+    const runner = new SuiteTestRunner(options);
+
+    for (const suiteName of suiteNames) {
+      console.log(`\n🧪 Running ${suiteName} test suite...`);
+      const results = await runner.runSuite(suiteName);
+      console.log(`   ${suiteName}: ${results.passed}/${results.total} passed`);
+    }
+  });
+
+program.parse();
+```
+
+### Quick Test Modes
+
+#### Smoke Tests (Fast Validation)
+
+```bash
+# Run essential tests only (1-2 tests per suite) - auto-starts mock server
+yarn mockserver-test:smoke
+
+# Quick validation of mock server endpoints
+yarn mockserver-test:smoke --endpoints-only
+
+# Verify basic functionality across all groups
+yarn mockserver-test:smoke --all-groups
+```
+
+```javascript
+// Smoke test configuration
+const smokeTests = {
+  basic: ['simple-html'],
+  print: ['css-default', 'margins'],
+  dynamic: ['delay-content'],
+  auth: ['basic-auth'],
+  errors: ['http-500']
+};
+```
+
+#### Quick Tests (Reduced Matrix)
+
+```bash
+# Run tests with reduced parameter combinations - auto-starts mock server
+yarn mockserver-test:quick
+
+# Quick test with specific parameters
+yarn mockserver-test:quick --format=A4 --orientation=portrait
+
+# Fast validation of core functionality
+yarn mockserver-test:quick --core-only
+```
+
+### Test Execution Examples
+
+#### Example 1: Complete Test Suite
+
+```bash
+# Run complete test suite (automatically starts mock server if needed)
+cd tests/mock-server-testing
+yarn mockserver-test:all
+
+# Or manually start mock server first (optional)
+cd mock-server && yarn start
+cd tests/mock-server-testing
+yarn mockserver-test:all
+
+# Generated outputs:
+# output/pdfs/basic/simple-html_A4-portrait-1in_20250921-143022.pdf
+# output/pdfs/print/margins_Letter-landscape-2cm_20250921-143045.pdf
+# output/reports/test-results-20250921-143000.html
+```
+
+#### Example 2: Single Test Case
+
+```bash
+# Test specific endpoint with custom parameters (auto-starts mock server if needed)
+yarn mockserver-test:single print/margins \
+  --format=A3 \
+  --orientation=landscape \
+  --margins=2cm \
+  --scale=1.5 \
+  --output=custom-margins-test.pdf
+
+# Generated: output/pdfs/print/custom-margins-test.pdf
+```
+
+#### Example 3: Authentication Testing
+
+```bash
+# Test all authentication scenarios (auto-starts mock server if needed)
+yarn mockserver-test:suite auth
+
+# Test specific auth method
+yarn mockserver-test:single auth/bearer \
+  --headers='{"Authorization": "Bearer test-token-123"}' \
+  --format=Letter
+
+# Generated: output/pdfs/auth/bearer_Letter-portrait-bearer-token_20250921-143112.pdf
+```
+
+#### Example 4: Error Handling Tests
+
+```bash
+# Test error resilience (auto-starts mock server if needed)
+yarn mockserver-test:suite errors --retries=3 --timeout=10000
+
+# Test specific error scenario
+yarn mockserver-test:single errors/timeout \
+  --timeout=5000 \
+  --retries=2
+
+# Expected: Test should fail gracefully with proper error reporting
+```
+
+### Test Output Organization
+
+Each command generates organized outputs:
+
+```
+output/
+├── pdfs/
+│   ├── basic/
+│   │   ├── simple-html_A4-portrait-1in_20250921-143022.pdf
+│   │   └── long-content_Letter-landscape-5pages_20250921-143045.pdf
+│   ├── print/
+│   │   ├── margins_A4-1in-all-sides_20250921-143112.pdf
+│   │   └── custom-size_210x99mm-portrait_20250921-143145.pdf
+│   └── auth/
+│       ├── basic-auth_A4-portrait-credentials_20250921-143200.pdf
+│       └── bearer-token_Letter-landscape-authorized_20250921-143235.pdf
+├── logs/
+│   ├── batch-test-20250921-143000.log
+│   ├── single-test-20250921-143500.log
+│   └── error-details-20250921-143000.log
+└── reports/
+    ├── summary-20250921-143000.html
+    ├── detailed-results-20250921-143000.json
+    └── failed-tests-20250921-143000.txt
+```
+
+### Mock Server Integration
+
+#### Automatic Server Management
+
+```javascript
+// Auto-start and manage mock server for testing
+class MockServerManager {
+  constructor() {
+    this.serverProcess = null;
+    this.isStarting = false;
+  }
+
+  async ensureServerRunning(serverUrl = 'http://localhost:4000') {
+    const client = new MockServerClient(serverUrl);
+
+    // Check if already running
+    if (await client.checkHealth()) {
+      console.log('✅ Mock server is already running');
+      return true;
+    }
+
+    // Prevent multiple startup attempts
+    if (this.isStarting) {
+      console.log('⏳ Mock server is starting...');
+      return this.waitForServer(client);
+    }
+
+    this.isStarting = true;
+
+    try {
+      console.log('🚀 Starting mock server automatically...');
+
+      // Start the mock server in background
+      const { spawn } = require('child_process');
+      const path = require('path');
+
+      const mockServerPath = path.resolve(__dirname, '../../mock-server');
+
+      this.serverProcess = spawn('yarn', ['start'], {
+        cwd: mockServerPath,
+        detached: false,
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+
+      // Handle server process events
+      this.serverProcess.on('error', (error) => {
+        console.error('❌ Failed to start mock server:', error.message);
+        this.isStarting = false;
+      });
+
+      // Wait for server to be ready with timeout
+      const success = await this.waitForServer(client, 30000);
+
+      if (success) {
+        console.log('✅ Mock server started successfully');
+
+        // Cleanup on process exit
+        process.on('exit', () => this.cleanup());
+        process.on('SIGINT', () => this.cleanup());
+        process.on('SIGTERM', () => this.cleanup());
+
+        return true;
+      } else {
+        throw new Error('Mock server failed to start within timeout period');
+      }
+    } catch (error) {
+      this.isStarting = false;
+      console.error('❌ Error starting mock server:', error.message);
+      console.log('💡 You can manually start it: cd mock-server && yarn start');
+      throw error;
+    }
+  }
+
+  async waitForServer(client, timeoutMs = 30000) {
+    const startTime = Date.now();
+    const checkInterval = 1000;
+
+    while (Date.now() - startTime < timeoutMs) {
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+
+      if (await client.checkHealth()) {
+        this.isStarting = false;
+        return true;
+      }
+    }
+
+    this.isStarting = false;
+    return false;
+  }
+
+  cleanup() {
+    if (this.serverProcess) {
+      console.log('🧹 Cleaning up mock server process...');
+      this.serverProcess.kill('SIGTERM');
+      this.serverProcess = null;
+    }
+  }
+}
+
+// Enhanced MockServerClient with better error handling
+class MockServerClient {
+  constructor(baseUrl = 'http://localhost:4000') {
+    this.baseUrl = baseUrl;
+  }
+
+  async checkHealth(retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(`${this.baseUrl}/__health`, {
+          method: 'GET',
+          timeout: 5000
+        });
+
+        if (response.ok) {
+          const health = await response.json();
+          return health.ok === true;
+        }
+      } catch (error) {
+        // Network error, server not running
+        if (i === retries - 1) {
+          return false;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    return false;
+  }
+
+  async getCatalog() {
+    try {
+      const response = await fetch(`${this.baseUrl}/__catalog.json`);
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Failed to fetch catalog: ${error.message}`);
+    }
+  }
+}
+```## Implementation Roadmap
+
+1. **Phase 1**: Core framework and batch testing commands
+2. **Phase 2**: Single test execution and parameter matrix testing
+3. **Phase 3**: Advanced reporting and verification tools
+4. **Phase 4**: CI/CD integration and automation
+5. **Phase 5**: API testing extension and performance testing
+
+This framework provides comprehensive coverage of Printeer functionality with flexible execution modes, from quick smoke tests to exhaustive parameter matrix validation, while maintaining clear organization for manual verification and future extension to direct API testing.
