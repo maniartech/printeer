@@ -6,14 +6,12 @@
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'path';
-import { writeFileSync } from 'fs';
 import {
   runCliCommand,
   validateFile,
   createTempOutputDir,
   cleanupTempDir,
   generateTestFileName,
-  createTestConfig,
   TEST_CONFIG,
   assertions
 } from './test-utils';

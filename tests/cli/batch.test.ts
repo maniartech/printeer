@@ -12,8 +12,6 @@ import {
   validateFile,
   createTempOutputDir,
   cleanupTempDir,
-  generateTestFileName,
-  createTestConfig,
   TEST_CONFIG,
   assertions
 } from './test-utils';
@@ -142,7 +140,7 @@ jobs:
 
     const csvContent = [
       'url,output',
-      ...outputs.map((output, i) => `${TEST_CONFIG.testUrls.simple},${output}`)
+      ...outputs.map((output) => `${TEST_CONFIG.testUrls.simple},${output}`)
     ].join('\n');
 
     writeFileSync(batchFile, csvContent);
