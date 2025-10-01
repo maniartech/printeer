@@ -119,8 +119,7 @@ export default async (url: string, outputFile: string, outputType: string | null
 }
 
 function getPackageJson() {
-  // Print process exec path
-  console.log("Process exec path", process.execPath)
+  // Get package.json for version info
 }
 
 function detectOutputType(fname: string, outputType: string | null) {

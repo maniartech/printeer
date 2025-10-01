@@ -39,7 +39,7 @@ export const TEST_CONFIG = {
   },
 
   // Timeouts
-  timeout: 30000
+  timeout: 15000  // Reduced timeout for faster test feedback
 };
 
 /**
@@ -80,7 +80,19 @@ export async function runCliCommand(
       {
         timeout: options.timeout || TEST_CONFIG.timeout,
         cwd: options.cwd || process.cwd(),
-        encoding: 'utf8'
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          NODE_ENV: 'test',
+          PRINTEER_BUNDLED_ONLY: '1', // Use bundled Chromium for faster startup
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'false',
+          PRINTEER_BROWSER_TIMEOUT: '5000', // Very fast browser timeout for tests
+          PRINTEER_BROWSER_POOL_MIN: '0',
+          PRINTEER_BROWSER_POOL_MAX: '1',
+          PRINTEER_BROWSER_HEADLESS: 'new',
+          PRINTEER_MAX_MEMORY_MB: '512',
+          PRINTEER_MAX_CONCURRENT_REQUESTS: '1'
+        }
       }
     );
 
@@ -158,7 +170,14 @@ function checkImageValid(filePath: string): boolean {
 export function createTempOutputDir(testName: string): string {
   const testDir = join(TEST_CONFIG.tempDir, testName);
   if (existsSync(testDir)) {
-    rmSync(testDir, { recursive: true });
+    try {
+      rmSync(testDir, { recursive: true, force: true });
+    } catch (error) {
+      // If cleanup fails, create a unique directory instead
+      const uniqueDir = join(TEST_CONFIG.tempDir, `${testName}-${Date.now()}`);
+      mkdirSync(uniqueDir, { recursive: true });
+      return uniqueDir;
+    }
   }
   mkdirSync(testDir, { recursive: true });
   return testDir;
@@ -170,7 +189,19 @@ export function createTempOutputDir(testName: string): string {
 export function cleanupTempDir(testName: string): void {
   const testDir = join(TEST_CONFIG.tempDir, testName);
   if (existsSync(testDir)) {
-    rmSync(testDir, { recursive: true });
+    try {
+      rmSync(testDir, { recursive: true, force: true });
+    } catch (error) {
+      // On Windows, files might be locked, try again after a short delay
+      setTimeout(() => {
+        try {
+          rmSync(testDir, { recursive: true, force: true });
+        } catch (e) {
+          // If still failing, just log and continue
+          console.warn(`Failed to cleanup ${testDir}:`, e);
+        }
+      }, 100);
+    }
   }
 }
 
@@ -207,7 +238,7 @@ export async function waitForMockServer(maxRetries: number = 10): Promise<boolea
 /**
  * Create test configuration files
  */
-export function createTestConfig(config: any, filename: string = 'test-config.json'): string {
+export function createTestConfig(config: unknown, filename: string = 'test-config.json'): string {
   const configPath = join(TEST_CONFIG.tempDir, filename);
   mkdirSync(TEST_CONFIG.tempDir, { recursive: true });
   require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2));
