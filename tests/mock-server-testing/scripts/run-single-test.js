@@ -56,6 +56,9 @@ program
         throw new Error(`Test case '${testName}' not found in group '${group}'. Available: ${available}`);
       }
 
+      // Add group property to testCase
+      testCase.group = group;
+
       // Build parameters from options
       const parameters = {};
       if (options.format) parameters.format = options.format;

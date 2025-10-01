@@ -18,7 +18,7 @@ program
   .action(async (orientationsArg, options) => {
     try {
       const orientations = orientationsArg.split(',').map(o => o.trim());
-      
+
       console.log(`🔄 Testing page orientations: ${orientations.join(', ')}`);
       console.log(`📍 Target Server: ${options.server}`);
 
@@ -40,16 +40,16 @@ program
 
       const batchRunner = new BatchTestRunner(config);
       const summary = await batchRunner.runBatchTests();
-      
+
       console.log(`\n📊 Orientation Testing Results: ${summary.passed}/${summary.total} passed`);
-      
+
       if (summary.failed > 0) {
         console.log(`❌ ${summary.failed} tests failed`);
         process.exit(1);
       } else {
         console.log('✅ All orientation tests passed!');
       }
-      
+
     } catch (error) {
       console.error('❌ Orientation testing failed:', error.message);
       process.exit(1);

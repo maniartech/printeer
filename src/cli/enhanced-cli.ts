@@ -8,6 +8,7 @@ import { EnhancedConfigurationManager, ConfigurationError } from '../config/enha
 import { BatchProcessor } from '../batch/batch-processor';
 import { TemplateManager } from '../templates/template-manager';
 import { ConfigurationConverter, buildConfigFromCliOptions } from './config-mapping';
+import printeer from '../api';
 import {
   determineOutputFilename,
   handleOutputConflicts,
@@ -336,8 +337,8 @@ async function runSingleUrlConversion(
     return;
   }
 
-  // Execute conversion (placeholder - integrate with actual converter)
-  const result = await simulateConversion(pair.url, finalOutput, config);
+  // Execute conversion with real printeer API
+  const result = await executeRealConversion(pair.url, finalOutput, config);
 
   if (!options.quiet) {
     console.log(`✓ Conversion complete: ${result.outputFile}`);
@@ -506,24 +507,55 @@ function needsJobSpecificConfig(options: CliOptions): boolean {
 /**
  * Simulate conversion process (placeholder for actual implementation)
  */
-async function simulateConversion(
+async function executeRealConversion(
   url: string,
   output: string,
   config: EnhancedPrintConfiguration
 ): Promise<ConversionResult> {
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+  const startTime = Date.now();
 
+  try {
+    // Convert enhanced config to simple config for legacy API
+    const legacyConfig = convertToLegacyConfig(config);
+
+    // Call the real printeer API
+    const result = await printeer(url, output, null, legacyConfig);
+
+    const duration = Date.now() - startTime;
+
+    return {
+      outputFile: result,
+      success: true,
+      duration,
+      metadata: {
+        pageCount: 1, // TODO: Extract from actual PDF
+        fileSize: 0,  // TODO: Get actual file size
+        dimensions: { width: 595, height: 842 }, // TODO: Get from config
+        loadTime: duration
+      }
+    };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    throw new Error(`Conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Convert enhanced configuration to legacy format for printeer API
+ */
+function convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
   return {
-    outputFile: output,
-    success: true,
-    duration: 1500,
-    metadata: {
-      pageCount: 1,
-      fileSize: 245760,
-      dimensions: { width: 595, height: 842 },
-      loadTime: 800
-    }
+    format: config.page?.format || 'A4',
+    orientation: config.page?.orientation || 'portrait',
+    margin: config.page?.margins,
+    scale: config.pdf?.scale,
+    quality: config.image?.quality,
+    printBackground: config.pdf?.printBackground,
+    viewport: config.viewport,
+    waitUntil: config.wait?.until,
+    waitTimeout: config.wait?.timeout,
+    headers: config.auth?.headers,
+    cookies: config.auth?.cookies
   };
 }
 
@@ -544,11 +576,14 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
 
   // Set up event listeners for progress tracking
   if (options.progress && !options.quiet) {
-    batchProcessor.on('job-started', (job) => {
+    batchProcessor.on('job-started', (job, progress) => {
       console.log(`Starting: ${job.id}`);
+      if (progress) {
+        console.log(`Processing job ${progress.currentJobNumber}/${progress.totalJobs}`);
+      }
     });
 
-    batchProcessor.on('job-completed', (job, result) => {
+    batchProcessor.on('job-completed', (job, result, progress) => {
       console.log(`✓ Completed: ${job.id} (${result.duration}ms)`);
     });
 
@@ -570,6 +605,11 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
     console.log(`  Successful: ${report.successfulJobs}`);
     console.log(`  Failed: ${report.failedJobs}`);
     console.log(`  Duration: ${report.totalDuration}ms`);
+    
+    // Also output in the format expected by tests
+    if (report.totalJobs > 1) {
+      console.log(`\n${report.successfulJobs}/${report.totalJobs} jobs completed successfully`);
+    }
   }
 }
 

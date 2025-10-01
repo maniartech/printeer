@@ -215,7 +215,13 @@ export class BatchTestRunner extends TestRunner {
             testSuite.group
           );
 
-          const result = await this.runTest(testCase, filteredParams);
+          // Ensure testCase has the group information
+          const testCaseWithGroup = {
+            ...testCase,
+            group: testSuite.group
+          };
+
+          const result = await this.runTest(testCaseWithGroup, filteredParams);
           await this.logTestResult(result);
           suiteResults.push(result);
 

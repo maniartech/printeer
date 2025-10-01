@@ -78,6 +78,7 @@ typings/
 .dist
 dist
 
-# Build output
+# Build and Test output
+output/
 dist/
 printeer-doctor-output.*

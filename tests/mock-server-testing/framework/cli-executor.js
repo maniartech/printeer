@@ -51,12 +51,11 @@ export class CLIExecutor {
 
   async runSingleCommand(args, options) {
     return new Promise((resolve, reject) => {
+      // Use real Printeer CLI - execute the actual printeer command
       const child = spawn(args[0], args.slice(1), {
         stdio: ['pipe', 'pipe', 'pipe'],
         timeout: options.timeout
-      });
-
-      let stdout = '';
+      });      let stdout = '';
       let stderr = '';
 
       child.stdout?.on('data', (data) => {
@@ -74,6 +73,14 @@ export class CLIExecutor {
 
       child.on('close', (code) => {
         clearTimeout(timeoutId);
+
+        // Debug logging
+        if (this.config.verbose || code !== 0) {
+          console.log(`🔍 DEBUG: Command finished with exit code ${code}`);
+          console.log(`🔍 DEBUG: stdout: "${stdout.trim()}"`);
+          console.log(`🔍 DEBUG: stderr: "${stderr.trim()}"`);
+        }
+
         resolve({
           exitCode: code,
           stdout: stdout.trim(),
@@ -182,7 +189,22 @@ export class PrinteerCommandBuilder {
   }
 
   waitFor(strategy) {
-    this.params.waitFor = strategy;
+    // Parse different wait strategies
+    if (strategy.startsWith('timeout:')) {
+      const delay = strategy.split(':')[1];
+      this.params.waitDelay = delay;
+    } else if (strategy.startsWith('selector:')) {
+      const selector = strategy.split(':')[1];
+      this.params.waitSelector = selector;
+    } else if (strategy.startsWith('function:')) {
+      const func = strategy.split(':')[1];
+      this.params.waitFunction = func;
+    } else if (['networkidle0', 'networkidle2', 'load', 'domcontentloaded'].includes(strategy)) {
+      this.params.waitUntil = strategy;
+    } else {
+      // Default to selector if no prefix
+      this.params.waitSelector = strategy;
+    }
     return this;
   }
 
@@ -220,15 +242,28 @@ export class PrinteerCommandBuilder {
   }
 
   build() {
-    const args = ['printeer'];
+    // Use node scripts/run-cli.js directly (same as npm run printeer)
+    const args = ['node', path.join(process.cwd(), 'scripts', 'run-cli.js'), 'convert'];
+
+    // Map our internal parameters to actual CLI options
+    const paramMapping = {
+      'background': 'print-background',
+      'waitDelay': 'wait-delay',
+      'waitSelector': 'wait-selector',
+      'waitFunction': 'wait-function',
+      'waitUntil': 'wait-until',
+      'timeout': 'load-timeout',
+      'retries': 'retry'
+    };
 
     Object.entries(this.params).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
+        // Map parameter name if needed
+        const cliKey = paramMapping[key] || key.replace(/([A-Z])/g, '-$1').toLowerCase();
+
         if (typeof value === 'boolean') {
-          if (value) args.push(`--${key}`);
+          if (value) args.push(`--${cliKey}`);
         } else {
-          // Convert camelCase to kebab-case for CLI
-          const cliKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
           args.push(`--${cliKey}`, String(value));
         }
       }

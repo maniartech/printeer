@@ -27,10 +27,19 @@ export class TestRunner {
 
   async runTest(testCase, parameters) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace(/T/, '_').slice(0, -5);
-    const filename = this.filenameGenerator.generate(testCase, parameters, timestamp);
-    const outputPath = path.join(this.config.outputDir, 'pdfs', testCase.group, filename);
 
-    // Ensure output directory exists
+    // Determine output type from expectedOutputs (default to pdf)
+    const expectedOutput = testCase.expectedOutputs?.[0] || 'pdf';
+    const fileExtension = expectedOutput === 'pdf' ? 'pdf' : expectedOutput;
+    const subDir = expectedOutput === 'pdf' ? 'pdfs' : 'images';
+
+    // Use a shorter filename for now to avoid path issues
+    const shortName = `${testCase.group}_${testCase.name}_${timestamp}.${fileExtension}`;
+    const filename = shortName;
+
+    // Ensure we use absolute paths
+    const outputDir = path.resolve(this.config.outputDir);
+    const outputPath = path.join(outputDir, subDir, testCase.group, filename);    // Ensure output directory exists
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
     try {
@@ -50,7 +59,7 @@ export class TestRunner {
       });
 
       // Validate output
-      const outputValidation = await this.cliExecutor.validateOutput(outputPath, 'pdf');
+      const outputValidation = await this.cliExecutor.validateOutput(outputPath, expectedOutput);
 
       const testResult = {
         testCase: testCase.name,
@@ -105,7 +114,12 @@ export class TestRunner {
     if (parameters.orientation) commandBuilder.orientation(parameters.orientation);
     if (parameters.margins) commandBuilder.margins(parameters.margins);
     if (parameters.scale) commandBuilder.scale(parameters.scale);
-    if (parameters.quality) commandBuilder.quality(parameters.quality);
+    if (parameters.quality) {
+      // Convert quality strings to numbers
+      const qualityMap = { 'low': 30, 'medium': 75, 'high': 95 };
+      const qualityValue = qualityMap[parameters.quality] || parseInt(parameters.quality) || 75;
+      commandBuilder.quality(qualityValue);
+    }
     if (parameters.background !== undefined) commandBuilder.background(parameters.background);
     if (parameters.viewport) {
       const [width, height] = parameters.viewport.split('x');

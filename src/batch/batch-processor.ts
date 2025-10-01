@@ -8,6 +8,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'yaml';
 import { EnhancedConfigurationManager } from '../config/enhanced-config-manager';
+import printeer from '../api';
 import type {
   BatchJob,
   BatchOptions,
@@ -156,12 +157,16 @@ export class BatchProcessor extends EventEmitter {
     allJobs: BatchJob[]
   ): Promise<void> {
     this.activeJobs++;
-    this.emit('job-started', job);
+    const currentJobNumber = processedJobs.size + processingJobs.size;
+    const totalJobs = allJobs.length;
+    this.emit('job-started', job, { currentJobNumber, totalJobs });
 
     try {
       const result = await this.executeJob(job, options);
       this.results.set(job.id, result);
-      this.emit('job-completed', job, result);
+      const completedJobNumber = processedJobs.size + 1;
+      const totalJobs = allJobs.length;
+      this.emit('job-completed', job, result, { completedJobNumber, totalJobs });
 
       // Queue dependent jobs when this job completes
       allJobs.forEach(candidateJob => {
@@ -217,8 +222,12 @@ export class BatchProcessor extends EventEmitter {
       // Apply job configuration
       const config = await this.resolveJobConfiguration(job);
 
-      // Simulate conversion (integrate with actual converter later)
-      await this.simulateConversion(job, config);
+      // Resolve output path with output directory if specified
+      const outputPath = this.resolveOutputPath(job.output, options.outputDirectory);
+      const jobWithResolvedOutput = { ...job, output: outputPath };
+
+      // Execute real conversion
+      await this.executeRealConversion(jobWithResolvedOutput, config);
 
       const endTime = new Date();
       const result: BatchResult = {
@@ -227,7 +236,7 @@ export class BatchProcessor extends EventEmitter {
         startTime,
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
-        outputFile: job.output,
+        outputFile: outputPath,
         retryCount: job.retryCount || 0
       };
 
@@ -239,23 +248,59 @@ export class BatchProcessor extends EventEmitter {
   }
 
   /**
-   * Simulate conversion process (placeholder for actual implementation)
+   * Resolve output path with output directory
    */
-  private async simulateConversion(
+  private resolveOutputPath(outputPath: string, outputDirectory?: string): string {
+    if (!outputDirectory) {
+      return outputPath;
+    }
+
+    // If output path is absolute, use it as-is
+    if (path.isAbsolute(outputPath)) {
+      return outputPath;
+    }
+
+    // Combine output directory with relative path
+    return path.join(outputDirectory, outputPath);
+  }
+
+  /**
+   * Execute real conversion using printeer API
+   */
+  private async executeRealConversion(
     job: BatchJob,
     config: EnhancedPrintConfiguration
   ): Promise<void> {
-    // Simulate processing time based on configuration complexity
-    const baseTime = 1000;
-    const complexityFactor = this.calculateComplexityFactor(config);
-    const processingTime = baseTime * complexityFactor;
+    // Ensure output directory exists
+    const outputDir = path.dirname(job.output);
+    await fs.mkdir(outputDir, { recursive: true }).catch(() => {
+      // Directory might already exist, ignore error
+    });
 
-    await new Promise(resolve => setTimeout(resolve, processingTime));
+    // Convert enhanced config to legacy format for printeer API
+    const legacyConfig = this.convertToLegacyConfig(config);
 
-    // Simulate potential failures
-    if (Math.random() < 0.05) { // 5% failure rate for simulation
-      throw new Error('Simulated conversion failure');
-    }
+    // Call the real printeer API
+    await printeer(job.url, job.output, null, legacyConfig);
+  }
+
+  /**
+   * Convert enhanced configuration to legacy format for printeer API
+   */
+  private convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
+    return {
+      format: config.page?.format || 'A4',
+      orientation: config.page?.orientation || 'portrait',
+      margin: config.page?.margins,
+      scale: config.pdf?.scale,
+      quality: config.image?.quality,
+      printBackground: config.pdf?.printBackground,
+      viewport: config.viewport,
+      waitUntil: config.wait?.until,
+      waitTimeout: config.wait?.timeout,
+      headers: config.auth?.headers,
+      cookies: config.auth?.cookies
+    };
   }
 
   /**
@@ -348,7 +393,7 @@ export class BatchProcessor extends EventEmitter {
       const job: BatchJob = {
         id: this.getCSVValue(headers, values, 'id') || `job-${i}`,
         url: this.getCSVValue(headers, values, 'url') || '',
-        output: this.getCSVValue(headers, values, 'output') || ''
+        output: this.getCSVValue(headers, values, 'output') || this.getCSVValue(headers, values, 'filename') || ''
       };
 
       // Parse optional fields
@@ -434,16 +479,20 @@ export class BatchProcessor extends EventEmitter {
       errors.push('Batch file must contain at least one job');
     }
 
-    // Validate individual jobs
-    for (const job of batchData.jobs || []) {
+    // Validate individual jobs and auto-generate IDs if missing
+    for (let i = 0; i < (batchData.jobs || []).length; i++) {
+      const job = batchData.jobs![i];
+      
+      // Auto-generate ID if missing
       if (!job.id) {
-        errors.push(`Job missing required field: id`);
+        job.id = `job-${i + 1}`;
       }
+      
       if (!job.url) {
-        errors.push(`Job ${job.id || 'unknown'} missing required field: url`);
+        errors.push(`Job ${job.id} missing required field: url`);
       }
       if (!job.output) {
-        errors.push(`Job ${job.id || 'unknown'} missing required field: output`);
+        errors.push(`Job ${job.id} missing required field: output`);
       }
 
       // Validate URL format
@@ -611,8 +660,9 @@ export class BatchProcessor extends EventEmitter {
       totalDuration,
       startTime: this.startTime || new Date(),
       endTime: new Date(),
-      results
-    };
+      results,
+      jobs: results // Add jobs property for backward compatibility
+    } as any;
 
     return report;
   }
