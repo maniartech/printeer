@@ -88,10 +88,12 @@ export async function runCliCommand(
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'false',
           PRINTEER_BROWSER_TIMEOUT: '5000', // Very fast browser timeout for tests
           PRINTEER_BROWSER_POOL_MIN: '0',
-          PRINTEER_BROWSER_POOL_MAX: '1',
+          PRINTEER_BROWSER_POOL_MAX: '3', // Allow small pool for batch tests
           PRINTEER_BROWSER_HEADLESS: 'new',
           PRINTEER_MAX_MEMORY_MB: '512',
-          PRINTEER_MAX_CONCURRENT_REQUESTS: '1'
+          PRINTEER_MAX_CONCURRENT_REQUESTS: '3', // Allow concurrency for batch tests
+          // Note: Don't force oneshot here - let batch commands use pool strategy
+          PRINTEER_CLI_MODE: '1' // Ensure CLI mode detection works
         }
       }
     );
@@ -102,7 +104,7 @@ export async function runCliCommand(
       exitCode: 0,
       duration: Date.now() - startTime
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       stdout: error.stdout || '',
       stderr: error.stderr || '',
@@ -184,7 +186,7 @@ export function createTempOutputDir(testName: string): string {
 }
 
 /**
- * Clean up temporary test files
+ * Clean up temporary test files and browser processes
  */
 export function cleanupTempDir(testName: string): void {
   const testDir = join(TEST_CONFIG.tempDir, testName);
@@ -202,6 +204,24 @@ export function cleanupTempDir(testName: string): void {
         }
       }, 100);
     }
+  }
+
+  // Also cleanup any browser processes
+  cleanupBrowserProcesses().catch(error => {
+    console.warn('Browser cleanup failed:', error);
+  });
+}
+
+/**
+ * Cleanup browser processes after tests
+ */
+export async function cleanupBrowserProcesses(): Promise<void> {
+  try {
+    // Use the comprehensive test cleanup
+    const { performTestCleanup } = await import('../src/test-utils/test-cleanup');
+    await performTestCleanup();
+  } catch (error) {
+    console.warn('Failed to cleanup browser processes:', error);
   }
 }
 
