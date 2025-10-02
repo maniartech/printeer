@@ -217,6 +217,13 @@ async function runInteractiveDoctor(verbose = false) {
       }
     } catch (error) {
       outputSpinner.stop('❌ Output Generation: Tests failed');
+      // Add failure to results so final verdict reflects this
+      allResults.push({
+        status: 'fail',
+        component: 'output-generation',
+        message: 'Output generation tests failed',
+        details: { error: error instanceof Error ? error.message : String(error) }
+      });
     }
   }
 
@@ -567,11 +574,11 @@ export async function runCLI() {
     const args = process.argv.slice(2);
     const legacyCommands = ['doctor', 'interactive', 'i'];
     const isLegacyCommand = args.length > 0 && legacyCommands.includes(args[0]);
-    
+
     // Check if it's a direct conversion (two arguments without commands)
-    const isDirectConversion = args.length >= 2 && 
-      !args[0].startsWith('-') && 
-      !args[1].startsWith('-') && 
+    const isDirectConversion = args.length >= 2 &&
+      !args[0].startsWith('-') &&
+      !args[1].startsWith('-') &&
       !legacyCommands.includes(args[0]) &&
       !['convert', 'c', 'batch', 'b', 'config', 'template', 'tpl'].includes(args[0]);
 

@@ -1,5 +1,5 @@
 // API domain - Library public surface
-import puppeteer from 'puppeteer';
+import puppeteer, { Browser } from 'puppeteer';
 import { normalize } from 'path';
 import { getDefaultBrowserOptions } from '../utils';
 import { DefaultBrowserManager } from '../printing/browser';
@@ -29,19 +29,19 @@ function getBrowserStrategy(): 'oneshot' | 'pool' {
 
   // Check if this is a batch operation (multiple URLs or batch command)
   const isBatchOperation = detectBatchOperation();
-  
+
   // Use pool for batch operations (performance for multiple conversions)
   if (isBatchOperation) {
     return 'pool';
   }
 
   // Use one-shot for single CLI commands (simple, clean, no lingering processes)
-  if (process.argv[1]?.includes('run-cli.js') || 
+  if (process.argv[1]?.includes('run-cli.js') ||
       process.argv[1]?.includes('cli.js') ||
       process.env.PRINTEER_CLI_MODE === '1') {
     return 'oneshot';
   }
-  
+
   // Use one-shot for test environment (clean, predictable)
   // Exception: batch tests should use pool for realistic testing
   if (process.env.NODE_ENV === 'test') {
@@ -50,7 +50,7 @@ function getBrowserStrategy(): 'oneshot' | 'pool' {
 
   // Use one-shot for Docker/container environments (resource constraints)
   // Exception: batch operations still use pool even in containers
-  if (process.env.DOCKER_CONTAINER === 'true' || 
+  if (process.env.DOCKER_CONTAINER === 'true' ||
       process.env.KUBERNETES_SERVICE_HOST ||
       existsSync('/.dockerenv')) {
     return 'oneshot';
@@ -62,7 +62,7 @@ function getBrowserStrategy(): 'oneshot' | 'pool' {
       process.env.NETLIFY) {
     return 'oneshot';
   }
-  
+
   // Use pool for server/API usage (performance for high throughput)
   return 'pool';
 }
@@ -73,28 +73,28 @@ function getBrowserStrategy(): 'oneshot' | 'pool' {
 function detectBatchOperation(): boolean {
   // Check command line arguments for batch indicators
   const args = process.argv;
-  
+
   // Explicit batch command
   if (args.includes('batch') || args.includes('--batch')) {
     return true;
   }
-  
+
   // Multiple URLs provided
   const urlCount = args.filter(arg => arg.startsWith('http')).length;
   if (urlCount > 1) {
     return true;
   }
-  
+
   // Batch file provided
   if (args.some(arg => arg.endsWith('.csv') || arg.endsWith('.json') || arg.endsWith('.yaml'))) {
     return true;
   }
-  
+
   // Environment variable indicating batch mode
   if (process.env.PRINTEER_BATCH_MODE === '1') {
     return true;
   }
-  
+
   // Check for batch-related CLI options
   const batchOptions = [
     '--concurrency',
@@ -102,11 +102,11 @@ function detectBatchOperation(): boolean {
     '--output-dir',
     '--batch-file'
   ];
-  
+
   if (batchOptions.some(option => args.includes(option))) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -128,7 +128,7 @@ let globalBrowserManager: DefaultBrowserManager | null = null;
 async function getBrowserManager(): Promise<DefaultBrowserManager> {
   if (!globalBrowserManager) {
     const browserOptions = getDefaultBrowserOptions();
-    
+
     // Apply environment-specific overrides
     const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
     if (exePath) {
@@ -168,17 +168,20 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
 /**
  * One-shot browser creation (simple, clean, no pool)
  */
-async function createOneshotBrowser(): Promise<Browser> {
-  const browserOptions = getDefaultBrowserOptions();
-  
+async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
+  const browserOptions = customOptions || getDefaultBrowserOptions();
+
   // Apply environment-specific overrides
   const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-  if (exePath) {
+  if (exePath && !browserOptions.executablePath) {
     browserOptions.executablePath = exePath;
   }
 
-  // Ensure headless mode
-  browserOptions.headless = "new";
+  // Ensure headless mode if not already set
+  if (!browserOptions.headless) {
+    browserOptions.headless = "new";
+  }
+
   const baseArgs: string[] = Array.isArray(browserOptions.args) ? browserOptions.args : [];
   const extraArgs = [
     baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new',
@@ -192,7 +195,7 @@ async function createOneshotBrowser(): Promise<Browser> {
 export default async (url: string, outputFile: string, outputType: string | null = null, browserOptions: any) => {
   const silent = process.env.PRINTEER_SILENT === '1';
   const strategy = getBrowserStrategy();
-  
+
   if (!silent) {
     getPackageJson();
     console.debug(`Using browser strategy: ${strategy}`);
@@ -214,7 +217,8 @@ export default async (url: string, outputFile: string, outputType: string | null
   } catch (error) {
     // If pool strategy fails, fallback to oneshot
     if (strategy === 'pool' && !silent) {
-      console.warn('Pool strategy failed, falling back to oneshot:', error.message);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.warn('Pool strategy failed, falling back to oneshot:', errMsg);
       return await runOneshotConversion(url, outputFile, outputType, browserOptions);
     }
     throw error;
@@ -225,19 +229,19 @@ export default async (url: string, outputFile: string, outputType: string | null
  * One-shot conversion: Simple, clean, no lingering processes
  */
 async function runOneshotConversion(
-  url: string, 
-  outputFile: string, 
-  outputType: string | null, 
+  url: string,
+  outputFile: string,
+  outputType: string | null,
   browserOptions: any
 ): Promise<string> {
   let browser: Browser | null = null;
   let page: any = null;
 
   try {
-    // Create browser
-    browser = await createOneshotBrowser();
+    // Create browser with custom options if provided
+    browser = await createOneshotBrowser(browserOptions);
     page = await browser.newPage();
-    
+
     // Navigate and render
     const res = await page.goto(url, { waitUntil: 'networkidle0' });
 
@@ -272,13 +276,13 @@ async function runOneshotConversion(
     if (browser) {
       try {
         await browser.close();
-        
+
         // Aggressive process cleanup for one-shot mode
         const process = browser.process();
         if (process && !process.killed) {
           // Give it a moment to close gracefully
           await new Promise(resolve => setTimeout(resolve, 500));
-          
+
           // Force kill if still alive
           if (!process.killed) {
             try {
@@ -299,14 +303,14 @@ async function runOneshotConversion(
  * Pool-based conversion: Efficient for high-throughput scenarios
  */
 async function runPooledConversion(
-  url: string, 
-  outputFile: string, 
-  outputType: string | null, 
+  url: string,
+  outputFile: string,
+  outputType: string | null,
   browserOptions: unknown
 ): Promise<string> {
   const browserManager = await getBrowserManager();
   const browserInstance = await browserManager.getBrowser();
-  
+
   let page: unknown = null;
 
   try {
@@ -363,13 +367,13 @@ function scheduleAutomaticCleanup(browserManager: DefaultBrowserManager): void {
   setTimeout(async () => {
     try {
       const status = browserManager.getPoolStatus();
-      
+
       // Only cleanup if no browsers are currently busy
       if (status.busyBrowsers === 0) {
         await browserManager.shutdown();
         globalBrowserManager = null;
         DefaultBrowserManager.setGlobalInstance(null);
-        
+
         if (!process.env.PRINTEER_SILENT) {
           console.debug('Automatic browser cleanup completed');
         }

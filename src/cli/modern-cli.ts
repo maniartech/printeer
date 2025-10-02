@@ -224,7 +224,13 @@ async function runDiagnosticsWithSteps(doctor: DefaultDoctorModule, verbose = fa
       }
     } catch (error) {
       outputSpinner.stop('❌ Output Generation: Tests failed');
-      // Don't throw here - output tests are less critical
+      // Add failure to results so final verdict reflects this
+      allResults.push({
+        status: 'fail',
+        component: 'output-generation',
+        message: 'Output generation tests failed',
+        details: { error: error instanceof Error ? error.message : String(error) }
+      });
     }
   }
 

@@ -1241,9 +1241,10 @@ export class DefaultDoctorModule implements DoctorModule {
       const out = path.resolve(process.cwd(), 'printeer-doctor-output.pdf');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
+      // Note: pipe:true doesn't work reliably on Windows, so we use pipe:false with a random port
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
         headless: "new",
-        pipe: true,
+        pipe: false,  // Changed from true - pipe doesn't work reliably on Windows
         timeout: 25000,
         args: [
           '--headless=new',
@@ -1254,25 +1255,15 @@ export class DefaultDoctorModule implements DoctorModule {
           '--no-first-run',
           '--no-default-browser-check',
           '--disable-background-networking',
-          '--disable-extensions'
+          '--disable-extensions',
+          '--remote-debugging-port=0'  // Use random port for WebSocket connection
         ]
       };
       // Silence library-level logs for doctor checks
       const prevSilent = process.env.PRINTEER_SILENT;
       process.env.PRINTEER_SILENT = '1';
       try {
-        try {
-          await printeer(url, out, 'pdf', options as unknown as Record<string, unknown>);
-        } catch (e) {
-          // Fallback: try without pipe and allow random devtools port
-          const fb: PuppeteerLaunchOptions & { pipe?: boolean } = { ...options, pipe: false };
-          const fbArgs: string[] = Array.isArray(fb.args) ? [...fb.args] : [];
-          if (!fbArgs.some((a: string) => a.startsWith('--remote-debugging-port'))) {
-            fbArgs.push('--remote-debugging-port=0');
-          }
-          fb.args = fbArgs;
-          await printeer(url, out, 'pdf', fb as unknown as Record<string, unknown>);
-        }
+        await printeer(url, out, 'pdf', options as unknown as Record<string, unknown>);
       } finally {
         if (prevSilent === undefined) delete process.env.PRINTEER_SILENT; else process.env.PRINTEER_SILENT = prevSilent;
       }
@@ -1301,9 +1292,10 @@ export class DefaultDoctorModule implements DoctorModule {
       const out = path.resolve(process.cwd(), 'printeer-doctor-output.png');
       try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
       // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
+      // Note: pipe:true doesn't work reliably on Windows, so we use pipe:false with a random port
       const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
         headless: "new",
-        pipe: true,
+        pipe: false,  // Changed from true - pipe doesn't work reliably on Windows
         timeout: 25000,
         args: [
           '--headless=new',
@@ -1314,23 +1306,14 @@ export class DefaultDoctorModule implements DoctorModule {
           '--no-first-run',
           '--no-default-browser-check',
           '--disable-background-networking',
-          '--disable-extensions'
+          '--disable-extensions',
+          '--remote-debugging-port=0'  // Use random port for WebSocket connection
         ]
       };
       const prevSilent = process.env.PRINTEER_SILENT;
       process.env.PRINTEER_SILENT = '1';
       try {
-        try {
-          await printeer(url, out, 'png', options as unknown as Record<string, unknown>);
-        } catch (e) {
-          const fb: PuppeteerLaunchOptions & { pipe?: boolean } = { ...options, pipe: false };
-          const fbArgs: string[] = Array.isArray(fb.args) ? [...fb.args] : [];
-          if (!fbArgs.some((a: string) => a.startsWith('--remote-debugging-port'))) {
-            fbArgs.push('--remote-debugging-port=0');
-          }
-          fb.args = fbArgs;
-          await printeer(url, out, 'png', fb as unknown as Record<string, unknown>);
-        }
+        await printeer(url, out, 'png', options as unknown as Record<string, unknown>);
       } finally {
         if (prevSilent === undefined) delete process.env.PRINTEER_SILENT; else process.env.PRINTEER_SILENT = prevSilent;
       }
