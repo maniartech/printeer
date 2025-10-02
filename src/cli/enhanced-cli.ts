@@ -285,6 +285,13 @@ templateCmd
     await previewTemplate(name, options);
   });
 
+// Add cleanup command for server maintenance
+import('./cleanup-command').then(m => {
+  program.addCommand(m.default());
+}).catch(error => {
+  console.warn('Failed to load cleanup command:', error.message);
+});
+
 // Export the program for testing
 export { program };
 
@@ -356,20 +363,24 @@ async function runMultiUrlConversion(
   options: CliOptions,
   configManager: EnhancedConfigurationManager
 ): Promise<void> {
-  // Create batch jobs from URL-output pairs
-  const batchJobs = await createBatchJobsFromPairs(pairs, options, configManager);
+  // Set batch mode for browser strategy detection
+  process.env.PRINTEER_BATCH_MODE = '1';
+  
+  try {
+    // Create batch jobs from URL-output pairs
+    const batchJobs = await createBatchJobsFromPairs(pairs, options, configManager);
 
-  // Use the batch processor for multiple URLs
-  const batchProcessor = new BatchProcessor({
-    concurrency: options.concurrency || Math.min(3, pairs.length),
-    retryAttempts: options.retry || 2,
-    continueOnError: options.continueOnError || true,
-    outputDirectory: options.outputDir || process.cwd(),
-    reportFormat: 'json',
-    progressTracking: !options.quiet,
-    dryRun: options.dryRun || false,
-    cleanup: options.cleanup !== false
-  });
+    // Use the batch processor for multiple URLs
+    const batchProcessor = new BatchProcessor({
+      concurrency: options.concurrency || Math.min(3, pairs.length),
+      retryAttempts: options.retry || 2,
+      continueOnError: options.continueOnError || true,
+      outputDirectory: options.outputDir || process.cwd(),
+      reportFormat: 'json',
+      progressTracking: !options.quiet,
+      dryRun: options.dryRun || false,
+      cleanup: options.cleanup !== false
+    });
 
   // Set up progress tracking
   if (!options.quiet) {
@@ -394,6 +405,9 @@ async function runMultiUrlConversion(
     }
   } catch (error) {
     throw new Error(`Multi-URL conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    // Clean up batch mode flag
+    delete process.env.PRINTEER_BATCH_MODE;
   }
 }
 

@@ -145,22 +145,190 @@ export class DefaultBrowserManager implements BrowserManager {
       this.cleanupInterval = undefined;
     }
 
-    // Close all browsers
+    // Close all browsers with aggressive cleanup
     const allBrowsers = [
       ...this.pool.available,
       ...Array.from(this.pool.busy.values())
     ];
 
-    await Promise.all(
-      allBrowsers.map(browser => this.destroyBrowserInstance(browser))
+    // Use Promise.allSettled to ensure all browsers are attempted to be closed
+    const shutdownResults = await Promise.allSettled(
+      allBrowsers.map(browser => this.destroyBrowserInstanceAggressively(browser))
     );
+
+    // Log any failures but don't throw
+    shutdownResults.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.warn(`Failed to shutdown browser ${allBrowsers[index].id}:`, result.reason);
+      }
+    });
 
     // Reset pool state
     this.pool.available = [];
     this.pool.busy.clear();
     this.pool.total = 0;
     this.isInitialized = false;
-    // Keep isShuttingDown = true to prevent new browser acquisition
+
+    // Final verification - ensure no processes are left
+    await this.verifyNoRemainingProcesses();
+  }
+
+  /**
+   * Aggressively destroy a browser instance with multiple fallback strategies
+   */
+  private async destroyBrowserInstanceAggressively(browserInstance: BrowserInstance): Promise<void> {
+    const maxAttempts = 3;
+    let attempt = 0;
+
+    while (attempt < maxAttempts) {
+      try {
+        attempt++;
+
+        // First attempt: normal destruction
+        if (attempt === 1) {
+          await this.destroyBrowserInstance(browserInstance);
+          return;
+        }
+
+        // Second attempt: force close with shorter timeout
+        if (attempt === 2) {
+          const browser = browserInstance.browser;
+          const process = browser.process();
+
+          // Try to close browser with short timeout
+          await Promise.race([
+            browser.close(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Close timeout')), 2000)
+            )
+          ]);
+
+          // Force kill process if still alive
+          if (process && !process.killed) {
+            process.kill('SIGKILL');
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+          this.pool.total--;
+          this.pool.metrics.destroyed++;
+          return;
+        }
+
+        // Third attempt: nuclear option
+        if (attempt === 3) {
+          const process = browserInstance.browser.process();
+          if (process && !process.killed) {
+            try {
+              process.kill('SIGKILL');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (error) {
+              // Process might already be dead
+            }
+          }
+
+          this.pool.total--;
+          this.pool.metrics.destroyed++;
+          return;
+        }
+
+      } catch (error) {
+        console.warn(`Browser destruction attempt ${attempt} failed for ${browserInstance.id}:`, error);
+
+        if (attempt === maxAttempts) {
+          // Final attempt failed, but still update metrics
+          this.pool.total = Math.max(0, this.pool.total - 1);
+          this.pool.metrics.errors++;
+          throw error;
+        }
+
+        // Wait before next attempt
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+      }
+    }
+  }
+
+  /**
+   * Verify no browser processes are left running
+   */
+  private async verifyNoRemainingProcesses(): Promise<void> {
+    // Give processes time to fully terminate
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      // This is a basic check - in production you might want more sophisticated verification
+      const remainingBrowsers = this.pool.available.length + this.pool.busy.size;
+      if (remainingBrowsers > 0) {
+        console.warn(`Warning: ${remainingBrowsers} browsers still tracked after shutdown`);
+      }
+
+      // Reset metrics to ensure clean state
+      this.pool.metrics = {
+        created: 0,
+        destroyed: 0,
+        reused: 0,
+        errors: 0
+      };
+
+    } catch (error) {
+      console.warn('Failed to verify remaining processes:', error);
+    }
+  }
+
+  /**
+   * Emergency cleanup - force close all browsers immediately
+   * This is used by CLI cleanup commands
+   */
+  async emergencyCleanup(): Promise<{ killed: number; errors: string[] }> {
+    const result = { killed: 0, errors: [] as string[] };
+
+    try {
+      // Get all browsers
+      const allBrowsers = [
+        ...this.pool.available,
+        ...Array.from(this.pool.busy.values())
+      ];
+
+      // Force close all browsers
+      for (const browserInstance of allBrowsers) {
+        try {
+          await this.destroyBrowserInstanceAggressively(browserInstance);
+          result.killed++;
+        } catch (error) {
+          result.errors.push(`Failed to kill browser ${browserInstance.id}: ${error.message}`);
+        }
+      }
+
+      // Clear pools
+      this.pool.available = [];
+      this.pool.busy.clear();
+      this.pool.total = 0;
+
+      // Stop monitoring
+      if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval);
+        this.cleanupInterval = undefined;
+      }
+
+    } catch (error) {
+      result.errors.push(`Emergency cleanup failed: ${error.message}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get global browser manager instance for cleanup commands
+   */
+  static getGlobalInstance(): DefaultBrowserManager | null {
+    // This will be set by the API when it creates the global manager
+    return (global as unknown).__printeerBrowserManager || null;
+  }
+
+  /**
+   * Set global browser manager instance
+   */
+  static setGlobalInstance(manager: DefaultBrowserManager | null): void {
+    (global as unknown).__printeerBrowserManager = manager;
   }
 
   getPoolStatus(): PoolStatus {
@@ -250,32 +418,164 @@ export class DefaultBrowserManager implements BrowserManager {
 
   private async destroyBrowserInstance(browserInstance: BrowserInstance): Promise<void> {
     try {
-      const process = browserInstance.browser.process();
-
-      // Close browser gracefully first
-      await browserInstance.browser.close();
-
-      // Wait for process termination and force kill if necessary
-      if (process && !process.killed) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Force kill if still alive
-        try {
-          if (!process.killed) {
-            process.kill('SIGKILL');
-            // Wait a bit more after force kill
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
-        } catch (error) {
-          // Process already dead, ignore
-        }
-      }
-
+      await this.destroyBrowserInstanceAggressively(browserInstance);
       this.pool.total--;
       this.pool.metrics.destroyed++;
     } catch (error) {
       console.warn(`Error closing browser ${browserInstance.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.pool.metrics.errors++;
+    }
+  }
+
+  /**
+   * Aggressively destroy browser instance with multiple fallback strategies
+   */
+  private async destroyBrowserInstanceAggressively(browserInstance: BrowserInstance): Promise<void> {
+    const { browser, id } = browserInstance;
+    const process = browser.process();
+    const pid = process?.pid;
+
+    // Strategy 1: Graceful close with timeout
+    try {
+      await Promise.race([
+        browser.close(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Graceful close timeout')), 5000)
+        )
+      ]);
+
+      // Verify process is actually dead
+      if (pid && await this.isProcessStillAlive(pid)) {
+        throw new Error('Process still alive after graceful close');
+      }
+
+      return; // Success!
+    } catch (error) {
+      console.warn(`Graceful close failed for browser ${id}: ${error.message}`);
+    }
+
+    // Strategy 2: Force kill the process
+    if (pid) {
+      try {
+        await this.forceKillProcess(pid);
+
+        // Wait and verify
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (await this.isProcessStillAlive(pid)) {
+          throw new Error(`Process ${pid} still alive after force kill`);
+        }
+
+        return; // Success!
+      } catch (error) {
+        console.warn(`Force kill failed for browser ${id} (PID: ${pid}): ${error.message}`);
+      }
+    }
+
+    // Strategy 3: System-level process termination
+    try {
+      await this.systemKillBrowserProcess(browserInstance);
+    } catch (error) {
+      console.error(`System kill failed for browser ${id}: ${error.message}`);
+      throw error; // This is our last resort, so throw if it fails
+    }
+  }
+
+  /**
+   * Check if a process is still alive
+   */
+  private async isProcessStillAlive(pid: number): Promise<boolean> {
+    try {
+      if (process.platform === 'win32') {
+        const { exec } = await import('child_process');
+        const { promisify } = await import('util');
+        const execAsync = promisify(exec);
+
+        const { stdout } = await execAsync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, { timeout: 5000 });
+        return stdout.includes(pid.toString());
+      } else {
+        // Send signal 0 to check if process exists
+        process.kill(pid, 0);
+        return true;
+      }
+    } catch (error) {
+      return false; // Process doesn't exist
+    }
+  }
+
+  /**
+   * Force kill a process by PID
+   */
+  private async forceKillProcess(pid: number): Promise<void> {
+    if (process.platform === 'win32') {
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+
+      await execAsync(`taskkill /F /PID ${pid} /T`, { timeout: 10000 });
+    } else {
+      process.kill(pid, 'SIGKILL');
+    }
+  }
+
+  /**
+   * System-level browser process termination (last resort)
+   */
+  private async systemKillBrowserProcess(browserInstance: BrowserInstance): Promise<void> {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+
+    if (process.platform === 'win32') {
+      // Kill any Chrome process that might be related to this browser
+      await execAsync(`
+        Get-WmiObject Win32_Process | 
+        Where-Object { 
+          $_.Name -eq "chrome.exe" -and 
+          ($_.CommandLine -like "*--remote-debugging-port*" -or $_.CommandLine -like "*--user-data-dir*")
+        } | 
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+      `, { shell: 'powershell', timeout: 15000 });
+    } else {
+      // Kill Chrome processes with debugging ports or user data dirs
+      await execAsync(`
+        pkill -f "chrome.*--remote-debugging-port" || true
+        pkill -f "chrome.*--user-data-dir" || true
+      `, { timeout: 15000 });
+    }
+  }
+
+  /**
+   * Verify no remaining browser processes after shutdown
+   */
+  private async verifyNoRemainingProcesses(): Promise<void> {
+    try {
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+
+      let remainingCount = 0;
+
+      if (process.platform === 'win32') {
+        const { stdout } = await execAsync(`
+          (Get-WmiObject Win32_Process | 
+           Where-Object { 
+             $_.Name -eq "chrome.exe" -and 
+             ($_.CommandLine -like "*--remote-debugging-port*" -or $_.CommandLine -like "*--user-data-dir*")
+           }).Count
+        `, { shell: 'powershell', timeout: 10000 });
+        remainingCount = parseInt(stdout.trim()) || 0;
+      } else {
+        const { stdout } = await execAsync(`
+          ps aux | grep -E "chrome.*(--remote-debugging-port|--user-data-dir)" | grep -v grep | wc -l
+        `, { timeout: 10000 });
+        remainingCount = parseInt(stdout.trim()) || 0;
+      }
+
+      if (remainingCount > 0) {
+        console.warn(`⚠️  ${remainingCount} browser processes may still be running after shutdown`);
+      }
+    } catch (error) {
+      console.debug('Could not verify remaining processes:', error.message);
     }
   }
 
@@ -591,7 +891,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
       });
 
       // Test basic page evaluation
-  const title = await page.title();
+      const title = await page.title();
 
       // Clean up test page
       await page.close();

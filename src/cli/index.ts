@@ -538,6 +538,9 @@ program
     await runInteractiveConvert();
   });
 
+// Cleanup command for server maintenance
+program.addCommand(await import('./cleanup-command').then(m => m.default()));
+
 // Error handling
 program.configureHelp({
   sortSubcommands: true,

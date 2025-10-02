@@ -47,6 +47,9 @@ export class BatchProcessor extends EventEmitter {
     options: BatchOptions
   ): Promise<BatchReport> {
     try {
+      // Set batch mode for browser strategy detection
+      process.env.PRINTEER_BATCH_MODE = '1';
+      
       // Load and validate batch file
       const batchData = await this.loadBatchFile(batchFile);
       const validation = await this.validateBatchData(batchData);
@@ -63,6 +66,9 @@ export class BatchProcessor extends EventEmitter {
     } catch (error) {
       this.emit('error', error);
       throw error;
+    } finally {
+      // Clean up batch mode flag
+      delete process.env.PRINTEER_BATCH_MODE;
     }
   }
 
@@ -76,6 +82,9 @@ export class BatchProcessor extends EventEmitter {
     this.startTime = new Date();
 
     try {
+      // Set batch mode for browser strategy detection
+      process.env.PRINTEER_BATCH_MODE = '1';
+      
       // Validate and prepare jobs
       const processedJobs = await this.prepareJobs(jobs, options);
 
@@ -91,6 +100,8 @@ export class BatchProcessor extends EventEmitter {
       return await this.generateBatchReport(options);
     } finally {
       await this.cleanup();
+      // Clean up batch mode flag
+      delete process.env.PRINTEER_BATCH_MODE;
     }
   }
 
@@ -574,7 +585,7 @@ export class BatchProcessor extends EventEmitter {
    */
   private substituteVariables(
     job: BatchJob,
-    variables: Record<string, any>
+    variables: Record<string, unknown>
   ): BatchJob {
     const substituted = { ...job };
 
@@ -662,7 +673,7 @@ export class BatchProcessor extends EventEmitter {
       endTime: new Date(),
       results,
       jobs: results // Add jobs property for backward compatibility
-    } as any;
+    } as unknown;
 
     return report;
   }
@@ -671,9 +682,13 @@ export class BatchProcessor extends EventEmitter {
    * Cleanup resources
    */
   private async cleanup(): Promise<void> {
-    // Reset state
+    // Reset state first
     this.results.clear();
     this.activeJobs = 0;
     this.resourceMetrics = [];
+
+    // Note: Browser cleanup is handled by the API layer's browser manager
+    // Each individual job properly releases browsers back to the pool
+    // The global browser manager handles final cleanup on process exit
   }
 }
