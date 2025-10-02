@@ -1248,7 +1248,7 @@ export class DefaultDoctorModule implements DoctorModule {
         timeout: 25000,
         args: [
           '--headless=new',
-          ...(process.platform === 'win32' ? ['--no-startup-window'] : []),
+          // NOTE: --no-startup-window removed - causes "waiting for target" timeouts in headless mode
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
@@ -1299,7 +1299,7 @@ export class DefaultDoctorModule implements DoctorModule {
         timeout: 25000,
         args: [
           '--headless=new',
-          ...(process.platform === 'win32' ? ['--no-startup-window'] : []),
+          // NOTE: --no-startup-window removed - causes "waiting for target" timeouts in headless mode
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',

@@ -169,7 +169,12 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
  * One-shot browser creation (simple, clean, no pool)
  */
 async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
-  const browserOptions = customOptions || getDefaultBrowserOptions();
+  let browserOptions = customOptions ? { ...customOptions } : getDefaultBrowserOptions();
+
+  // Remove pipe option if false (only meaningful when true, causes issues when false)
+  if (browserOptions.pipe === false) {
+    delete browserOptions.pipe;
+  }
 
   // Apply environment-specific overrides
   const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
@@ -184,8 +189,9 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
 
   const baseArgs: string[] = Array.isArray(browserOptions.args) ? browserOptions.args : [];
   const extraArgs = [
-    baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new',
-    process.platform === 'win32' ? '--no-startup-window' : null
+    baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new'
+    // NOTE: Removed --no-startup-window for Windows as it causes "waiting for target" timeouts
+    // in headless mode. The flag is redundant in headless mode anyway.
   ].filter(Boolean) as string[];
   browserOptions.args = Array.from(new Set([...baseArgs, ...extraArgs]));
 
