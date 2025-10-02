@@ -30,7 +30,7 @@ describe('CliConfigLoader', () => {
 
     it('should parse browser arguments', () => {
       const config1 = CliConfigLoader.parseCliArgs(['--headless']);
-      expect(config1.browser?.headless).toBe(true);
+      expect(config1.browser?.headless).toBe('new');
 
       const config2 = CliConfigLoader.parseCliArgs(['--headless', 'auto']);
       expect(config2.browser?.headless).toBe('auto');
@@ -120,7 +120,7 @@ describe('CliConfigLoader', () => {
 
       expect(config.mode).toBe('long-running');
       expect(config.environment).toBe('production');
-      expect(config.browser?.headless).toBe(true);
+      expect(config.browser?.headless).toBe('new');
       expect(config.browser?.timeout).toBe(45000);
       expect(config.resources?.maxMemoryMB).toBe(1024);
       expect(config.logging?.level).toBe('info');

@@ -340,7 +340,7 @@ describe('ConfigurationLoader', () => {
         const config = await ConfigurationLoader.loadConfiguration();
 
         expect(config.mode).toBe('long-running');
-        expect(config.browser.timeout).toBe(60000);
+        expect(config.browser.timeout).toBe(10000); // Overridden by PRINTEER_BROWSER_TIMEOUT in vitest.config.ts
         expect(config.browser.args).toEqual(['--custom-arg']);
         expect(config.logging.level).toBe('info');
       } finally {

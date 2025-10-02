@@ -365,7 +365,7 @@ async function runMultiUrlConversion(
 ): Promise<void> {
   // Set batch mode for browser strategy detection
   process.env.PRINTEER_BATCH_MODE = '1';
-  
+
   try {
     // Create batch jobs from URL-output pairs
     const batchJobs = await createBatchJobsFromPairs(pairs, options, configManager);
@@ -382,18 +382,17 @@ async function runMultiUrlConversion(
       cleanup: options.cleanup !== false
     });
 
-  // Set up progress tracking
-  if (!options.quiet) {
-    batchProcessor.on('job-completed', (job, result) => {
-      console.log(`✓ Completed: ${job.url} -> ${result.outputFile} (${result.duration}ms)`);
-    });
+    // Set up progress tracking
+    if (!options.quiet) {
+      batchProcessor.on('job-completed', (job, result) => {
+        console.log(`✓ Completed: ${job.url} -> ${result.outputFile} (${result.duration}ms)`);
+      });
 
-    batchProcessor.on('job-failed', (job, error) => {
-      console.error(`✗ Failed: ${job.url} - ${error.message}`);
-    });
-  }
+      batchProcessor.on('job-failed', (job, error) => {
+        console.error(`✗ Failed: ${job.url} - ${error.message}`);
+      });
+    }
 
-  try {
     const report = await batchProcessor.processBatch(batchJobs, batchProcessor.options);
 
     if (!options.quiet) {
@@ -619,7 +618,7 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
     console.log(`  Successful: ${report.successfulJobs}`);
     console.log(`  Failed: ${report.failedJobs}`);
     console.log(`  Duration: ${report.totalDuration}ms`);
-    
+
     // Also output in the format expected by tests
     if (report.totalJobs > 1) {
       console.log(`\n${report.successfulJobs}/${report.totalJobs} jobs completed successfully`);

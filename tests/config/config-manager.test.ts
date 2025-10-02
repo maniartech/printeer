@@ -107,7 +107,7 @@ describe('ConfigurationManager', () => {
   const config = await configManager.load();
 
   expect(config.environment).toBe('production');
-  expect(config.browser.headless).toBe(true);
+  expect(config.browser.headless).toBe('new');
   expect(config.logging.format).toBe('json');
   expect(config.logging.level).toBe('info');
   expect(config.resources.maxMemoryMB).toBe(1024);

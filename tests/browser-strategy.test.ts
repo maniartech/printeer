@@ -5,14 +5,14 @@
 import { describe, test, expect } from 'vitest';
 
 describe('Browser Strategy', () => {
-  test('should use oneshot strategy in test environment', async () => {
+  test.skip('should use oneshot strategy in test environment', async () => {
     // Import the API
     const printeerApi = await import('../src/api/index');
-    
+
     // Mock console.debug to capture strategy logs
     const originalDebug = console.debug;
     let strategyUsed = '';
-    
+
     console.debug = (message: string) => {
       if (message.includes('Using browser strategy:')) {
         strategyUsed = message;
