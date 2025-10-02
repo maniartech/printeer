@@ -926,7 +926,7 @@ async function listTemplates(options: any): Promise<void> {
 /**
  * Show template content
  */
-async function showTemplate(name: string, options: unknown): Promise<void> {
+async function showTemplate(name: string, options: { preview?: boolean; variables?: string }): Promise<void> {
   const templateManager = new TemplateManager();
 
   try {
@@ -961,7 +961,7 @@ async function showTemplate(name: string, options: unknown): Promise<void> {
 /**
  * Preview template with variables
  */
-async function previewTemplate(name: string, options: unknown): Promise<void> {
+async function previewTemplate(name: string, options: { variables?: string }): Promise<void> {
   const templateManager = new TemplateManager();
 
   try {
@@ -1016,7 +1016,7 @@ async function previewTemplate(name: string, options: unknown): Promise<void> {
  * Parse CLI arguments into options object
  */
 function parseCliArgs(args: string[]): CliOptions {
-  const options: unknown = {};
+  const options: Record<string, unknown> = {};
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -1036,5 +1036,5 @@ function parseCliArgs(args: string[]): CliOptions {
     }
   }
 
-  return options;
+  return options as CliOptions;
 }
