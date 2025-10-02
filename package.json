@@ -22,6 +22,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run --exclude 'tests/cli/**'",
+    "test:unit:watch": "vitest --exclude 'tests/cli/**' --watch",
+    "test:unit:coverage": "vitest run --exclude 'tests/cli/**' --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "tsc": "tsc",
@@ -33,7 +36,9 @@
     "mockserver-test:batch": "node tests/mock-server-testing/scripts/run-batch.js",
     "test:cli": "vitest run tests/cli --reporter=verbose",
     "test:cli:watch": "vitest tests/cli --watch",
-    "test:cli:coverage": "vitest run tests/cli --coverage"
+    "test:cli:coverage": "vitest run tests/cli --coverage",
+    "test:browser": "node scripts/test-both-strategies.js",
+    "test:browser:strategy": "vitest run tests/browser-*.test.ts tests/batch-strategy.test.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
