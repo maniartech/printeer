@@ -73,6 +73,7 @@ main();
 - [x] Support web to png printing
 - [ ] Accept page size and other print options
 - [ ] Run printeer as a service (with a web interface) with CDP (Chrome DevTools Protocol) to print webpages to PDF and PNG
+- [ ] Support for Watermarking (Text/Image)
 
 ##
 > **Note:** Master branch is not stable. Use the latest release instead.

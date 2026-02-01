@@ -2,16 +2,16 @@
 
 Contains the work in progress for the project and the ideas that I have.
 
-## Options
+## Options Status
 
-| Option | Description | Default | Options |
+| Option | Description | Status | Current Implementation |
 | --- | --- | --- | --- |
-| pagesize | The page size of the PDF | Auto | Auto, A1, A2, A3, A4, width*height (Eg. `800cm*600cm`) |
-| type | The type of the output | PDF | PDF, PNG |
-| output | The output file path | `none` | Eg. `./output.pdf` |
-| waitfor | The waitfor option for Puppeteer | networkidle2 | networkidle0, networkidle2, load |
-| timeout | The timeout option for Puppeteer | 30000 | Eg. `30000` |
-| watermark | The watermark option for Puppeteer | `none` | Eg. `./watermark.png` |
+| `pagesize` | The page size of the PDF | ✅ Ready | `--format` and `--viewport` |
+| `type` | The type of the output | ✅ Ready | Auto-detected from extension |
+| `output` | The output file path | ✅ Ready | Positional arg or `--output` |
+| `waitfor` | The waitfor option for Puppeteer | ✅ Ready | `--wait-until` |
+| `timeout` | The timeout option for Puppeteer | ✅ Ready | `--wait-timeout` |
+| `watermark` | The watermark option for Puppeteer | 🚧 TODO | Not implemented |
 
 ## Reference Links
 

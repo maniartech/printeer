@@ -54,6 +54,8 @@ program
   .command('convert')
   .alias('c')
   .description('Convert web page(s) to PDF/PNG with flexible URL-output pairing')
+  .argument('[url]', 'URL to convert')
+  .argument('[output]', 'Output filename')
   .option('-u, --url <url>', 'URL to convert (can be used multiple times)', collect, [])
   .option('-o, --output <filename>', 'Output filename for preceding --url (optional)', collect, [])
   .option('--output-dir <dir>', 'Output directory for generated filenames')
@@ -134,11 +136,24 @@ program
   .option('--dry-run', 'Validate configuration without converting')
   .option('--output-metadata', 'Include metadata in output')
 
-  .action(async (options) => {
+  .action(async (url, output, options) => {
     try {
+      // Handle positional arguments
+      if (url) {
+        options.url = options.url || [];
+        // Add positional URL to the beginning of the list
+        options.url.unshift(url);
+
+        if (output) {
+          options.output = options.output || [];
+          // Add positional output to the beginning of the list to match the URL
+          options.output.unshift(output);
+        }
+      }
+
       // Validate URL-output pairing
       if (!options.url || options.url.length === 0) {
-        throw new Error('At least one --url must be specified');
+        throw new Error('At least one URL must be specified (via argument or --url)');
       }
 
       // Ensure output array doesn't exceed url array
