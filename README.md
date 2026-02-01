@@ -32,7 +32,14 @@
 ### Install
 
 ```bash
+# npm
 npm install -g printeer
+
+# bun
+bun add -g printeer
+
+# yarn
+yarn global add printeer
 ```
 
 ### Use
@@ -207,10 +214,54 @@ Printeer supports configuration files for complex setups:
 | `PRINTEER_BROWSER_HEADLESS` | `true` / `false` |
 | `PRINTEER_LOG_LEVEL` | `error`, `warn`, `info`, `debug` |
 
-## Requirements
+## Runtime Compatibility
 
-- **Node.js** 16.8 or higher
-- **Chromium** (auto-installed with Puppeteer)
+Printeer is built for Node.js but works across modern JavaScript runtimes:
+
+| Runtime | Status | Notes |
+|---------|--------|-------|
+| **Node.js** 16.8+ | ✅ Full Support | Primary runtime, fully tested |
+| **Bun** 1.0+ | ✅ Supported | Install via `bun add printeer` |
+| **Deno** 2.0+ | ⚠️ Experimental | Use npm specifier (see below) |
+
+### Node.js (Recommended)
+
+```bash
+npm install -g printeer
+```
+
+### Bun
+
+```bash
+# Install
+bun add printeer
+
+# Note: Run post-install to download Chromium
+bunx puppeteer browsers install chrome
+
+# Use
+bun run printeer convert https://example.com page.pdf
+```
+
+### Deno
+
+```typescript
+// Import using npm specifier
+import printeer from "npm:printeer";
+
+// Requires permissions: --allow-read --allow-write --allow-net --allow-run --allow-env
+await printeer("https://example.com", "output.pdf");
+```
+
+Run with:
+```bash
+deno run --allow-all your-script.ts
+```
+
+### Requirements
+
+- **Chromium** — Auto-installed with Puppeteer, or set `PRINTEER_BROWSER_EXECUTABLE_PATH`
+- **Linux headless servers** — May require `xvfb` or `--no-sandbox` flag
 
 ## Troubleshooting
 
