@@ -49,7 +49,7 @@ export class BatchProcessor extends EventEmitter {
     try {
       // Set batch mode for browser strategy detection
       process.env.PRINTEER_BATCH_MODE = '1';
-      
+
       // Load and validate batch file
       const batchData = await this.loadBatchFile(batchFile);
       const validation = await this.validateBatchData(batchData);
@@ -84,7 +84,7 @@ export class BatchProcessor extends EventEmitter {
     try {
       // Set batch mode for browser strategy detection
       process.env.PRINTEER_BATCH_MODE = '1';
-      
+
       // Validate and prepare jobs
       const processedJobs = await this.prepareJobs(jobs, options);
 
@@ -395,7 +395,7 @@ export class BatchProcessor extends EventEmitter {
 
     for (let i = 1; i < lines.length; i++) {
       const values = this.parseCSVLine(lines[i]);
-      
+
       if (values.length !== headers.length) {
         console.warn(`Line ${i + 1}: Column count mismatch, skipping`);
         continue;
@@ -445,7 +445,7 @@ export class BatchProcessor extends EventEmitter {
 
     while (i < line.length) {
       const char = line[i];
-      
+
       if (char === '"') {
         if (inQuotes && line[i + 1] === '"') {
           // Escaped quote
@@ -493,12 +493,12 @@ export class BatchProcessor extends EventEmitter {
     // Validate individual jobs and auto-generate IDs if missing
     for (let i = 0; i < (batchData.jobs || []).length; i++) {
       const job = batchData.jobs![i];
-      
+
       // Auto-generate ID if missing
       if (!job.id) {
         job.id = `job-${i + 1}`;
       }
-      
+
       if (!job.url) {
         errors.push(`Job ${job.id} missing required field: url`);
       }
@@ -516,10 +516,10 @@ export class BatchProcessor extends EventEmitter {
       }
     }
 
-    return { 
-      valid: errors.length === 0, 
+    return {
+      valid: errors.length === 0,
       errors: errors.map(msg => ({ path: 'batch', message: msg })),
-      formattedErrors: errors 
+      formattedErrors: errors
     };
   }
 
@@ -673,7 +673,7 @@ export class BatchProcessor extends EventEmitter {
       endTime: new Date(),
       results,
       jobs: results // Add jobs property for backward compatibility
-    } as unknown;
+    } as BatchReport;
 
     return report;
   }

@@ -583,7 +583,8 @@ function convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
     waitUntil: config.wait?.until,
     waitTimeout: config.wait?.timeout,
     headers: config.auth?.headers,
-    cookies: config.auth?.cookies
+    cookies: config.auth?.cookies,
+    fullPage: config.image?.fullPage
   };
 }
 

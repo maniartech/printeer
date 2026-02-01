@@ -81,7 +81,8 @@ export async function buildConfigFromCliOptions(
 
   // Process all mappings
   for (const mapping of CONFIG_MAPPINGS) {
-    const cliKey = mapping.cliOption.replace(/-/g, ''); // Convert kebab-case to camelCase
+    // Convert kebab-case cliOption to camelCase to match Commander/CLI parser behavior
+    const cliKey = mapping.cliOption.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     const cliValue = (options as any)[cliKey];
 
     if (cliValue !== undefined) {
@@ -198,8 +199,8 @@ export class ConfigurationConverter {
    * Generate complete CLI command string from JSON configuration
    */
   generateCliCommandFromJson(
-    config: Partial<EnhancedPrintConfiguration>, 
-    url?: string, 
+    config: Partial<EnhancedPrintConfiguration>,
+    url?: string,
     output?: string
   ): string {
     const options = this.generateCliFromJson(config);

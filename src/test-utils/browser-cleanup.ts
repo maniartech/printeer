@@ -1,6 +1,6 @@
 /**
  * Browser Cleanup Utilities for Tests
- * 
+ *
  * This module provides comprehensive browser cleanup functionality to prevent
  * memory leaks and zombie processes during testing.
  */
@@ -40,7 +40,7 @@ class BrowserCleanupManager {
    */
   registerBrowser(browser: Browser, id?: string): string {
     const browserId = id || `browser-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const browserProcess: BrowserProcess = {
       browser,
       pid: this.getBrowserPid(browser),
@@ -48,7 +48,7 @@ class BrowserCleanupManager {
     };
 
     this.activeBrowsers.set(browserId, browserProcess);
-    
+
     // Auto-cleanup after browser closes
     browser.on('disconnected', () => {
       this.activeBrowsers.delete(browserId);
@@ -93,7 +93,7 @@ class BrowserCleanupManager {
       if (browser.isConnected()) {
         await Promise.race([
           browser.close(),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Browser close timeout')), 5000)
           )
         ]);
@@ -128,7 +128,7 @@ class BrowserCleanupManager {
 
       // Wait a bit and verify process is dead
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       if (await this.isProcessRunning(pid)) {
         console.warn(`Process ${pid} still running after force kill`);
       }
@@ -180,7 +180,7 @@ class BrowserCleanupManager {
     this.activeBrowsers.clear();
 
     // Run additional cleanup handlers
-    const handlerPromises = this.cleanupHandlers.map(handler => 
+    const handlerPromises = this.cleanupHandlers.map(handler =>
       handler().catch(error => console.error('Cleanup handler failed:', error))
     );
     await Promise.all(handlerPromises);
@@ -193,13 +193,13 @@ class BrowserCleanupManager {
    */
   async killAllChromiumProcesses(): Promise<{ killed: number; errors: string[] }> {
     const results = { killed: 0, errors: [] as string[] };
-    
+
     try {
       if (process.platform === 'win32') {
         // Windows - Kill Puppeteer-specific Chrome processes
         const puppeteerProcesses = await this.findPuppeteerProcessesWindows();
         results.killed += await this.killWindowsProcesses(puppeteerProcesses);
-        
+
         // Also kill any remaining chrome/chromium processes
         const chromeProcesses = await this.findChromeProcessesWindows();
         results.killed += await this.killWindowsProcesses(chromeProcesses);
@@ -208,20 +208,20 @@ class BrowserCleanupManager {
         const processes = await this.findPuppeteerProcessesUnix();
         results.killed += await this.killUnixProcesses(processes);
       }
-      
+
       // Wait for processes to die
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Verify cleanup
       const remaining = await this.countRemainingProcesses();
       if (remaining > 0) {
         results.errors.push(`${remaining} processes still running after cleanup`);
       }
-      
+
     } catch (error) {
       results.errors.push(`Kill all chromium processes failed: ${error}`);
     }
-    
+
     return results;
   }
 
@@ -231,18 +231,18 @@ class BrowserCleanupManager {
   private async findPuppeteerProcessesWindows(): Promise<number[]> {
     try {
       const { stdout } = await execAsync(`
-        Get-WmiObject Win32_Process | 
-        Where-Object { 
-          $_.CommandLine -like "*puppeteer*chrome-win*" -or 
+        Get-WmiObject Win32_Process |
+        Where-Object {
+          $_.CommandLine -like "*puppeteer*chrome-win*" -or
           $_.CommandLine -like "*--user-data-dir=*" -or
-          $_.CommandLine -like "*--remote-debugging-port*" 
-        } | 
-        Select-Object ProcessId | 
+          $_.CommandLine -like "*--remote-debugging-port*"
+        } |
+        Select-Object ProcessId |
         ConvertTo-Json
       `, { shell: 'powershell' });
-      
+
       const processes = JSON.parse(stdout || '[]');
-      return Array.isArray(processes) 
+      return Array.isArray(processes)
         ? processes.map(p => p.ProcessId).filter(Boolean)
         : processes?.ProcessId ? [processes.ProcessId] : [];
     } catch (error) {
@@ -257,17 +257,17 @@ class BrowserCleanupManager {
   private async findChromeProcessesWindows(): Promise<number[]> {
     try {
       const { stdout } = await execAsync(`
-        Get-WmiObject Win32_Process | 
-        Where-Object { 
-          $_.Name -eq "chrome.exe" -or 
-          $_.Name -eq "chromium.exe" 
-        } | 
-        Select-Object ProcessId | 
+        Get-WmiObject Win32_Process |
+        Where-Object {
+          $_.Name -eq "chrome.exe" -or
+          $_.Name -eq "chromium.exe"
+        } |
+        Select-Object ProcessId |
         ConvertTo-Json
       `, { shell: 'powershell' });
-      
+
       const processes = JSON.parse(stdout || '[]');
-      return Array.isArray(processes) 
+      return Array.isArray(processes)
         ? processes.map(p => p.ProcessId).filter(Boolean)
         : processes?.ProcessId ? [processes.ProcessId] : [];
     } catch (error) {
@@ -281,7 +281,7 @@ class BrowserCleanupManager {
    */
   private async killWindowsProcesses(pids: number[]): Promise<number> {
     let killed = 0;
-    
+
     for (const pid of pids) {
       try {
         await execAsync(`Stop-Process -Id ${pid} -Force -ErrorAction SilentlyContinue`, { shell: 'powershell' });
@@ -290,7 +290,7 @@ class BrowserCleanupManager {
         console.debug(`Failed to kill Windows process ${pid}:`, error);
       }
     }
-    
+
     return killed;
   }
 
@@ -300,12 +300,12 @@ class BrowserCleanupManager {
   private async findPuppeteerProcessesUnix(): Promise<number[]> {
     try {
       const { stdout } = await execAsync(`
-        ps aux | grep -E "(chrome|chromium)" | 
-        grep -E "(puppeteer|user-data-dir|remote-debugging-port)" | 
-        grep -v grep | 
+        ps aux | grep -E "(chrome|chromium)" |
+        grep -E "(puppeteer|user-data-dir|remote-debugging-port)" |
+        grep -v grep |
         awk '{print $2}'
       `);
-      
+
       return stdout.trim().split('\n')
         .map(pid => parseInt(pid.trim()))
         .filter(pid => !isNaN(pid));
@@ -320,7 +320,7 @@ class BrowserCleanupManager {
    */
   private async killUnixProcesses(pids: number[]): Promise<number> {
     let killed = 0;
-    
+
     for (const pid of pids) {
       try {
         process.kill(pid, 'SIGKILL');
@@ -329,7 +329,7 @@ class BrowserCleanupManager {
         console.debug(`Failed to kill Unix process ${pid}:`, error);
       }
     }
-    
+
     return killed;
   }
 
@@ -340,10 +340,10 @@ class BrowserCleanupManager {
     try {
       if (process.platform === 'win32') {
         const { stdout } = await execAsync(`
-          (Get-WmiObject Win32_Process | 
-           Where-Object { 
-             $_.Name -eq "chrome.exe" -or 
-             $_.Name -eq "chromium.exe" 
+          (Get-WmiObject Win32_Process |
+           Where-Object {
+             $_.Name -eq "chrome.exe" -or
+             $_.Name -eq "chromium.exe"
            }).Count
         `, { shell: 'powershell' });
         return parseInt(stdout.trim()) || 0;
@@ -424,7 +424,7 @@ export function wrapBrowserForCleanup(browser: Browser, id?: string): string {
  */
 export async function createTestBrowser(launchOptions: any = {}): Promise<{ browser: Browser; cleanup: () => Promise<void> }> {
   const puppeteer = await import('puppeteer');
-  
+
   // Ensure test-friendly options
   const testOptions = {
     headless: 'new',
@@ -454,7 +454,7 @@ export async function createTestBrowser(launchOptions: any = {}): Promise<{ brow
  */
 export function setupBrowserCleanup(): {
   cleanup: () => Promise<void>;
-  killAll: () => Promise<void>;
+  killAll: () => Promise<{ killed: number; errors: string[] }>;
   getStatus: () => { count: number; browsers: Array<{ id: string; pid?: number; age: number }> };
 } {
   return {
@@ -469,7 +469,7 @@ export function setupBrowserCleanup(): {
  */
 export async function ensureTestCleanup(): Promise<void> {
   await browserCleanup.cleanupAllBrowsers();
-  
+
   // Additional safety: kill any remaining processes
   const status = browserCleanup.getStatus();
   if (status.count > 0) {

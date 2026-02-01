@@ -249,7 +249,22 @@ async function runOneshotConversion(
     page = await browser.newPage();
 
     // Navigate and render
-    const res = await page.goto(url, { waitUntil: 'networkidle0' });
+    const waitUntil = browserOptions.waitUntil || 'networkidle0';
+    const timeout = browserOptions.waitTimeout || 30000;
+
+    // Apply viewport if provided
+    if (browserOptions.viewport) {
+      await page.setViewport({
+        width: browserOptions.viewport.width || 1920,
+        height: browserOptions.viewport.height || 1080,
+        deviceScaleFactor: browserOptions.viewport.deviceScaleFactor || 1,
+        isMobile: !!browserOptions.viewport.isMobile,
+        hasTouch: !!browserOptions.viewport.hasTouch,
+        isLandscape: !!browserOptions.viewport.isLandscape
+      });
+    }
+
+    const res = await page.goto(url, { waitUntil, timeout });
 
     if (!res) {
       throw new Error("Could not load the page.");
@@ -261,10 +276,29 @@ async function runOneshotConversion(
       throw new Error(`Error: ${res.status()}: ${res.statusText()}`);
     }
 
+    // Auto-scroll if requested or for full page screenshots
+    if (browserOptions.fullPage) {
+       await autoScroll(page);
+    }
+
     if (outputType === 'png') {
-      await page.screenshot({ path: outputFile });
+      await page.screenshot({
+        path: outputFile,
+        fullPage: !!browserOptions.fullPage,
+        omitBackground: !!browserOptions.omitBackground
+      });
     } else {
-      await page.pdf({ format: 'A4', path: outputFile });
+      await page.pdf({
+        format: browserOptions.format || 'A4',
+        path: outputFile,
+        printBackground: browserOptions.printBackground !== undefined ? browserOptions.printBackground : true,
+        landscape: browserOptions.orientation === 'landscape',
+        margin: browserOptions.margin,
+        scale: browserOptions.scale,
+        displayHeaderFooter: !!browserOptions.headerTemplate || !!browserOptions.footerTemplate,
+        headerTemplate: browserOptions.headerTemplate,
+        footerTemplate: browserOptions.footerTemplate
+      });
     }
 
     return normalize(outputFile);
@@ -314,14 +348,30 @@ async function runPooledConversion(
   outputType: string | null,
   browserOptions: unknown
 ): Promise<string> {
+  const opts = browserOptions as any;
   const browserManager = await getBrowserManager();
   const browserInstance = await browserManager.getBrowser();
 
-  let page: unknown = null;
+  let page: any = null;
 
   try {
     page = await browserInstance.browser.newPage();
-    const res = await page.goto(url, { waitUntil: 'networkidle0' });
+    const waitUntil = opts.waitUntil || 'networkidle0';
+    const timeout = opts.waitTimeout || 30000;
+
+    // Apply viewport if provided
+    if (opts.viewport) {
+      await page.setViewport({
+        width: opts.viewport.width || 1920,
+        height: opts.viewport.height || 1080,
+        deviceScaleFactor: opts.viewport.deviceScaleFactor || 1,
+        isMobile: !!opts.viewport.isMobile,
+        hasTouch: !!opts.viewport.hasTouch,
+        isLandscape: !!opts.viewport.isLandscape
+      });
+    }
+
+    const res = await page.goto(url, { waitUntil, timeout });
 
     if (!res) {
       throw new Error("Could not load the page.");
@@ -333,10 +383,29 @@ async function runPooledConversion(
       throw new Error(`Error: ${res.status()}: ${res.statusText()}`);
     }
 
+    // Auto-scroll if requested or for full page screenshots
+    if (opts.fullPage) {
+       await autoScroll(page);
+    }
+
     if (outputType === 'png') {
-      await page.screenshot({ path: outputFile });
+      await page.screenshot({
+        path: outputFile,
+        fullPage: !!opts.fullPage,
+        omitBackground: !!opts.omitBackground
+      });
     } else {
-      await page.pdf({ format: 'A4', path: outputFile });
+      await page.pdf({
+        format: opts.format || 'A4',
+        path: outputFile,
+        printBackground: opts.printBackground !== undefined ? opts.printBackground : true,
+        landscape: opts.orientation === 'landscape',
+        margin: opts.margin,
+        scale: opts.scale,
+        displayHeaderFooter: !!opts.headerTemplate || !!opts.footerTemplate,
+        headerTemplate: opts.headerTemplate,
+        footerTemplate: opts.footerTemplate
+      });
     }
 
     return normalize(outputFile);
@@ -459,4 +528,29 @@ export function getCurrentBrowserStrategy(): 'oneshot' | 'pool' {
 // Utility function to check if browser manager exists (for debugging)
 export function hasBrowserManager(): boolean {
   return globalBrowserManager !== null;
+}
+
+/**
+ * Auto-scroll the page to trigger lazy loading
+ */
+async function autoScroll(page: any) {
+  await page.evaluate(async () => {
+    // @ts-ignore
+    await new Promise<void>((resolve) => {
+      let totalHeight = 0;
+      const distance = 100;
+      const timer = setInterval(() => {
+        // @ts-ignore
+        const scrollHeight = document.body.scrollHeight;
+        // @ts-ignore
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+
+        if (totalHeight >= scrollHeight) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 100);
+    });
+  });
 }

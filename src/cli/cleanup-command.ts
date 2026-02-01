@@ -1,6 +1,6 @@
 /**
  * CLI Cleanup Command
- * 
+ *
  * Provides server maintenance commands for cleaning up zombie browser processes
  */
 
@@ -20,7 +20,7 @@ interface CleanupOptions {
  */
 export function createCleanupCommand(): Command {
   const command = new Command('cleanup');
-  
+
   command
     .description('Clean up zombie browser processes and manage browser lifecycle')
     .option('-f, --force', 'Force kill all Chrome/Chromium processes')
@@ -78,14 +78,14 @@ async function runCleanupCommand(options: CleanupOptions): Promise<void> {
     console.log('🔧 Cleaning up managed browsers...');
     const globalManager = DefaultBrowserManager.getGlobalInstance();
     let managedResult = { killed: 0, errors: [] as string[] };
-    
+
     if (globalManager) {
       managedResult = await globalManager.emergencyCleanup();
       console.log(`✅ Managed cleanup: ${managedResult.killed} browsers closed`);
     } else {
       console.log('ℹ️  No active browser manager found');
     }
-    
+
     if (managedResult.errors.length > 0) {
       console.log('⚠️  Managed cleanup errors:');
       managedResult.errors.forEach(error => console.log(`   - ${error}`));
@@ -94,9 +94,9 @@ async function runCleanupCommand(options: CleanupOptions): Promise<void> {
     // Perform system-wide cleanup
     console.log('\n🔍 Scanning for orphaned browser processes...');
     const systemResult = await browserCleanup.killAllChromiumProcesses();
-    
+
     console.log(`✅ System cleanup: ${systemResult.killed} processes killed`);
-    
+
     if (systemResult.errors.length > 0) {
       console.log('⚠️  System cleanup errors:');
       systemResult.errors.forEach(error => console.log(`   - ${error}`));
@@ -109,7 +109,7 @@ async function runCleanupCommand(options: CleanupOptions): Promise<void> {
     console.log('\n✨ Cleanup completed successfully!');
 
   } catch (error) {
-    console.error('❌ Cleanup failed:', error.message);
+    console.error('❌ Cleanup failed:', (error as Error).message);
     process.exit(1);
   }
 }
@@ -119,9 +119,9 @@ async function runCleanupCommand(options: CleanupOptions): Promise<void> {
  */
 async function showBrowserStatus(options: { verbose?: boolean }): Promise<void> {
   const globalManager = DefaultBrowserManager.getGlobalInstance();
-  
+
   console.log('📊 Browser Process Status:');
-  
+
   if (globalManager) {
     const status = globalManager.getPoolStatus();
     console.log(`   Active browsers: ${status.totalBrowsers}`);
@@ -145,7 +145,7 @@ async function showBrowserStatus(options: { verbose?: boolean }): Promise<void> 
   try {
     const systemCount = await getSystemChromeProcessCount();
     console.log(`   System Chrome processes: ${systemCount}`);
-    
+
     const managedCount = globalManager ? globalManager.getPoolStatus().totalBrowsers : 0;
     if (systemCount > managedCount + 5) {
       console.log('   ⚠️  High number of Chrome processes detected - consider cleanup');
@@ -163,24 +163,24 @@ async function killAllBrowsers(options: { force?: boolean }): Promise<void> {
     console.log('⚠️  This will forcefully kill ALL Chrome/Chromium processes on the system.');
     console.log('   This may affect other applications using Chrome.');
     console.log('   Use --force to skip this confirmation.');
-    
+
     // In a real CLI, you'd use a prompt library here
     console.log('   Aborting for safety. Use --force if you\'re sure.');
     return;
   }
 
   console.log('💀 Force killing all Chrome/Chromium processes...');
-  
+
   try {
     const result = await browserCleanup.killAllChromiumProcesses();
     console.log(`✅ Killed ${result.killed} processes`);
-    
+
     if (result.errors.length > 0) {
       console.log('⚠️  Errors during force kill:');
       result.errors.forEach(error => console.log(`   - ${error}`));
     }
   } catch (error) {
-    console.error('❌ Force kill failed:', error.message);
+    console.error('❌ Force kill failed:', (error as Error).message);
     process.exit(1);
   }
 }
@@ -190,7 +190,7 @@ async function killAllBrowsers(options: { force?: boolean }): Promise<void> {
  */
 async function startMonitoring(options: { interval?: string }): Promise<void> {
   const interval = parseInt(options.interval || '60000');
-  
+
   console.log(`🔍 Starting browser process monitoring (interval: ${interval}ms)...`);
   console.log('   Press Ctrl+C to stop monitoring\n');
 
@@ -222,17 +222,17 @@ async function getSystemChromeProcessCount(): Promise<number> {
   try {
     if (process.platform === 'win32') {
       const { stdout } = await execAsync(`
-        (Get-WmiObject Win32_Process | 
+        (Get-WmiObject Win32_Process |
          Where-Object { $_.Name -eq "chrome.exe" -or $_.Name -eq "chromium.exe" }).Count
       `, { shell: 'powershell', timeout: 10000 });
       return parseInt(stdout.trim()) || 0;
     } else {
-      const { stdout } = await execAsync(`ps aux | grep -E "(chrome|chromium)" | grep -v grep | wc -l`, 
+      const { stdout } = await execAsync(`ps aux | grep -E "(chrome|chromium)" | grep -v grep | wc -l`,
         { timeout: 10000 });
       return parseInt(stdout.trim()) || 0;
     }
   } catch (error) {
-    throw new Error(`Failed to count Chrome processes: ${error.message}`);
+    throw new Error(`Failed to count Chrome processes: ${(error as Error).message}`);
   }
 }
 

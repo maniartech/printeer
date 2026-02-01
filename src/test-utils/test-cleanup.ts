@@ -1,6 +1,6 @@
 /**
  * Test-specific cleanup utilities
- * 
+ *
  * This module provides aggressive cleanup specifically for test environments
  */
 
@@ -51,7 +51,7 @@ export async function forceKillAllChromiumProcesses(): Promise<{ killed: number;
     await new Promise(resolve => setTimeout(resolve, 2000));
 
   } catch (error) {
-    result.errors.push(`Force kill failed: ${error.message}`);
+    result.errors.push(`Force kill failed: ${(error as Error).message}`);
   }
 
   return result;
@@ -65,7 +65,7 @@ export async function performTestCleanup(): Promise<void> {
     // 1. Cleanup managed browsers
     const { DefaultBrowserManager } = await import('../printing/browser');
     const globalManager = DefaultBrowserManager.getGlobalInstance();
-    
+
     if (globalManager) {
       await globalManager.emergencyCleanup();
       await globalManager.shutdown();

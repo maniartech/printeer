@@ -140,7 +140,7 @@ export class EnhancedConfigurationManager {
     validateConfiguration(config: any): ValidationResult {
         // Check if this looks like a configuration file (has expected structure)
         const isConfigFile = config && (config.defaults || config.environments || config.presets || config.$schema);
-        
+
         // If it's a configuration file, validate against the config file schema
         // If it's a configuration object, validate against the configuration schema
         const schemaName = isConfigFile ? 'enhanced-config' : 'configuration-object';
@@ -367,7 +367,7 @@ export class EnhancedConfigurationManager {
                 outline: false
             },
             image: {
-                fullPage: true,
+                fullPage: false,
                 quality: 90,
                 type: 'png',
                 encoding: 'binary',
@@ -611,7 +611,7 @@ export class EnhancedConfigurationManager {
         };
 
         this.validator.addSchema(schema, 'enhanced-config');
-        
+
         // Add schema for validating configuration objects (not config files)
         const configObjectSchema = {
             $ref: '#/definitions/EnhancedPrintConfiguration',
@@ -622,7 +622,7 @@ export class EnhancedConfigurationManager {
 }
 
 // Simple merge function to replace lodash-es dependency
-function merge(target: Record<string, any>, ...sources: Record<string, unknown>[]): Record<string, unknown> {
+function merge(target: Record<string, any>, ...sources: Record<string, any>[]): Record<string, any> {
     if (!target) target = {};
 
     for (const source of sources) {
@@ -631,7 +631,7 @@ function merge(target: Record<string, any>, ...sources: Record<string, unknown>[
         for (const key in source) {
             if (Object.prototype.hasOwnProperty.call(source, key)) {
                 if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
-                    target[key] = merge(target[key] || {}, source[key]);
+                    target[key] = merge(target[key] || {}, source[key] as Record<string, any>);
                 } else {
                     target[key] = source[key];
                 }

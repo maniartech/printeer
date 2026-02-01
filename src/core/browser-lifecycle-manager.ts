@@ -1,6 +1,6 @@
 /**
  * Production Browser Lifecycle Manager
- * 
+ *
  * This module provides comprehensive browser lifecycle management for production
  * environments, ensuring no zombie processes are left behind.
  */
@@ -56,7 +56,7 @@ export class BrowserLifecycleManager extends EventEmitter {
   registerBrowser(browser: Browser): string {
     const id = this.generateBrowserId();
     const pid = this.getBrowserPid(browser);
-    
+
     const managedBrowser: ManagedBrowser = {
       browser,
       pid,
@@ -78,7 +78,7 @@ export class BrowserLifecycleManager extends EventEmitter {
     });
 
     this.emit('browserRegistered', { id, pid, processName: managedBrowser.processName });
-    
+
     // Start monitoring if this is the first browser
     if (this.browsers.size === 1 && !this.isMonitoring) {
       this.startMonitoring();
@@ -98,7 +98,7 @@ export class BrowserLifecycleManager extends EventEmitter {
 
     await this.closeBrowserSafely(managedBrowser);
     this.browsers.delete(id);
-    
+
     this.emit('browserUnregistered', { id, pid: managedBrowser.pid });
 
     // Stop monitoring if no browsers left
@@ -128,7 +128,7 @@ export class BrowserLifecycleManager extends EventEmitter {
     this.isMonitoring = true;
     this.monitoringInterval = setInterval(() => {
       this.performCleanupCycle().catch(error => {
-        this.emit('error', new Error(`Monitoring cleanup failed: ${error.message}`));
+        this.emit('error', new Error(`Monitoring cleanup failed: ${(error as Error).message}`));
       });
     }, this.cleanupInterval);
 
@@ -215,7 +215,7 @@ export class BrowserLifecycleManager extends EventEmitter {
           await this.closeBrowserSafely(managedBrowser);
           result.totalKilled++;
         } catch (error) {
-          result.errors.push(`Failed to close browser ${id}: ${error.message}`);
+          result.errors.push(`Failed to close browser ${id}: ${(error as Error).message}`);
         }
       }
     );
@@ -244,7 +244,7 @@ export class BrowserLifecycleManager extends EventEmitter {
         return await this.cleanupUnixProcesses();
       }
     } catch (error) {
-      result.errors.push(`System cleanup failed: ${error.message}`);
+      result.errors.push(`System cleanup failed: ${(error as Error).message}`);
       return result;
     }
   }
@@ -263,30 +263,30 @@ export class BrowserLifecycleManager extends EventEmitter {
     try {
       // Find Puppeteer Chrome processes
       const { stdout } = await execAsync(`
-        Get-WmiObject Win32_Process | 
-        Where-Object { 
+        Get-WmiObject Win32_Process |
+        Where-Object {
           ($_.CommandLine -like "*puppeteer*chrome-win*") -or
           ($_.CommandLine -like "*--user-data-dir=*") -or
           ($_.CommandLine -like "*--remote-debugging-port*") -or
           ($_.CommandLine -like "*--headless*" -and $_.Name -eq "chrome.exe")
-        } | 
-        Select-Object ProcessId, CommandLine, CreationDate | 
+        } |
+        Select-Object ProcessId, CommandLine, CreationDate |
         ConvertTo-Json
       `, { shell: 'powershell', timeout: 30000 });
 
       const processes = JSON.parse(stdout || '[]');
       const processList = Array.isArray(processes) ? processes : (processes ? [processes] : []);
-      
+
       result.totalFound = processList.length;
 
       // Kill each process
       for (const proc of processList) {
         try {
-          await execAsync(`Stop-Process -Id ${proc.ProcessId} -Force -ErrorAction SilentlyContinue`, 
+          await execAsync(`Stop-Process -Id ${proc.ProcessId} -Force -ErrorAction SilentlyContinue`,
             { shell: 'powershell', timeout: 5000 });
           result.totalKilled++;
         } catch (error) {
-          result.errors.push(`Failed to kill process ${proc.ProcessId}: ${error.message}`);
+          result.errors.push(`Failed to kill process ${proc.ProcessId}: ${(error as Error).message}`);
         }
       }
 
@@ -300,7 +300,7 @@ export class BrowserLifecycleManager extends EventEmitter {
       }
 
     } catch (error) {
-      result.errors.push(`Windows cleanup failed: ${error.message}`);
+      result.errors.push(`Windows cleanup failed: ${(error as Error).message}`);
     }
 
     return result;
@@ -320,9 +320,9 @@ export class BrowserLifecycleManager extends EventEmitter {
     try {
       // Find Chrome/Chromium processes with Puppeteer indicators
       const { stdout } = await execAsync(`
-        ps aux | grep -E "(chrome|chromium)" | 
-        grep -E "(puppeteer|user-data-dir|remote-debugging-port|headless)" | 
-        grep -v grep | 
+        ps aux | grep -E "(chrome|chromium)" |
+        grep -E "(puppeteer|user-data-dir|remote-debugging-port|headless)" |
+        grep -v grep |
         awk '{print $2}'
       `, { timeout: 30000 });
 
@@ -338,7 +338,7 @@ export class BrowserLifecycleManager extends EventEmitter {
           process.kill(pid, 'SIGKILL');
           result.totalKilled++;
         } catch (error) {
-          result.errors.push(`Failed to kill process ${pid}: ${error.message}`);
+          result.errors.push(`Failed to kill process ${pid}: ${(error as Error).message}`);
         }
       }
 
@@ -352,7 +352,7 @@ export class BrowserLifecycleManager extends EventEmitter {
       }
 
     } catch (error) {
-      result.errors.push(`Unix cleanup failed: ${error.message}`);
+      result.errors.push(`Unix cleanup failed: ${(error as Error).message}`);
     }
 
     return result;
@@ -387,7 +387,7 @@ export class BrowserLifecycleManager extends EventEmitter {
   private async isProcessAlive(pid: number): Promise<boolean> {
     try {
       if (process.platform === 'win32') {
-        const { stdout } = await execAsync(`Get-Process -Id ${pid} -ErrorAction SilentlyContinue | Select-Object Id`, 
+        const { stdout } = await execAsync(`Get-Process -Id ${pid} -ErrorAction SilentlyContinue | Select-Object Id`,
           { shell: 'powershell', timeout: 5000 });
         return stdout.trim().length > 0;
       } else {
@@ -410,7 +410,7 @@ export class BrowserLifecycleManager extends EventEmitter {
       if (browser.isConnected()) {
         await Promise.race([
           browser.close(),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Browser close timeout')), 10000)
           )
         ]);
@@ -425,7 +425,7 @@ export class BrowserLifecycleManager extends EventEmitter {
             process.kill(pid, 'SIGKILL');
           }
         } catch (killError) {
-          throw new Error(`Failed to force kill browser process ${pid}: ${killError.message}`);
+          throw new Error(`Failed to force kill browser process ${pid}: ${(killError as Error).message}`);
         }
       }
     }
@@ -437,7 +437,7 @@ export class BrowserLifecycleManager extends EventEmitter {
   private async countRemainingWindowsProcesses(): Promise<number> {
     try {
       const { stdout } = await execAsync(`
-        (Get-WmiObject Win32_Process | 
+        (Get-WmiObject Win32_Process |
          Where-Object { $_.Name -eq "chrome.exe" -or $_.Name -eq "chromium.exe" }).Count
       `, { shell: 'powershell', timeout: 10000 });
       return parseInt(stdout.trim()) || 0;
@@ -451,7 +451,7 @@ export class BrowserLifecycleManager extends EventEmitter {
    */
   private async countRemainingUnixProcesses(): Promise<number> {
     try {
-      const { stdout } = await execAsync(`ps aux | grep -E "(chrome|chromium)" | grep -v grep | wc -l`, 
+      const { stdout } = await execAsync(`ps aux | grep -E "(chrome|chromium)" | grep -v grep | wc -l`,
         { timeout: 10000 });
       return parseInt(stdout.trim()) || 0;
     } catch (error) {
