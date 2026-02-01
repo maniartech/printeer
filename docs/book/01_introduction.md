@@ -81,7 +81,7 @@ Changing the output to an image is as simple as changing the file extension:
 printeer convert https://example.com homepage.png
 ```
 
-This will default to a full-page screenshot of the URL.
+This will capture a screenshot of the visible viewport. To capture the entire page including scrollable content, add the `--full-page` flag.
 
 ## Architecture Overview
 

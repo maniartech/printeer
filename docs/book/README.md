@@ -25,6 +25,7 @@ This book is your comprehensive guide to mastering Printeer, from simple command
 - [Chapter 5: Printeer as a Library](./05_library.md)
 - [Chapter 6: Diagnostics & Troubleshooting](./06_diagnostics.md)
 - [Appendix A: Command Reference](./A_command_reference.md)
+- [Appendix B: Architecture & Code Structure](./B_architecture.md)
 
 ---
 

@@ -62,39 +62,83 @@ printeer convert https://store.com/order/1 receipt.pdf \
   --print-background
 ```
 
+### Image (Screenshot) Options
+
+When generating PNG/JPEG output, these options control the screenshot behavior:
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--full-page` | Capture entire scrollable page | false |
+| `--image-type <type>` | Output format (`png`, `jpeg`, `webp`) | png |
+| `--quality <n>` | Image quality (1-100, JPEG/WebP only) | 90 |
+| `--clip <region>` | Clip to region (`x,y,width,height`) | - |
+| `--omit-background` | Transparent background (PNG only) | false |
+| `--optimize-size` | Optimize file size | false |
+
+**Example: Full Page Screenshot**
+```bash
+printeer convert https://docs.example.com page.png --full-page
+```
+
+**Example: High Quality Mobile Screenshot**
+```bash
+printeer convert https://app.com screenshot.jpeg \
+  --viewport 375x812 \
+  --mobile \
+  --quality 95
+```
+
 ### Viewport & Emulation
 
 Control how the browser "sees" the page before printing.
 
--   `--viewport <size>`: Sets the window size (e.g., `1920x1080` or `375x667`).
--   `--mobile`: Emulates mobile touch events and user agent.
--   `--device-scale <factor>`: Sets DPI scaling (e.g., `2` for Retina).
--   `--color-scheme <scheme>`: Emulates `prefers-color-scheme` (`light` or `dark`).
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--viewport <size>` | Viewport size (e.g., `1920x1080`) | 1920x1080 |
+| `--mobile` | Emulate mobile device (375×812, touch, 2x scale) | false |
+| `--tablet` | Emulate tablet device (768×1024, touch, 2x scale) | false |
+| `--device-scale <n>` | Device scale factor (e.g., `2` for Retina) | 1 |
+| `--landscape-viewport` | Use landscape orientation | false |
+| `--color-scheme <val>` | Emulate `prefers-color-scheme` (`light`/`dark`) | - |
+| `--media-type <type>` | Emulate media type (`screen`/`print`) | screen |
+| `--timezone <tz>` | Timezone (e.g., `America/New_York`) | - |
+| `--locale <locale>` | Locale (e.g., `en-US`) | - |
+| `--user-agent <ua>` | Custom user agent string | - |
 
 **Example: Mobile Screenshot**
 ```bash
-printeer convert https://twitter.com mobile-view.png \
-  --viewport 375x812 \
-  --mobile \
-  --device-scale 3
+printeer convert https://twitter.com mobile.png --mobile --full-page
+```
+
+**Example: Tablet Screenshot**
+```bash
+printeer convert https://app.com tablet.png --tablet --full-page
 ```
 
 ### Wait Conditions
 
 One of the hardest parts of web printing is knowing *when* the page is ready. Printeer offers multiple strategies:
 
--   `--wait-until <event>`:
-    -   `load`: `window.onload` fires.
-    -   `networkidle0`: No network connections for 500ms (strict).
-    -   `networkidle2`: Max 2 connections (good for polling sites).
--   `--wait-selector <css>`: Wait for a specific element to appear in the DOM.
--   `--wait-timeout <ms>`: Max time to wait (default: 30000ms).
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--wait-until <event>` | Wait event (`load`, `domcontentloaded`, `networkidle0`, `networkidle2`) | networkidle0 |
+| `--wait-selector <css>` | Wait for a CSS selector to appear in the DOM | - |
+| `--wait-timeout <ms>` | Maximum wait time in milliseconds | 30000 |
+| `--wait-delay <ms>` | Additional delay after page load | - |
+| `--wait-function <js>` | Custom JavaScript function to wait for | - |
 
 **Example: SPA Rendering**
 ```bash
 printeer convert https://spa-app.com dashboard.pdf \
   --wait-selector "#main-chart-loaded" \
   --wait-until networkidle0
+```
+
+**Example: Wait for Animation**
+```bash
+printeer convert https://animated-site.com page.png \
+  --wait-delay 2000 \
+  --full-page
 ```
 
 ### Authentication
@@ -135,15 +179,26 @@ This launches a wizard utilizing `@clack/prompts` to guide you through:
 
 For power users running heavy workloads:
 
--   `--block-resources <types>`: Block heavy assets (`image`, `font`, `stylesheet`, `script`) to speed up loading.
--   `--disable-javascript`: Render only static HTML/CSS (extremely fast).
--   `--cache` / `--no-cache`: Control browser caching behavior.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--block-resources <types>` | Block resource types (`image`, `font`, `stylesheet`, `script`) | - |
+| `--disable-javascript` | Render only static HTML/CSS (very fast) | false |
+| `--cache` / `--no-cache` | Control browser caching behavior | true |
+| `--load-timeout <ms>` | Page load timeout in milliseconds | 30000 |
+| `--retry <n>` | Retry attempts on failure | 2 |
 
 **Example: Fast Text-Only PDF**
 ```bash
 printeer convert https://news.site.com article.pdf \
   --block-resources image,font \
   --disable-javascript
+```
+
+**Example: Reliable Conversion with Retries**
+```bash
+printeer convert https://slow-site.com page.pdf \
+  --load-timeout 60000 \
+  --retry 3
 ```
 
 In the next chapter, we'll see how to save these complex flag combinations into reusable **Configurations**.

@@ -3,28 +3,81 @@
 ## `convert` (alias `c`)
 Convert a URL to a PDF or PNG file.
 
+### General Options
+
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `-u, --url <url>` | URL to convert (repeatable) | - |
 | `-o, --output <file>` | Output filename (repeatable) | - |
 | `--output-dir <dir>` | Directory for output files | `./` |
-| `--format <type>` | Paper format (A4, Letter, etc.) | `A4` |
-| `--orientation <type>` | `portrait` / `landscape` | `portrait` |
-| `--viewport <size>` | Viewport dimensions (WxH) | `1920x1080` |
-| `--scale <n>` | CSS zoom factor | `1` |
-| `--print-background` | Print background graphics | `false` |
-| `--wait-until <event>` | `load`, `domcontentloaded`, `networkidle0`, `networkidle2` | `load` |
-| `--wait-timeout <ms>` | Max wait time | `30000` |
-| `--wait-selector <css>` | Wait for element to verify render | - |
-| `--mobile` | Emulate mobile device | `false` |
-| `--auth <u:p>` | Basic Auth credentials | - |
-| `--cookies <json>` | JSON string of cookies | - |
-| `--headers <json>` | JSON string of custom headers | - |
-| `--disable-javascript`| Block JS execution | `false` |
 | `-p, --preset <name>` | Use a config preset | - |
 | `-e, --env <name>` | Select config environment | - |
 | `-q, --quiet` | Suppress standard output | `false` |
 | `--dry-run` | Show what would happen | `false` |
+
+### PDF Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--format <type>` | Paper format (A4, Letter, etc.) | `A4` |
+| `--orientation <type>` | `portrait` / `landscape` | `portrait` |
+| `--scale <n>` | CSS zoom factor | `1` |
+| `--margins <val>` | CSS-style margins | - |
+| `--print-background` | Print background graphics | `false` |
+
+### Image Options (PNG/JPEG)
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--full-page` | Capture entire scrollable page | `false` |
+| `--image-type <type>` | Output format (`png`, `jpeg`, `webp`) | `png` |
+| `--quality <n>` | Image quality (1-100) | `90` |
+| `--clip <region>` | Clip region (`x,y,width,height`) | - |
+| `--omit-background` | Transparent background (PNG) | `false` |
+| `--optimize-size` | Optimize file size | `false` |
+
+### Viewport & Emulation
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--viewport <size>` | Viewport dimensions (WxH) | `1920x1080` |
+| `--mobile` | Emulate mobile device (375×812, touch) | `false` |
+| `--tablet` | Emulate tablet device (768×1024, touch) | `false` |
+| `--device-scale <n>` | Device scale factor | `1` |
+| `--landscape-viewport` | Use landscape orientation | `false` |
+| `--color-scheme <val>` | `light` / `dark` | - |
+| `--media-type <type>` | `screen` / `print` | `screen` |
+| `--timezone <tz>` | Timezone emulation | - |
+| `--locale <locale>` | Locale emulation | - |
+| `--user-agent <ua>` | Custom user agent | - |
+
+### Wait Conditions
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--wait-until <event>` | `load`, `domcontentloaded`, `networkidle0`, `networkidle2` | `networkidle0` |
+| `--wait-timeout <ms>` | Max wait time | `30000` |
+| `--wait-selector <css>` | Wait for element to appear | - |
+| `--wait-delay <ms>` | Additional delay after load | - |
+| `--wait-function <js>` | Custom wait function | - |
+
+### Authentication
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--auth <u:p>` | Basic Auth credentials | - |
+| `--cookies <json>` | JSON string of cookies | - |
+| `--headers <json>` | JSON string of custom headers | - |
+
+### Performance
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--disable-javascript`| Block JS execution | `false` |
+| `--block-resources <types>` | Block resource types | - |
+| `--cache` / `--no-cache` | Browser caching | `true` |
+| `--load-timeout <ms>` | Page load timeout | `30000` |
+| `--retry <n>` | Retry attempts on failure | `2` |
 
 ---
 

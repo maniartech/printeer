@@ -40,6 +40,7 @@ export const CONFIG_MAPPINGS: ConfigMapping[] = [
   { cliOption: 'viewport', jsonPath: 'viewport', type: 'object', parser: parseViewportConfig, serializer: serializeViewportConfig },
   { cliOption: 'device-scale', jsonPath: 'viewport.deviceScaleFactor', type: 'number' },
   { cliOption: 'mobile', jsonPath: 'viewport.isMobile', type: 'boolean' },
+  { cliOption: 'tablet', jsonPath: 'viewport.isTablet', type: 'boolean' },
   { cliOption: 'landscape-viewport', jsonPath: 'viewport.isLandscape', type: 'boolean' },
 
   // Wait Configuration
@@ -98,6 +99,34 @@ export async function buildConfigFromCliOptions(
       // Set the value in the configuration object using the JSON path
       setNestedValue(config, mapping.jsonPath, parsedValue);
     }
+  }
+
+  // Apply mobile defaults when --mobile is set (unless viewport is explicitly specified)
+  if ((options as any).mobile && !(options as any).viewport) {
+    // Get current viewport or create new one with mobile defaults
+    const existingViewport = config.viewport || {};
+    config.viewport = {
+      width: existingViewport.width ?? 375,       // iPhone X width
+      height: existingViewport.height ?? 812,     // iPhone X height
+      deviceScaleFactor: existingViewport.deviceScaleFactor ?? 2,  // Retina display
+      isMobile: true,
+      hasTouch: existingViewport.hasTouch ?? true,
+      isLandscape: existingViewport.isLandscape ?? false
+    };
+  }
+
+  // Apply tablet defaults when --tablet is set (unless viewport is explicitly specified)
+  if ((options as any).tablet && !(options as any).viewport && !(options as any).mobile) {
+    // Get current viewport or create new one with tablet defaults
+    const existingViewport = config.viewport || {};
+    config.viewport = {
+      width: existingViewport.width ?? 768,       // iPad width
+      height: existingViewport.height ?? 1024,    // iPad height
+      deviceScaleFactor: existingViewport.deviceScaleFactor ?? 2,  // Retina display
+      isMobile: false,  // Tablets are not "mobile" in Puppeteer sense
+      hasTouch: existingViewport.hasTouch ?? true,
+      isLandscape: existingViewport.isLandscape ?? false
+    };
   }
 
   return config;

@@ -77,6 +77,7 @@ program
   .option('--viewport <size>', 'Viewport size (e.g., "1920x1080")')
   .option('--device-scale <factor>', 'Device scale factor (0.1-3.0)', parseFloat)
   .option('--mobile', 'Emulate mobile device')
+  .option('--tablet', 'Emulate tablet device')
   .option('--landscape-viewport', 'Use landscape viewport')
 
   // Wait conditions
