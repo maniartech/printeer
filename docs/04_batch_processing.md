@@ -14,10 +14,18 @@ printeer batch <job_file> [options]
 ```
 
 **Options:**
--   `--concurrency <n>`: Number of parallel browser tabs (default: 3).
+-   `-o, --output-dir <dir>`: Output directory (default: `./output`).
+-   `-c, --concurrency <n>`: Number of parallel browser tabs (default: 3).
 -   `--continue-on-error`: If one job fails, keep processing the rest.
--   `--report <format>`: Generate a final report (`json` or `csv`).
+-   `--report <format>`: Generate a final report (`json`, `csv`, or `html`).
 -   `--report-file <path>`: Where to save the report.
+-   `--retry <attempts>`: Retry attempts for failed jobs (default: 2).
+-   `--progress`: Show progress bar.
+-   `--dry-run`: Validate batch file without processing.
+-   `--max-memory <amount>`: Maximum memory usage (e.g., "2GB").
+-   `--cleanup`: Cleanup temporary files after processing.
+-   `-q, --quiet`: Suppress output except errors.
+-   `--verbose`: Verbose output.
 
 ## Defining Jobs
 

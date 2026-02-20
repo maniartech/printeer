@@ -42,6 +42,13 @@ printeer convert -u https://example.com --output-dir ./dist
 # Generates ./dist/Example_Domain.pdf
 ```
 
+You can control this behavior with the following flags:
+- `--output-pattern <pattern>`: Filename pattern (e.g., `"{title}.pdf"`, `"{domain}_{timestamp}.png"`).
+- `--output-conflict <strategy>`: Conflict resolution (`override`, `copy`, `skip`, `prompt`). Default is `copy`.
+- `--title-fallback`: Use webpage title for filename when `--output` not specified (default behavior).
+- `--url-fallback`: Use URL-based algorithm when title unavailable.
+- `--output-metadata`: Include metadata in output.
+
 ### Page & Layout Options
 
 Customize the physical properties of your PDF output.
@@ -49,10 +56,18 @@ Customize the physical properties of your PDF output.
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `-f, --format <format>` | Paper format (A4, Letter, Legal, Tabloid) | A4 |
+| `--custom-size <size>` | Custom page size (e.g., `210mm,297mm`) | - |
 | `--orientation <type>` | `portrait` or `landscape` | portrait |
 | `--margins <val>` | CSS-style margins (e.g., `"1cm"` or `"1cm 2cm"`) | None |
 | `--scale <factor>` | Zoom factor (0.1 to 2.0) | 1.0 |
 | `--print-background` | Print CSS background colors/images | false |
+| `--no-print-background` | Don't print background graphics | - |
+| `--header-template <tpl>` | Header template name or file path | - |
+| `--footer-template <tpl>` | Footer template name or file path | - |
+| `--header-footer` | Display header and footer | false |
+| `--prefer-css-page-size` | Prefer CSS page size | false |
+| `--tagged-pdf` | Generate tagged PDF (accessibility) | false |
+| `--pdf-outline` | Generate PDF outline/bookmarks | false |
 
 **Example: Receipt Printing**
 ```bash
