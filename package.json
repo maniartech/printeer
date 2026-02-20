@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:browser": "vitest run tests/isolated/*.manual.ts --reporter=verbose",
     "test:unit": "vitest run tests/config tests/diagnostics tests/printing tests/resources tests/shared tests/browser-strategy.test.ts tests/batch-strategy.test.ts",
     "test:unit:watch": "vitest tests/config tests/diagnostics tests/printing tests/resources tests/shared tests/browser-strategy.test.ts tests/batch-strategy.test.ts --watch",
     "test:unit:coverage": "vitest run tests/config tests/diagnostics tests/printing tests/resources tests/shared tests/browser-strategy.test.ts tests/batch-strategy.test.ts --coverage",
@@ -33,7 +34,6 @@
     "test:cli": "vitest run tests/cli --reporter=verbose",
     "test:cli:watch": "vitest tests/cli --watch",
     "test:cli:coverage": "vitest run tests/cli --coverage",
-    "test:browser": "node scripts/test-both-strategies.js",
     "test:browser:strategy": "vitest run tests/browser-*.test.ts tests/batch-strategy.test.ts"
   },
   "dependencies": {
