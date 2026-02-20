@@ -110,6 +110,7 @@ program
   .option('--image-type <type>', 'Image type (png/jpeg/webp)')
   .option('--full-page', 'Capture full page')
   .option('--clip <region>', 'Clip region (x,y,width,height)')
+  .option('--omit-background', 'Transparent background (PNG only)')
   .option('--optimize-size', 'Optimize image file size')
 
   // Authentication
@@ -583,9 +584,31 @@ function convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
     viewport: config.viewport,
     waitUntil: config.wait?.until,
     waitTimeout: config.wait?.timeout,
+    waitSelector: config.wait?.selector,
+    waitDelay: config.wait?.delay,
+    waitFunction: config.wait?.customFunction,
     headers: config.auth?.headers,
     cookies: config.auth?.cookies,
-    fullPage: config.image?.fullPage
+    auth: config.auth?.basic,
+    userAgent: config.auth?.userAgent,
+    fullPage: config.image?.fullPage,
+    mediaType: config.emulation?.mediaType,
+    colorScheme: config.emulation?.colorScheme,
+    timezone: config.emulation?.timezone,
+    locale: config.emulation?.locale,
+    blockResources: config.performance?.blockResources,
+    javascriptEnabled: config.performance?.javascriptEnabled,
+    cacheEnabled: config.performance?.cacheEnabled,
+    loadTimeout: config.performance?.loadTimeout,
+    preferCSSPageSize: config.pdf?.preferCSSPageSize,
+    generateTaggedPDF: config.pdf?.generateTaggedPDF,
+    outline: config.pdf?.outline,
+    imageType: config.image?.type,
+    clip: config.image?.clip,
+    optimizeForSize: config.image?.optimizeForSize,
+    displayHeaderFooter: config.pdf?.displayHeaderFooter,
+    headerTemplate: config.pdf?.headerTemplate,
+    footerTemplate: config.pdf?.footerTemplate
   };
 }
 

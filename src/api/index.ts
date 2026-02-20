@@ -231,6 +231,36 @@ export default async (url: string, outputFile: string, outputType: string | null
   }
 }
 
+async function applyAdvancedPageOptions(page: any, opts: any) {
+  const headers = { ...opts.headers };
+  if (opts.locale) {
+    headers['Accept-Language'] = opts.locale;
+  }
+  if (Object.keys(headers).length > 0) {
+    await page.setExtraHTTPHeaders(headers);
+  }
+
+  if (opts.cookies) await page.setCookie(...(Array.isArray(opts.cookies) ? opts.cookies : [opts.cookies]));
+  if (opts.auth) await page.authenticate(opts.auth);
+  if (opts.userAgent) await page.setUserAgent(opts.userAgent);
+  if (opts.mediaType) await page.emulateMediaType(opts.mediaType);
+  if (opts.colorScheme) await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: opts.colorScheme }]);
+  if (opts.timezone) await page.emulateTimezone(opts.timezone);
+  if (opts.javascriptEnabled === false) await page.setJavaScriptEnabled(false);
+  if (opts.cacheEnabled === false) await page.setCacheEnabled(false);
+
+  if (opts.blockResources && opts.blockResources.length > 0) {
+    await page.setRequestInterception(true);
+    page.on('request', (req: any) => {
+      if (opts.blockResources.includes(req.resourceType())) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+  }
+}
+
 /**
  * One-shot conversion: Simple, clean, no lingering processes
  */
@@ -251,6 +281,7 @@ async function runOneshotConversion(
     // Navigate and render
     const waitUntil = browserOptions.waitUntil || 'networkidle0';
     const timeout = browserOptions.waitTimeout || 30000;
+    const loadTimeout = browserOptions.loadTimeout || timeout;
 
     // Apply viewport if provided
     if (browserOptions.viewport) {
@@ -264,10 +295,22 @@ async function runOneshotConversion(
       });
     }
 
-    const res = await page.goto(url, { waitUntil, timeout });
+    await applyAdvancedPageOptions(page, browserOptions);
+
+    const res = await page.goto(url, { waitUntil, timeout: loadTimeout });
 
     if (!res) {
       throw new Error("Could not load the page.");
+    }
+
+    if (browserOptions.waitSelector) {
+      await page.waitForSelector(browserOptions.waitSelector, { timeout });
+    }
+    if (browserOptions.waitFunction) {
+      await page.waitForFunction(browserOptions.waitFunction, { timeout });
+    }
+    if (browserOptions.waitDelay) {
+      await new Promise(resolve => setTimeout(resolve, browserOptions.waitDelay));
     }
 
     outputType = detectOutputType(outputFile, outputType);
@@ -282,11 +325,18 @@ async function runOneshotConversion(
     }
 
     if (outputType === 'png') {
-      await page.screenshot({
+      const screenshotOptions: any = {
         path: outputFile,
         fullPage: !!browserOptions.fullPage,
-        omitBackground: !!browserOptions.omitBackground
-      });
+        omitBackground: !!browserOptions.omitBackground,
+        type: browserOptions.imageType || 'png',
+        clip: browserOptions.clip,
+        optimizeForSize: browserOptions.optimizeForSize
+      };
+      if (screenshotOptions.type !== 'png' && browserOptions.quality !== undefined) {
+        screenshotOptions.quality = browserOptions.quality;
+      }
+      await page.screenshot(screenshotOptions);
     } else {
       await page.pdf({
         format: browserOptions.format || 'A4',
@@ -295,9 +345,12 @@ async function runOneshotConversion(
         landscape: browserOptions.orientation === 'landscape',
         margin: browserOptions.margin,
         scale: browserOptions.scale,
-        displayHeaderFooter: !!browserOptions.headerTemplate || !!browserOptions.footerTemplate,
+        displayHeaderFooter: browserOptions.displayHeaderFooter !== undefined ? browserOptions.displayHeaderFooter : (!!browserOptions.headerTemplate || !!browserOptions.footerTemplate),
         headerTemplate: browserOptions.headerTemplate,
-        footerTemplate: browserOptions.footerTemplate
+        footerTemplate: browserOptions.footerTemplate,
+        preferCSSPageSize: browserOptions.preferCSSPageSize,
+        tagged: browserOptions.generateTaggedPDF,
+        outline: browserOptions.outline
       });
     }
 
@@ -358,6 +411,7 @@ async function runPooledConversion(
     page = await browserInstance.browser.newPage();
     const waitUntil = opts.waitUntil || 'networkidle0';
     const timeout = opts.waitTimeout || 30000;
+    const loadTimeout = opts.loadTimeout || timeout;
 
     // Apply viewport if provided
     if (opts.viewport) {
@@ -371,10 +425,22 @@ async function runPooledConversion(
       });
     }
 
-    const res = await page.goto(url, { waitUntil, timeout });
+    await applyAdvancedPageOptions(page, opts);
+
+    const res = await page.goto(url, { waitUntil, timeout: loadTimeout });
 
     if (!res) {
       throw new Error("Could not load the page.");
+    }
+
+    if (opts.waitSelector) {
+      await page.waitForSelector(opts.waitSelector, { timeout });
+    }
+    if (opts.waitFunction) {
+      await page.waitForFunction(opts.waitFunction, { timeout });
+    }
+    if (opts.waitDelay) {
+      await new Promise(resolve => setTimeout(resolve, opts.waitDelay));
     }
 
     outputType = detectOutputType(outputFile, outputType);
@@ -389,11 +455,18 @@ async function runPooledConversion(
     }
 
     if (outputType === 'png') {
-      await page.screenshot({
+      const screenshotOptions: any = {
         path: outputFile,
         fullPage: !!opts.fullPage,
-        omitBackground: !!opts.omitBackground
-      });
+        omitBackground: !!opts.omitBackground,
+        type: opts.imageType || 'png',
+        clip: opts.clip,
+        optimizeForSize: opts.optimizeForSize
+      };
+      if (screenshotOptions.type !== 'png' && opts.quality !== undefined) {
+        screenshotOptions.quality = opts.quality;
+      }
+      await page.screenshot(screenshotOptions);
     } else {
       await page.pdf({
         format: opts.format || 'A4',
@@ -402,9 +475,12 @@ async function runPooledConversion(
         landscape: opts.orientation === 'landscape',
         margin: opts.margin,
         scale: opts.scale,
-        displayHeaderFooter: !!opts.headerTemplate || !!opts.footerTemplate,
+        displayHeaderFooter: opts.displayHeaderFooter !== undefined ? opts.displayHeaderFooter : (!!opts.headerTemplate || !!opts.footerTemplate),
         headerTemplate: opts.headerTemplate,
-        footerTemplate: opts.footerTemplate
+        footerTemplate: opts.footerTemplate,
+        preferCSSPageSize: opts.preferCSSPageSize,
+        tagged: opts.generateTaggedPDF,
+        outline: opts.outline
       });
     }
 

@@ -34,6 +34,7 @@ export const CONFIG_MAPPINGS: ConfigMapping[] = [
   { cliOption: 'image-type', jsonPath: 'image.type', type: 'string' },
   { cliOption: 'full-page', jsonPath: 'image.fullPage', type: 'boolean' },
   { cliOption: 'clip', jsonPath: 'image.clip', type: 'object', parser: parseClipRegion, serializer: serializeClipRegion },
+  { cliOption: 'omit-background', jsonPath: 'image.omitBackground', type: 'boolean' },
   { cliOption: 'optimize-size', jsonPath: 'image.optimizeForSize', type: 'boolean' },
 
   // Viewport Configuration
@@ -321,7 +322,8 @@ export function parseCliOptions(cliArray: string[]): CliOptions {
     const arg = cliArray[i];
 
     if (arg.startsWith('--')) {
-      const key = arg.slice(2).replace(/-/g, '');
+      // Convert kebab-case to camelCase
+      const key = arg.slice(2).replace(/-([a-z])/g, (g) => g[1].toUpperCase());
       const nextArg = cliArray[i + 1];
 
       if (nextArg && !nextArg.startsWith('--')) {
