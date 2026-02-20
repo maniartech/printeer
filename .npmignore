@@ -1,0 +1,29 @@
+# Source code and tests
+src/
+tests/
+mock-server/
+mock-server-testing/
+scripts/
+examples/
+usages/
+
+# Internal documentation
+docs/internal/
+
+# Config files
+tsconfig.json
+tsconfig.build.json
+vitest.config.ts
+.eslintrc.json
+.gitignore
+.npmignore
+
+# CI/CD
+.circleci/
+.github/
+
+# Local dev files
+.env
+.env.test
+.mock-server-pid
+*.log

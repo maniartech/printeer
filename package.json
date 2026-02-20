@@ -4,9 +4,26 @@
   "description": "Prints specified web url to PDF (or Image - Coming Soon)!",
   "main": "./dist/lib/index.js",
   "types": "./dist/lib/index.d.ts",
-  "repository": "git@github.com:maniartech/printeer.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maniartech/printeer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maniartech/printeer/issues"
+  },
+  "homepage": "https://github.com/maniartech/printeer#readme",
+  "keywords": [
+    "puppeteer",
+    "pdf",
+    "html-to-pdf",
+    "screenshot",
+    "headless-chrome",
+    "cli",
+    "batch-processing",
+    "web-to-print"
+  ],
   "author": "Mohamed Aamir Maniar <aamir.maniar@maniartech.com>",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "type": "module",
   "bin": {
     "printeer": "./dist/bin/cli.js"
