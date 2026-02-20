@@ -1,18 +1,24 @@
 /**
  * Test setup file
- * 
+ *
  * This ensures most tests use the oneshot browser strategy,
- * except for specific pool tests that need to test pool functionality
+ * except for specific pool tests that need to test pool functionality.
+ *
+ * IMPORTANT: Heavy cleanup (process killing, taskkill) is ONLY done in
+ * global-teardown.ts, NOT after every test. Per-test cleanup is lightweight
+ * (just clearing global state references) to avoid adding seconds of
+ * overhead to each of the 300+ tests.
  */
 
-import { expect } from 'vitest';
+import { expect, beforeEach, afterEach } from 'vitest';
 
 // Get the current test file name
 const testFile = expect.getState().testPath || '';
 
 // Only force oneshot for non-pool tests
-const isPoolTest = testFile.includes('browser-pool') || 
-                   testFile.includes('browser-integration') || 
+const isPoolTest = testFile.includes('browser-pool') ||
+                   testFile.includes('browser-integration') ||
+                   testFile.includes('browser.test.ts') ||
                    testFile.includes('browser-performance');
 
 if (!isPoolTest) {
@@ -23,20 +29,18 @@ if (!isPoolTest) {
   process.env.PRINTEER_CLI_MODE = '1';
 }
 
-// Ensure no browser pools persist between tests (for all tests)
+// Lightweight per-test cleanup: only clear in-memory global state.
+// No process killing, no sleeps, no shell commands.
 beforeEach(() => {
-  // Clear any global browser manager
   if (typeof global !== 'undefined') {
     delete (global as any).__printeerBrowserManager;
   }
 });
 
-afterEach(async () => {
-  // Cleanup any remaining browser processes after each test
-  try {
-    const { performTestCleanup } = await import('../src/test-utils/test-cleanup');
-    await performTestCleanup();
-  } catch (error) {
-    console.warn('Test cleanup failed:', error);
+afterEach(() => {
+  // Only clear global references — no expensive process cleanup here.
+  // Heavy cleanup (killing chrome processes) happens once in global-teardown.ts.
+  if (typeof global !== 'undefined') {
+    delete (global as any).__printeerBrowserManager;
   }
 });

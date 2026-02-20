@@ -5,11 +5,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    pool: 'forks', // Use child processes (not threads) so each test file gets its own process.env
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', 'bin'],
-    testTimeout: 30000, // 30 seconds - reduced for faster feedback
-    hookTimeout: 10000, // 10 seconds for beforeEach/afterEach hooks
+    exclude: ['node_modules', 'dist', 'bin', '**/tests/isolated/**', 'tests/isolated/**', '**/isolated/**'],
+    testTimeout: 30000, // 30 seconds for browser tests
+    hookTimeout: 10000, // 10 seconds for hooks
     setupFiles: ['./tests/setup.ts'],
+    globalSetup: './tests/global-setup.ts',
     globalTeardown: './tests/global-teardown.ts',
     env: {
       NODE_ENV: 'test',

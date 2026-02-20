@@ -1,7 +1,10 @@
 /**
  * Test-specific cleanup utilities
  *
- * This module provides aggressive cleanup specifically for test environments
+ * This module provides cleanup specifically for test environments.
+ * IMPORTANT: These functions are expensive (spawn shell processes, etc.)
+ * and should only be called from global-teardown.ts — NOT from per-test
+ * afterEach hooks. Running them after every test adds ~2s overhead each.
  */
 
 import { exec } from 'child_process';
@@ -10,7 +13,9 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 /**
- * Force kill all Chrome/Chromium processes (test environment only)
+ * Force kill all Chrome/Chromium processes (test environment only).
+ * WARNING: This is expensive — spawns shell processes and waits for them.
+ * Only call from global teardown, not per-test hooks.
  */
 export async function forceKillAllChromiumProcesses(): Promise<{ killed: number; errors: string[] }> {
   const result = { killed: 0, errors: [] as string[] };
@@ -47,8 +52,10 @@ export async function forceKillAllChromiumProcesses(): Promise<{ killed: number;
       }
     }
 
-    // Wait for processes to die
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Brief wait only if we actually killed something
+    if (result.killed > 0) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
   } catch (error) {
     result.errors.push(`Force kill failed: ${(error as Error).message}`);
@@ -91,7 +98,7 @@ export async function performTestCleanup(): Promise<void> {
 }
 
 /**
- * Setup test cleanup hooks
+ * Setup test cleanup hooks (for global teardown only)
  */
 export function setupTestCleanup(): void {
   // Only in test environment
@@ -105,21 +112,7 @@ export function setupTestCleanup(): void {
     });
   };
 
-  // Register cleanup handlers
-  process.on('exit', cleanup);
+  // Register cleanup handlers for unexpected exits only
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
-  process.on('uncaughtException', (error) => {
-    console.error('Uncaught exception in test:', error);
-    cleanup();
-  });
-  process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled rejection in test:', reason);
-    cleanup();
-  });
-}
-
-// Auto-setup in test environment
-if (process.env.NODE_ENV === 'test') {
-  setupTestCleanup();
 }

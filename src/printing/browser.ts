@@ -790,7 +790,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
       // Test navigation to a simple data URL
       await page.goto('data:text/html,<h1>Browser Test</h1>', {
         waitUntil: 'load',
-        timeout: 5000
+        timeout: 10000
       });
 
       // Test basic page evaluation

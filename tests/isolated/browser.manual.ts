@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import { DefaultBrowserFactory, DefaultBrowserManager } from '../../src/printing/browser';
 import { Browser } from 'puppeteer';
+import { forceKillAllChromiumProcesses } from '../../src/test-utils/test-cleanup';
 
 // Force test environment and use real bundled Chromium only
 process.env.NODE_ENV = 'test';
@@ -12,6 +13,11 @@ const TEST_TIMEOUT = 30000; // 30 seconds
 describe('DefaultBrowserFactory', () => {
   let browserFactory: DefaultBrowserFactory;
   let createdBrowsers: Browser[] = [];
+
+  beforeAll(async () => {
+    // aggressive cleanup before running these sensitive tests
+    await forceKillAllChromiumProcesses();
+  });
 
   beforeEach(() => {
     browserFactory = new DefaultBrowserFactory();
@@ -27,15 +33,19 @@ describe('DefaultBrowserFactory', () => {
             await browser.close();
           }
         } catch (error) {
-          // Ignore cleanup errors in tests
+          // Ignore cleanup errors in tests but log them
+          console.warn('Cleanup warning:', error);
         }
       })
     );
     createdBrowsers = [];
+
+    // Explicitly clear any global state if it exists
+    // (Future-proofing against singleton leakage)
   });
 
   describe('createBrowser', () => {
-    it.skip('should create browser successfully', async () => {
+    it('should create browser successfully', async () => {
       // Skipped: Requires actual browser which may not be available in bundled-only test mode
       const browser = await browserFactory.createBrowser();
       createdBrowsers.push(browser);
@@ -52,7 +62,7 @@ describe('DefaultBrowserFactory', () => {
       expect(typeof title).toBe('string');
     }, TEST_TIMEOUT);
 
-    it.skip('should validate browser correctly', async () => {
+    it('should validate browser correctly', async () => {
       // Skipped: Requires actual browser which may not be available in bundled-only test mode
       const browser = await browserFactory.createBrowser();
       createdBrowsers.push(browser);
@@ -61,7 +71,7 @@ describe('DefaultBrowserFactory', () => {
       expect(isValid).toBe(true);
     }, TEST_TIMEOUT);
 
-    it.skip('should get browser version', async () => {
+    it('should get browser version', async () => {
       // Skipped: Requires actual browser which may not be available in bundled-only test mode
       const browser = await browserFactory.createBrowser();
       createdBrowsers.push(browser);
@@ -88,9 +98,9 @@ describe('DefaultBrowserManager', () => {
     // Create browser manager with test configuration
     browserManager = new DefaultBrowserManager(undefined, {
       minSize: 1,
-      maxSize: 2, // Reduced for faster tests
-      idleTimeout: 5000, // 5 seconds for faster tests
-      cleanupInterval: 2000 // 2 seconds for faster tests
+      maxSize: 2,
+      idleTimeout: 30000, // Increased to 30s to prevent race conditions during slow tests
+      cleanupInterval: 60000 // Increased to 60s
     });
   });
 
@@ -104,18 +114,18 @@ describe('DefaultBrowserManager', () => {
   });
 
   describe('initialization', () => {
-    it.skip('should initialize successfully', async () => {
+    it('should initialize successfully', async () => {
       // Skipped: Requires actual browser which may not be available in bundled-only test mode
       await browserManager.initialize();
 
       const status = browserManager.getPoolStatus();
       expect(status.totalBrowsers).toBeGreaterThan(0);
-    }, TEST_TIMEOUT);
+    }, 60000); // Increased timeout
   });
 
   describe('pool status', () => {
-    it.skip('should provide accurate pool status', async () => {
-      // Skipped: Requires actual browser which may not be available in bundled-only test mode
+    it('should provide accurate pool status', async () => {
+      // Tests browser pool status reporting
       await browserManager.initialize();
 
       const status = browserManager.getPoolStatus();

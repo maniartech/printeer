@@ -65,10 +65,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
 
       // Mock process
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: { DISPLAY: ':0' },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
 
       // Mock file system checks
       mockFs.existsSync.mockImplementation((path) => {
@@ -132,10 +129,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.platform.mockReturnValue('linux');
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: { DISPLAY: ':0' },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
 
       // Mock no browser found
       mockFs.existsSync.mockImplementation((path) => {
@@ -168,10 +162,8 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.platform.mockReturnValue('linux');
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: {},
-        configurable: true
-      });
+      // Reset env
+      vi.unstubAllEnvs();
 
       // Mock Docker detection
       mockFs.existsSync.mockImplementation((path) => {
@@ -200,10 +192,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.platform.mockReturnValue('linux');
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: {}, // No DISPLAY
-        configurable: true
-      });
+      vi.unstubAllEnvs(); // No DISPLAY
 
       mockFs.existsSync.mockImplementation((path) => {
         if (path === '/usr/bin/google-chrome') return true;
@@ -238,6 +227,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.platform.mockReturnValue('win32');
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
+      vi.unstubAllEnvs(); // No DISPLAY on Windows
 
       mockFs.existsSync.mockImplementation((path) => {
         if (path === 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe') return true;
@@ -256,7 +246,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
 
       const browserResult = results.find(r => r.component === 'browser-availability');
       expect(browserResult?.details?.path).toContain('Chrome\\Application\\chrome.exe');
-  expect(browserResult?.details?.source).toBe('system');
+      expect(browserResult?.details?.source).toBe('system');
     });
 
     it('should handle custom browser path from environment variable', async () => {
@@ -267,13 +257,8 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.platform.mockReturnValue('linux');
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: {
-          DISPLAY: ':0',
-          PUPPETEER_EXECUTABLE_PATH: '/custom/chrome/path'
-        },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
+      vi.stubEnv('PUPPETEER_EXECUTABLE_PATH', '/custom/chrome/path');
 
       mockFs.existsSync.mockImplementation((path) => {
         if (path === '/custom/chrome/path') return true;
@@ -292,7 +277,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       expect(browserResult?.status).toBe('pass');
       expect(browserResult?.details?.path).toBe('/custom/chrome/path');
       expect(browserResult?.details?.version).toBe('Custom Chrome 120.0.0.0');
-  expect(browserResult?.details?.source).toBe('env');
+      expect(browserResult?.details?.source).toBe('env');
     });
   });
 
@@ -309,7 +294,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
     it.skip('should validate the real bundled browser installation successfully', async () => {
       // Skipped: Requires actual browser which may not be available in bundled-only test mode
       // Force use of bundled browser for this test
-      process.env.PRINTEER_BUNDLED_ONLY = '1';
+      vi.stubEnv('PRINTEER_BUNDLED_ONLY', '1');
 
       const doctor = new DefaultDoctorModule();
       const results = await doctor.validateBrowserInstallation();
@@ -322,13 +307,11 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
 
       const sandboxResult = results.find(r => r.component === 'browser-sandbox');
       expect(sandboxResult?.status).toBe('pass');
-
-      delete process.env.PRINTEER_BUNDLED_ONLY;
     }, 30000); // 30-second timeout for real browser launch
 
     it('should handle browser launch failure gracefully when path is invalid', async () => {
       // Force an invalid path
-      process.env.PUPPETEER_EXECUTABLE_PATH = '/path/to/non/existent/browser';
+      vi.stubEnv('PUPPETEER_EXECUTABLE_PATH', '/path/to/non/existent/browser');
 
       const doctor = new DefaultDoctorModule();
       const results = await doctor.validateBrowserInstallation({ noFallback: true });
@@ -342,8 +325,6 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       const launchResult = results.find(r => r.component === 'browser-launch');
       expect(launchResult?.status).toBe('fail');
       expect(launchResult?.message).toContain('Cannot test browser launch - no browser available');
-
-      delete process.env.PUPPETEER_EXECUTABLE_PATH;
     }, 30000);
 
     it.skip('should handle successful browser launch', async () => {
@@ -399,7 +380,28 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.tmpdir.mockReturnValue('/tmp');
       mockOs.totalmem.mockReturnValue(8 * 1024 * 1024 * 1024); // 8GB
       mockOs.freemem.mockReturnValue(4 * 1024 * 1024 * 1024); // 4GB
-      mockOs.cpus.mockReturnValue(new Array(4).fill({})); // 4 cores
+      mockOs.cpus.mockReturnValue([
+        {
+          model: 'Intel(R) Core(TM) i7',
+          speed: 3000,
+          times: { user: 100, nice: 0, sys: 100, idle: 1000, irq: 0 }
+        },
+        {
+          model: 'Intel(R) Core(TM) i7',
+          speed: 3000,
+          times: { user: 100, nice: 0, sys: 100, idle: 1000, irq: 0 }
+        },
+        {
+          model: 'Intel(R) Core(TM) i7',
+          speed: 3000,
+          times: { user: 100, nice: 0, sys: 100, idle: 1000, irq: 0 }
+        },
+        {
+          model: 'Intel(R) Core(TM) i7',
+          speed: 3000,
+          times: { user: 100, nice: 0, sys: 100, idle: 1000, irq: 0 }
+        }
+      ]);
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       mockFs.writeFileSync.mockImplementation(() => {});
@@ -535,10 +537,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: { DISPLAY: ':0' },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
 
       mockFs.existsSync.mockImplementation((path) => {
         if (path === '/usr/bin/google-chrome') return true;
@@ -600,10 +599,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: { DISPLAY: ':0' },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
 
       mockFs.existsSync.mockImplementation((path) => {
         if (path === '/usr/bin/google-chrome') return true;
@@ -633,12 +629,12 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
         setImmediate(() => callback(null, '8.8.8.8', 4));
       });
 
-  const report = await doctorModule.generateReport();
+      const report = await doctorModule.generateReport();
 
       expect(report).toContain('# Printeer System Diagnostic Report');
       expect(report).toContain('## Summary');
-  expect(report).toContain('### Browser');
-  expect(report).toMatch(/Path:\s/);
+      expect(report).toContain('### Browser');
+      expect(report).toMatch(/Path:\s/);
       expect(report).toContain('✅ Passed:');
       expect(report).toContain('⚠️  Warnings:');
       expect(report).toContain('❌ Failed:');
@@ -658,10 +654,7 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: { DISPLAY: ':0' },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
 
       // Mock no browser found
       mockFs.existsSync.mockImplementation((path) => {
@@ -698,14 +691,17 @@ describe('DefaultDoctorModule - System Dependency Checker', () => {
       mockOs.tmpdir.mockReturnValue('/tmp');
       mockOs.totalmem.mockReturnValue(512 * 1024 * 1024); // Low memory
       mockOs.freemem.mockReturnValue(128 * 1024 * 1024);
-      mockOs.cpus.mockReturnValue([{}]); // Single core
+      mockOs.cpus.mockReturnValue([
+        {
+          model: 'Intel(R) Core(TM) i7',
+          speed: 3000,
+          times: { user: 100, nice: 0, sys: 100, idle: 1000, irq: 0 }
+        }
+      ]);
       mockOs.userInfo.mockReturnValue({ username: 'testuser' } as any);
 
       Object.defineProperty(process, 'version', { value: 'v18.0.0' });
-      Object.defineProperty(process, 'env', {
-        value: { DISPLAY: ':0' },
-        configurable: true
-      });
+      vi.stubEnv('DISPLAY', ':0');
 
       mockFs.existsSync.mockImplementation((path) => {
         if (path === '/usr/bin/google-chrome') return true;

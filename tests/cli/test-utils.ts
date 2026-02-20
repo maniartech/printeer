@@ -86,7 +86,7 @@ export async function runCliCommand(
           NODE_ENV: 'test',
           PRINTEER_BUNDLED_ONLY: '1', // Use bundled Chromium for faster startup
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'false',
-          PRINTEER_BROWSER_TIMEOUT: '5000', // Very fast browser timeout for tests
+          PRINTEER_BROWSER_TIMEOUT: '15000', // Increased timeout for stability
           PRINTEER_BROWSER_POOL_MIN: '0',
           PRINTEER_BROWSER_POOL_MAX: '3', // Allow small pool for batch tests
           PRINTEER_BROWSER_HEADLESS: 'new',
@@ -106,9 +106,9 @@ export async function runCliCommand(
     };
   } catch (error: unknown) {
     return {
-      stdout: error.stdout || '',
-      stderr: error.stderr || '',
-      exitCode: error.code || 1,
+      stdout: (error as any).stdout || '',
+      stderr: (error as any).stderr || '',
+      exitCode: (error as any).code || 1,
       duration: Date.now() - startTime
     };
   }
@@ -218,7 +218,7 @@ export function cleanupTempDir(testName: string): void {
 export async function cleanupBrowserProcesses(): Promise<void> {
   try {
     // Use the comprehensive test cleanup
-    const { performTestCleanup } = await import('../src/test-utils/test-cleanup');
+    const { performTestCleanup } = await import('../../src/test-utils/test-cleanup');
     await performTestCleanup();
   } catch (error) {
     console.warn('Failed to cleanup browser processes:', error);

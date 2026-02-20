@@ -24,3 +24,19 @@ waitForMockServer(3).then(isAvailable => {
     console.log('✅ Mock server is available');
   }
 });
+
+// Ensure test isolation by clearing global browser manager state
+import { afterEach } from 'vitest';
+afterEach(() => {
+  // Clear the global instance to prevent state leakage between tests
+  if ((global as any).__printeerBrowserManager) {
+    try {
+      // Try to shutdown if it exists
+      const manager = (global as any).__printeerBrowserManager;
+      if (typeof manager.shutdown === 'function') {
+        manager.shutdown().catch(() => {});
+      }
+    } catch {}
+    (global as any).__printeerBrowserManager = null;
+  }
+});
