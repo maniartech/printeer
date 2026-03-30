@@ -85,3 +85,5 @@ dist/
 printeer-doctor-output.*
 *test*.pdf
 *test*.png
+
+*.png
