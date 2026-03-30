@@ -5,11 +5,12 @@ import {
   BrowserInstance,
   PoolStatus,
   BrowserFactory,
-  BrowserPoolState
-} from './types/browser';
-import { Browser, PuppeteerLaunchOptions } from 'puppeteer';
-import * as NodeFS from 'fs';
-import * as NodeOS from 'os';
+  BrowserPoolState,
+} from "./types/browser";
+import { Browser, PuppeteerLaunchOptions } from "puppeteer";
+import * as NodeFS from "fs";
+import * as NodeOS from "os";
+import { ensurePrinteerOwnershipArg } from "../utils";
 
 export class DefaultBrowserManager implements BrowserManager {
   private pool: BrowserPoolState;
@@ -25,7 +26,7 @@ export class DefaultBrowserManager implements BrowserManager {
       maxSize?: number;
       idleTimeout?: number;
       cleanupInterval?: number;
-    } = {}
+    } = {},
   ) {
     this.factory = factory || new DefaultBrowserFactory();
 
@@ -34,7 +35,7 @@ export class DefaultBrowserManager implements BrowserManager {
       minSize: 1,
       maxSize: 5,
       idleTimeout: 30000, // 30 seconds
-      cleanupInterval: 60000 // 1 minute
+      cleanupInterval: 60000, // 1 minute
     };
 
     this.config = { ...defaultConfig, ...this.config };
@@ -51,8 +52,8 @@ export class DefaultBrowserManager implements BrowserManager {
         created: 0,
         destroyed: 0,
         reused: 0,
-        errors: 0
-      }
+        errors: 0,
+      },
     };
   }
 
@@ -67,7 +68,7 @@ export class DefaultBrowserManager implements BrowserManager {
 
       // Check if we have any browsers after warm-up
       if (this.pool.total === 0) {
-        throw new Error('Failed to create any browsers during initialization');
+        throw new Error("Failed to create any browsers during initialization");
       }
 
       // Start cleanup interval
@@ -75,13 +76,15 @@ export class DefaultBrowserManager implements BrowserManager {
 
       this.isInitialized = true;
     } catch (error) {
-      throw new Error(`Failed to initialize browser manager: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to initialize browser manager: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   async getBrowser(): Promise<BrowserInstance> {
     if (this.isShuttingDown) {
-      throw new Error('Browser manager is shutting down');
+      throw new Error("Browser manager is shutting down");
     }
 
     if (!this.isInitialized) {
@@ -111,7 +114,9 @@ export class DefaultBrowserManager implements BrowserManager {
 
   async releaseBrowser(browser: BrowserInstance): Promise<void> {
     if (!this.pool.busy.has(browser.id)) {
-      console.warn(`Attempted to release browser ${browser.id} that is not in busy pool`);
+      console.warn(
+        `Attempted to release browser ${browser.id} that is not in busy pool`,
+      );
       return;
     }
 
@@ -148,18 +153,23 @@ export class DefaultBrowserManager implements BrowserManager {
     // Close all browsers with aggressive cleanup
     const allBrowsers = [
       ...this.pool.available,
-      ...Array.from(this.pool.busy.values())
+      ...Array.from(this.pool.busy.values()),
     ];
 
     // Use Promise.allSettled to ensure all browsers are attempted to be closed
     const shutdownResults = await Promise.allSettled(
-      allBrowsers.map(browser => this.destroyBrowserInstanceAggressively(browser))
+      allBrowsers.map((browser) =>
+        this.destroyBrowserInstanceAggressively(browser),
+      ),
     );
 
     // Log any failures but don't throw
     shutdownResults.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        console.warn(`Failed to shutdown browser ${allBrowsers[index].id}:`, result.reason);
+      if (result.status === "rejected") {
+        console.warn(
+          `Failed to shutdown browser ${allBrowsers[index].id}:`,
+          result.reason,
+        );
       }
     });
 
@@ -188,7 +198,7 @@ export class DefaultBrowserManager implements BrowserManager {
       // Get all browsers
       const allBrowsers = [
         ...this.pool.available,
-        ...Array.from(this.pool.busy.values())
+        ...Array.from(this.pool.busy.values()),
       ];
 
       // Force close all browsers
@@ -197,7 +207,9 @@ export class DefaultBrowserManager implements BrowserManager {
           await this.destroyBrowserInstanceAggressively(browserInstance);
           result.killed++;
         } catch (error) {
-          result.errors.push(`Failed to kill browser ${browserInstance.id}: ${(error as Error).message}`);
+          result.errors.push(
+            `Failed to kill browser ${browserInstance.id}: ${(error as Error).message}`,
+          );
         }
       }
 
@@ -211,9 +223,10 @@ export class DefaultBrowserManager implements BrowserManager {
         clearInterval(this.cleanupInterval);
         this.cleanupInterval = undefined;
       }
-
     } catch (error) {
-      result.errors.push(`Emergency cleanup failed: ${(error as Error).message}`);
+      result.errors.push(
+        `Emergency cleanup failed: ${(error as Error).message}`,
+      );
     }
 
     return result;
@@ -235,8 +248,9 @@ export class DefaultBrowserManager implements BrowserManager {
   }
 
   getPoolStatus(): PoolStatus {
-    const healthyBrowsers = this.pool.available.filter(b => b.isHealthy).length +
-      Array.from(this.pool.busy.values()).filter(b => b.isHealthy).length;
+    const healthyBrowsers =
+      this.pool.available.filter((b) => b.isHealthy).length +
+      Array.from(this.pool.busy.values()).filter((b) => b.isHealthy).length;
 
     return {
       totalBrowsers: this.pool.total,
@@ -245,7 +259,7 @@ export class DefaultBrowserManager implements BrowserManager {
       healthyBrowsers,
       unhealthyBrowsers: this.pool.total - healthyBrowsers,
       uptime: Date.now() - this.pool.lastCleanup.getTime(),
-      metrics: { ...this.pool.metrics }
+      metrics: { ...this.pool.metrics },
     };
   }
 
@@ -256,20 +270,25 @@ export class DefaultBrowserManager implements BrowserManager {
       return;
     }
 
-    const createPromises = Array.from({ length: browsersToCreate }, async () => {
-      try {
-        return await this.createBrowserInstance();
-      } catch (error) {
-        console.warn(`Failed to create browser during warm-up: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        this.pool.metrics.errors++;
-        return null;
-      }
-    });
+    const createPromises = Array.from(
+      { length: browsersToCreate },
+      async () => {
+        try {
+          return await this.createBrowserInstance();
+        } catch (error) {
+          console.warn(
+            `Failed to create browser during warm-up: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
+          this.pool.metrics.errors++;
+          return null;
+        }
+      },
+    );
 
     const browsers = await Promise.all(createPromises);
 
     // Add successfully created browsers to available pool
-    browsers.forEach(browser => {
+    browsers.forEach((browser) => {
       if (browser) {
         this.pool.available.push(browser);
       }
@@ -278,7 +297,7 @@ export class DefaultBrowserManager implements BrowserManager {
 
   private getAvailableBrowser(): BrowserInstance | null {
     // Find the most recently used healthy browser
-    const healthyBrowsers = this.pool.available.filter(b => b.isHealthy);
+    const healthyBrowsers = this.pool.available.filter((b) => b.isHealthy);
 
     if (healthyBrowsers.length === 0) {
       return null;
@@ -306,7 +325,7 @@ export class DefaultBrowserManager implements BrowserManager {
         createdAt: new Date(),
         lastUsed: new Date(),
         isHealthy: true,
-        processId: this.getBrowserProcessId(browser)
+        processId: this.getBrowserProcessId(browser),
       };
 
       this.pool.total++;
@@ -319,13 +338,17 @@ export class DefaultBrowserManager implements BrowserManager {
     }
   }
 
-  private async destroyBrowserInstance(browserInstance: BrowserInstance): Promise<void> {
+  private async destroyBrowserInstance(
+    browserInstance: BrowserInstance,
+  ): Promise<void> {
     try {
       await this.destroyBrowserInstanceAggressively(browserInstance);
       this.pool.total--;
       this.pool.metrics.destroyed++;
     } catch (error) {
-      console.warn(`Error closing browser ${browserInstance.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Error closing browser ${browserInstance.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       this.pool.metrics.errors++;
     }
   }
@@ -333,7 +356,9 @@ export class DefaultBrowserManager implements BrowserManager {
   /**
    * Aggressively destroy browser instance with multiple fallback strategies
    */
-  private async destroyBrowserInstanceAggressively(browserInstance: BrowserInstance): Promise<void> {
+  private async destroyBrowserInstanceAggressively(
+    browserInstance: BrowserInstance,
+  ): Promise<void> {
     const { browser, id } = browserInstance;
     const process = browser.process();
     const pid = process?.pid;
@@ -343,18 +368,20 @@ export class DefaultBrowserManager implements BrowserManager {
       await Promise.race([
         browser.close(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Graceful close timeout')), 5000)
-        )
+          setTimeout(() => reject(new Error("Graceful close timeout")), 5000),
+        ),
       ]);
 
       // Verify process is actually dead
-      if (pid && await this.isProcessStillAlive(pid)) {
-        throw new Error('Process still alive after graceful close');
+      if (pid && (await this.isProcessStillAlive(pid))) {
+        throw new Error("Process still alive after graceful close");
       }
 
       return; // Success!
     } catch (error) {
-      console.warn(`Graceful close failed for browser ${id}: ${(error as Error).message}`);
+      console.warn(
+        `Graceful close failed for browser ${id}: ${(error as Error).message}`,
+      );
     }
 
     // Strategy 2: Force kill the process
@@ -363,14 +390,16 @@ export class DefaultBrowserManager implements BrowserManager {
         await this.forceKillProcess(pid);
 
         // Wait and verify
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         if (await this.isProcessStillAlive(pid)) {
           throw new Error(`Process ${pid} still alive after force kill`);
         }
 
         return; // Success!
       } catch (error) {
-        console.warn(`Force kill failed for browser ${id} (PID: ${pid}): ${(error as Error).message}`);
+        console.warn(
+          `Force kill failed for browser ${id} (PID: ${pid}): ${(error as Error).message}`,
+        );
       }
     }
 
@@ -378,7 +407,9 @@ export class DefaultBrowserManager implements BrowserManager {
     try {
       await this.systemKillBrowserProcess(browserInstance);
     } catch (error) {
-      console.error(`System kill failed for browser ${id}: ${(error as Error).message}`);
+      console.error(
+        `System kill failed for browser ${id}: ${(error as Error).message}`,
+      );
       throw error; // This is our last resort, so throw if it fails
     }
   }
@@ -388,12 +419,15 @@ export class DefaultBrowserManager implements BrowserManager {
    */
   private async isProcessStillAlive(pid: number): Promise<boolean> {
     try {
-      if (process.platform === 'win32') {
-        const { exec } = await import('child_process');
-        const { promisify } = await import('util');
+      if (process.platform === "win32") {
+        const { exec } = await import("child_process");
+        const { promisify } = await import("util");
         const execAsync = promisify(exec);
 
-        const { stdout } = await execAsync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, { timeout: 5000 });
+        const { stdout } = await execAsync(
+          `tasklist /FI "PID eq ${pid}" /FO CSV /NH`,
+          { timeout: 5000 },
+        );
         return stdout.includes(pid.toString());
       } else {
         // Send signal 0 to check if process exists
@@ -409,41 +443,49 @@ export class DefaultBrowserManager implements BrowserManager {
    * Force kill a process by PID
    */
   private async forceKillProcess(pid: number): Promise<void> {
-    if (process.platform === 'win32') {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
+    if (process.platform === "win32") {
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
       const execAsync = promisify(exec);
 
       await execAsync(`taskkill /F /PID ${pid} /T`, { timeout: 10000 });
     } else {
-      process.kill(pid, 'SIGKILL');
+      process.kill(pid, "SIGKILL");
     }
   }
 
   /**
    * System-level browser process termination (last resort)
    */
-  private async systemKillBrowserProcess(browserInstance: BrowserInstance): Promise<void> {
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
+  private async systemKillBrowserProcess(
+    browserInstance: BrowserInstance,
+  ): Promise<void> {
+    const { exec } = await import("child_process");
+    const { promisify } = await import("util");
     const execAsync = promisify(exec);
 
-    if (process.platform === 'win32') {
+    if (process.platform === "win32") {
       // Kill any Chrome process that might be related to this browser
-      await execAsync(`
+      await execAsync(
+        `
         Get-WmiObject Win32_Process |
         Where-Object {
           $_.Name -eq "chrome.exe" -and
           ($_.CommandLine -like "*--remote-debugging-port*" -or $_.CommandLine -like "*--user-data-dir*")
         } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-      `, { shell: 'powershell', timeout: 15000 });
+      `,
+        { shell: "powershell", timeout: 15000 },
+      );
     } else {
       // Kill Chrome processes with debugging ports or user data dirs
-      await execAsync(`
-        pkill -f "chrome.*--remote-debugging-port" || true
-        pkill -f "chrome.*--user-data-dir" || true
-      `, { timeout: 15000 });
+      await execAsync(
+        `
+        pkill -fi "chrome.*--remote-debugging-port" || true
+        pkill -fi "chrome.*--user-data-dir" || true
+      `,
+        { timeout: 15000 },
+      );
     }
   }
 
@@ -452,37 +494,50 @@ export class DefaultBrowserManager implements BrowserManager {
    */
   private async verifyNoRemainingProcesses(): Promise<void> {
     try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
       const execAsync = promisify(exec);
 
       let remainingCount = 0;
 
-      if (process.platform === 'win32') {
-        const { stdout } = await execAsync(`
+      if (process.platform === "win32") {
+        const { stdout } = await execAsync(
+          `
           (Get-WmiObject Win32_Process |
            Where-Object {
              $_.Name -eq "chrome.exe" -and
              ($_.CommandLine -like "*--remote-debugging-port*" -or $_.CommandLine -like "*--user-data-dir*")
            }).Count
-        `, { shell: 'powershell', timeout: 10000 });
+        `,
+          { shell: "powershell", timeout: 10000 },
+        );
         remainingCount = parseInt(stdout.trim()) || 0;
       } else {
-        const { stdout } = await execAsync(`
-          ps aux | grep -E "chrome.*(--remote-debugging-port|--user-data-dir)" | grep -v grep | wc -l
-        `, { timeout: 10000 });
+        const { stdout } = await execAsync(
+          `
+          ps aux | grep -Ei "chrome.*(--remote-debugging-port|--user-data-dir)" | grep -v grep | wc -l
+        `,
+          { timeout: 10000 },
+        );
         remainingCount = parseInt(stdout.trim()) || 0;
       }
 
       if (remainingCount > 0) {
-        console.warn(`⚠️  ${remainingCount} browser processes may still be running after shutdown`);
+        console.warn(
+          `⚠️  ${remainingCount} browser processes may still be running after shutdown`,
+        );
       }
     } catch (error) {
-      console.debug('Could not verify remaining processes:', (error as Error).message);
+      console.debug(
+        "Could not verify remaining processes:",
+        (error as Error).message,
+      );
     }
   }
 
-  private async waitForAvailableBrowser(timeout = 30000): Promise<BrowserInstance> {
+  private async waitForAvailableBrowser(
+    timeout = 30000,
+  ): Promise<BrowserInstance> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
@@ -492,13 +547,15 @@ export class DefaultBrowserManager implements BrowserManager {
       }
 
       // Wait a bit before checking again
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    throw new Error('Timeout waiting for available browser');
+    throw new Error("Timeout waiting for available browser");
   }
 
-  private async checkBrowserHealth(browserInstance: BrowserInstance): Promise<boolean> {
+  private async checkBrowserHealth(
+    browserInstance: BrowserInstance,
+  ): Promise<boolean> {
     try {
       // Check if browser process is still alive
       if (!this.isBrowserProcessAlive(browserInstance)) {
@@ -506,16 +563,22 @@ export class DefaultBrowserManager implements BrowserManager {
       }
 
       // Use the factory's validation method for functional testing
-      const isValid = await this.factory.validateBrowser(browserInstance.browser);
+      const isValid = await this.factory.validateBrowser(
+        browserInstance.browser,
+      );
 
       if (!isValid) {
-        console.warn(`Browser ${browserInstance.id} failed functional validation`);
+        console.warn(
+          `Browser ${browserInstance.id} failed functional validation`,
+        );
         return false;
       }
 
       return true;
     } catch (error) {
-      console.warn(`Browser health check failed for ${browserInstance.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Browser health check failed for ${browserInstance.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       return false;
     }
   }
@@ -523,7 +586,7 @@ export class DefaultBrowserManager implements BrowserManager {
   private isBrowserProcessAlive(browserInstance: BrowserInstance): boolean {
     try {
       // For testing environments, assume browser is alive
-      if (process.env.NODE_ENV === 'test') {
+      if (process.env.NODE_ENV === "test") {
         return true;
       }
 
@@ -534,24 +597,27 @@ export class DefaultBrowserManager implements BrowserManager {
       }
 
       // Check if browser is connected (not closed)
-      if (browserInstance.browser.isConnected && !browserInstance.browser.isConnected()) {
+      if (
+        browserInstance.browser.isConnected &&
+        !browserInstance.browser.isConnected()
+      ) {
         return false;
       }
 
       return true;
     } catch (error) {
       // In test environments, don't fail on process check errors
-      return process.env.NODE_ENV === 'test';
+      return process.env.NODE_ENV === "test";
     }
   }
 
   private async performHealthCheck(): Promise<void> {
     const allBrowsers = [
       ...this.pool.available,
-      ...Array.from(this.pool.busy.values())
+      ...Array.from(this.pool.busy.values()),
     ];
 
-    const healthChecks = allBrowsers.map(async browser => {
+    const healthChecks = allBrowsers.map(async (browser) => {
       const isHealthy = await this.checkBrowserHealth(browser);
       browser.isHealthy = isHealthy;
 
@@ -577,22 +643,31 @@ export class DefaultBrowserManager implements BrowserManager {
   private async recoverFromFailures(): Promise<void> {
     // Ensure we have minimum browsers after health checks
     if (this.pool.total < this.pool.minSize) {
-      console.info(`Pool below minimum size (${this.pool.total}/${this.pool.minSize}), creating new browsers`);
+      console.info(
+        `Pool below minimum size (${this.pool.total}/${this.pool.minSize}), creating new browsers`,
+      );
       await this.warmUp();
     }
 
     // If we have no healthy browsers, force create at least one
-    const healthyBrowsers = this.pool.available.filter(b => b.isHealthy).length +
-      Array.from(this.pool.busy.values()).filter(b => b.isHealthy).length;
+    const healthyBrowsers =
+      this.pool.available.filter((b) => b.isHealthy).length +
+      Array.from(this.pool.busy.values()).filter((b) => b.isHealthy).length;
 
     if (healthyBrowsers === 0 && this.pool.total === 0) {
-      console.warn('No healthy browsers available, attempting emergency recovery');
+      console.warn(
+        "No healthy browsers available, attempting emergency recovery",
+      );
       try {
         const emergencyBrowser = await this.createBrowserInstance();
         this.pool.available.push(emergencyBrowser);
-        console.info(`Emergency browser ${emergencyBrowser.id} created successfully`);
+        console.info(
+          `Emergency browser ${emergencyBrowser.id} created successfully`,
+        );
       } catch (error) {
-        console.error(`Emergency browser creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(
+          `Emergency browser creation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
         this.pool.metrics.errors++;
       }
     }
@@ -600,8 +675,10 @@ export class DefaultBrowserManager implements BrowserManager {
 
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
-      this.performCleanup().catch(error => {
-        console.warn(`Cleanup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.performCleanup().catch((error) => {
+        console.warn(
+          `Cleanup error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
       });
     }, this.config.cleanupInterval);
   }
@@ -611,7 +688,7 @@ export class DefaultBrowserManager implements BrowserManager {
     const idleTimeout = this.config.idleTimeout!;
 
     // Find idle browsers to remove
-    const idleBrowsers = this.pool.available.filter(browser => {
+    const idleBrowsers = this.pool.available.filter((browser) => {
       const idleTime = now.getTime() - browser.lastUsed.getTime();
       return idleTime > idleTimeout && this.pool.total > this.pool.minSize;
     });
@@ -626,7 +703,7 @@ export class DefaultBrowserManager implements BrowserManager {
     }
 
     // Check health of remaining browsers
-    const healthChecks = this.pool.available.map(async browser => {
+    const healthChecks = this.pool.available.map(async (browser) => {
       const isHealthy = await this.checkBrowserHealth(browser);
       browser.isHealthy = isHealthy;
 
@@ -667,7 +744,11 @@ export class DefaultBrowserFactory implements BrowserFactory {
   private fs: typeof NodeFS;
   private os: typeof NodeOS;
 
-  constructor(private config: PuppeteerLaunchOptions = {}, fsImpl: typeof NodeFS = NodeFS, osImpl: typeof NodeOS = NodeOS) {
+  constructor(
+    private config: PuppeteerLaunchOptions = {},
+    fsImpl: typeof NodeFS = NodeFS,
+    osImpl: typeof NodeOS = NodeOS,
+  ) {
     // Allow dependency injection for testing
     this.fs = fsImpl;
     this.os = osImpl;
@@ -675,56 +756,56 @@ export class DefaultBrowserFactory implements BrowserFactory {
 
   private static readonly FALLBACK_CONFIGURATIONS = [
     {
-      name: 'standard',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      name: "standard",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     },
     {
-      name: 'minimal',
+      name: "minimal",
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
     },
     {
-      name: 'container-optimized',
+      name: "container-optimized",
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding'
-      ]
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-web-security",
+        "--disable-features=VizDisplayCompositor",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+      ],
     },
     {
-      name: 'headless-server',
+      name: "headless-server",
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--single-process',
-        '--no-zygote'
-      ]
-    }
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-web-security",
+        "--disable-features=VizDisplayCompositor",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+        "--single-process",
+        "--no-zygote",
+      ],
+    },
   ];
 
   async createBrowser(): Promise<Browser> {
-    const puppeteer = await import('puppeteer');
+    const puppeteer = await import("puppeteer");
     const launchOptions = this.getOptimalLaunchOptions();
 
     // If bundled-only mode is enabled, force use of bundled Chromium
-    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === '1';
+    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === "1";
     if (bundledOnly) {
       // Don't set executablePath for bundled Chromium - let Puppeteer use its default
       // The bundled browser is used by default when no executablePath is specified
@@ -733,26 +814,30 @@ export class DefaultBrowserFactory implements BrowserFactory {
 
     // Try to launch browser with optimal configuration first
     try {
-      console.log('Launching browser with optimal configuration...');
+      console.log("Launching browser with optimal configuration...");
       const browser = await puppeteer.launch(launchOptions);
 
       // Validate the browser is working
       const isValid = await this.validateBrowser(browser);
       if (isValid) {
-        console.log('Browser launched and validated successfully');
+        console.log("Browser launched and validated successfully");
         return browser;
       }
 
       // Close invalid browser
       await browser.close();
-      console.warn('Browser launched but failed validation');
+      console.warn("Browser launched but failed validation");
     } catch (error) {
-      console.warn(`Failed to launch browser with optimal configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Failed to launch browser with optimal configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
 
     // Skip fallback configurations if bundled-only mode is enabled
     if (bundledOnly) {
-      throw new Error('Failed to launch bundled Chromium and PRINTEER_BUNDLED_ONLY is set');
+      throw new Error(
+        "Failed to launch bundled Chromium and PRINTEER_BUNDLED_ONLY is set",
+      );
     }
 
     // Try fallback configurations
@@ -760,7 +845,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
       try {
         const fallbackOptions: PuppeteerLaunchOptions = {
           ...launchOptions,
-          args: config.args
+          args: config.args,
         };
 
         const browser = await puppeteer.launch(fallbackOptions);
@@ -768,18 +853,24 @@ export class DefaultBrowserFactory implements BrowserFactory {
         // Validate the browser is working
         const isValid = await this.validateBrowser(browser);
         if (isValid) {
-          console.info(`Browser launched successfully with '${config.name}' configuration`);
+          console.info(
+            `Browser launched successfully with '${config.name}' configuration`,
+          );
           return browser;
         }
 
         // Close invalid browser
         await browser.close();
       } catch (error) {
-        console.warn(`Failed to launch browser with '${config.name}' configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.warn(
+          `Failed to launch browser with '${config.name}' configuration: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
       }
     }
 
-    throw new Error('Failed to launch browser with any configuration. Please check system requirements and browser installation.');
+    throw new Error(
+      "Failed to launch browser with any configuration. Please check system requirements and browser installation.",
+    );
   }
 
   async validateBrowser(browser: Browser): Promise<boolean> {
@@ -788,9 +879,9 @@ export class DefaultBrowserFactory implements BrowserFactory {
       const page = await browser.newPage();
 
       // Test navigation to a simple data URL
-      await page.goto('data:text/html,<h1>Browser Test</h1>', {
-        waitUntil: 'load',
-        timeout: 10000
+      await page.goto("data:text/html,<h1>Browser Test</h1>", {
+        waitUntil: "load",
+        timeout: 10000,
       });
 
       // Test basic page evaluation
@@ -800,9 +891,11 @@ export class DefaultBrowserFactory implements BrowserFactory {
       await page.close();
 
       // Browser is valid if we can navigate and evaluate
-      return typeof title === 'string';
+      return typeof title === "string";
     } catch (error) {
-      console.warn(`Browser validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Browser validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       return false;
     }
   }
@@ -812,8 +905,10 @@ export class DefaultBrowserFactory implements BrowserFactory {
       const version = await browser.version();
       return version;
     } catch (error) {
-      console.warn(`Failed to get browser version: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return 'unknown';
+      console.warn(
+        `Failed to get browser version: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+      return "unknown";
     }
   }
 
@@ -821,28 +916,31 @@ export class DefaultBrowserFactory implements BrowserFactory {
     const baseOptions: PuppeteerLaunchOptions = {
       headless: "new", // Use new headless mode (Chrome 112+)
       timeout: 30000,
-      args: []
+      args: [],
     };
 
     // Merge constructor config, allowing it to override defaults
-    const launchOptions: PuppeteerLaunchOptions = { ...baseOptions, ...this.config };
+    const launchOptions: PuppeteerLaunchOptions = {
+      ...baseOptions,
+      ...this.config,
+    };
 
     // Force headless mode in test environment to prevent UI windows
-    if (process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === "test") {
       launchOptions.headless = "new";
       // Use minimal args for tests to avoid launch issues
       launchOptions.args = [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--headless=new'
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--headless=new",
       ];
       return launchOptions;
     }
 
     // Check if we should use bundled Chromium only
-    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === '1';
+    const bundledOnly = process.env.PRINTEER_BUNDLED_ONLY === "1";
 
     if (!bundledOnly) {
       // Detect system Chrome/Chromium first (only if not bundled-only)
@@ -861,14 +959,18 @@ export class DefaultBrowserFactory implements BrowserFactory {
     // Add environment-specific optimizations
     const optimizedArgs = this.getEnvironmentOptimizedArgs();
     const alwaysArgs: string[] = [];
-    if (!(launchOptions.args || []).some(a => a.startsWith('--headless'))) {
-      alwaysArgs.push('--headless=new');
+    if (!(launchOptions.args || []).some((a) => a.startsWith("--headless"))) {
+      alwaysArgs.push("--headless=new");
     }
-    if (this.os.platform() === 'win32') {
-      alwaysArgs.push('--no-startup-window');
+    if (this.os.platform() === "win32") {
+      alwaysArgs.push("--no-startup-window");
     }
-    const allArgs = (launchOptions.args || []).concat(optimizedArgs).concat(alwaysArgs);
-    launchOptions.args = Array.from(new Set(allArgs));
+    const allArgs = (launchOptions.args || [])
+      .concat(optimizedArgs)
+      .concat(alwaysArgs);
+    launchOptions.args = ensurePrinteerOwnershipArg(
+      Array.from(new Set(allArgs)),
+    );
 
     return launchOptions;
   }
@@ -879,29 +981,29 @@ export class DefaultBrowserFactory implements BrowserFactory {
     let browserPaths: string[] = [];
 
     switch (platform) {
-      case 'win32':
+      case "win32":
         browserPaths = [
-          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-          'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-          'C:\\Program Files\\Chromium\\Application\\chrome.exe',
-          'C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe'
+          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+          "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+          "C:\\Program Files\\Chromium\\Application\\chrome.exe",
+          "C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe",
         ];
         break;
-      case 'darwin':
+      case "darwin":
         browserPaths = [
-          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-          '/Applications/Chromium.app/Contents/MacOS/Chromium'
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+          "/Applications/Chromium.app/Contents/MacOS/Chromium",
         ];
         break;
-      case 'linux':
+      case "linux":
       default:
         browserPaths = [
-          '/usr/bin/google-chrome',
-          '/usr/bin/google-chrome-stable',
-          '/usr/bin/chromium',
-          '/usr/bin/chromium-browser',
-          '/snap/bin/chromium',
-          '/usr/bin/chrome'
+          "/usr/bin/google-chrome",
+          "/usr/bin/google-chrome-stable",
+          "/usr/bin/chromium",
+          "/usr/bin/chromium-browser",
+          "/snap/bin/chromium",
+          "/usr/bin/chrome",
         ];
         break;
     }
@@ -927,43 +1029,43 @@ export class DefaultBrowserFactory implements BrowserFactory {
     const isHeadless = this.isHeadlessEnvironment();
 
     let args = [
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding',
-      '--disable-features=TranslateUI',
-      '--disable-ipc-flooding-protection'
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
+      "--disable-features=TranslateUI",
+      "--disable-ipc-flooding-protection",
     ];
 
     // Always disable sandbox for root users or Docker environments
     if (isRoot || isDocker) {
-      args.push('--no-sandbox', '--disable-setuid-sandbox');
+      args.push("--no-sandbox", "--disable-setuid-sandbox");
     }
 
     // Add memory optimizations for containers
     if (isDocker) {
       args.push(
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security'
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-web-security",
       );
     }
 
     // Add headless server optimizations
     if (isHeadless) {
       args.push(
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-background-timer-throttling'
+        "--disable-gpu",
+        "--disable-software-rasterizer",
+        "--disable-background-timer-throttling",
       );
     }
 
     // Platform-specific optimizations
-    if (platform === 'linux') {
-      args.push('--disable-dev-shm-usage');
+    if (platform === "linux") {
+      args.push("--disable-dev-shm-usage");
 
       // Check for display server
       if (!process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) {
-        args.push('--virtual-time-budget=1000');
+        args.push("--virtual-time-budget=1000");
       }
     }
 
@@ -976,7 +1078,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
         return process.getuid() === 0;
       }
 
-      return this.os.userInfo().username === 'root';
+      return this.os.userInfo().username === "root";
     } catch (error) {
       return false;
     }
@@ -985,14 +1087,14 @@ export class DefaultBrowserFactory implements BrowserFactory {
   private isRunningInDocker(): boolean {
     try {
       // Check for .dockerenv file
-      if (this.fs.existsSync('/.dockerenv')) {
+      if (this.fs.existsSync("/.dockerenv")) {
         return true;
       }
 
       // Check cgroup for docker
       try {
-        const cgroup = this.fs.readFileSync('/proc/1/cgroup', 'utf8');
-        return cgroup.includes('docker') || cgroup.includes('containerd');
+        const cgroup = this.fs.readFileSync("/proc/1/cgroup", "utf8");
+        return cgroup.includes("docker") || cgroup.includes("containerd");
       } catch (error) {
         return false;
       }
@@ -1004,7 +1106,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
   private isHeadlessEnvironment(): boolean {
     const platform = this.os.platform();
 
-    if (platform === 'win32' || platform === 'darwin') {
+    if (platform === "win32" || platform === "darwin") {
       return false; // Assume GUI available on Windows/macOS
     }
 

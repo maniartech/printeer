@@ -1,8 +1,8 @@
 // API domain - Library public surface
-import puppeteer, { Browser } from 'puppeteer';
-import { normalize } from 'path';
-import { getDefaultBrowserOptions } from '../utils';
-import { DefaultBrowserManager } from '../printing/browser';
+import puppeteer, { Browser } from "puppeteer";
+import { normalize } from "path";
+import { getDefaultBrowserOptions, ensurePrinteerOwnershipArg } from "../utils";
+import { DefaultBrowserManager } from "../printing/browser";
 
 // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms
 // networkidle2 - consider navigation to be finished when there are no more than 2 network connections for at least 500 ms.
@@ -18,13 +18,13 @@ import { DefaultBrowserManager } from '../printing/browser';
 /**
  * Determine the appropriate browser strategy based on usage context
  */
-function getBrowserStrategy(): 'oneshot' | 'pool' {
+function getBrowserStrategy(): "oneshot" | "pool" {
   // Explicit override via environment variable
-  if (process.env.PRINTEER_BROWSER_STRATEGY === 'oneshot') {
-    return 'oneshot';
+  if (process.env.PRINTEER_BROWSER_STRATEGY === "oneshot") {
+    return "oneshot";
   }
-  if (process.env.PRINTEER_BROWSER_STRATEGY === 'pool') {
-    return 'pool';
+  if (process.env.PRINTEER_BROWSER_STRATEGY === "pool") {
+    return "pool";
   }
 
   // Check if this is a batch operation (multiple URLs or batch command)
@@ -32,39 +32,45 @@ function getBrowserStrategy(): 'oneshot' | 'pool' {
 
   // Use pool for batch operations (performance for multiple conversions)
   if (isBatchOperation) {
-    return 'pool';
+    return "pool";
   }
 
   // Use one-shot for single CLI commands (simple, clean, no lingering processes)
-  if (process.argv[1]?.includes('run-cli.js') ||
-      process.argv[1]?.includes('cli.js') ||
-      process.env.PRINTEER_CLI_MODE === '1') {
-    return 'oneshot';
+  if (
+    process.argv[1]?.includes("run-cli.js") ||
+    process.argv[1]?.includes("cli.js") ||
+    process.env.PRINTEER_CLI_MODE === "1"
+  ) {
+    return "oneshot";
   }
 
   // Use one-shot for test environment (clean, predictable)
   // Exception: batch tests should use pool for realistic testing
-  if (process.env.NODE_ENV === 'test') {
-    return 'oneshot';
+  if (process.env.NODE_ENV === "test") {
+    return "oneshot";
   }
 
   // Use one-shot for Docker/container environments (resource constraints)
   // Exception: batch operations still use pool even in containers
-  if (process.env.DOCKER_CONTAINER === 'true' ||
-      process.env.KUBERNETES_SERVICE_HOST ||
-      existsSync('/.dockerenv')) {
-    return 'oneshot';
+  if (
+    process.env.DOCKER_CONTAINER === "true" ||
+    process.env.KUBERNETES_SERVICE_HOST ||
+    existsSync("/.dockerenv")
+  ) {
+    return "oneshot";
   }
 
   // Use one-shot for serverless environments (Lambda, etc.)
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME ||
-      process.env.VERCEL ||
-      process.env.NETLIFY) {
-    return 'oneshot';
+  if (
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.VERCEL ||
+    process.env.NETLIFY
+  ) {
+    return "oneshot";
   }
 
   // Use pool for server/API usage (performance for high throughput)
-  return 'pool';
+  return "pool";
 }
 
 /**
@@ -75,35 +81,40 @@ function detectBatchOperation(): boolean {
   const args = process.argv;
 
   // Explicit batch command
-  if (args.includes('batch') || args.includes('--batch')) {
+  if (args.includes("batch") || args.includes("--batch")) {
     return true;
   }
 
   // Multiple URLs provided
-  const urlCount = args.filter(arg => arg.startsWith('http')).length;
+  const urlCount = args.filter((arg) => arg.startsWith("http")).length;
   if (urlCount > 1) {
     return true;
   }
 
   // Batch file provided
-  if (args.some(arg => arg.endsWith('.csv') || arg.endsWith('.json') || arg.endsWith('.yaml'))) {
+  if (
+    args.some(
+      (arg) =>
+        arg.endsWith(".csv") || arg.endsWith(".json") || arg.endsWith(".yaml"),
+    )
+  ) {
     return true;
   }
 
   // Environment variable indicating batch mode
-  if (process.env.PRINTEER_BATCH_MODE === '1') {
+  if (process.env.PRINTEER_BATCH_MODE === "1") {
     return true;
   }
 
   // Check for batch-related CLI options
   const batchOptions = [
-    '--concurrency',
-    '--continue-on-error',
-    '--output-dir',
-    '--batch-file'
+    "--concurrency",
+    "--continue-on-error",
+    "--output-dir",
+    "--batch-file",
   ];
 
-  if (batchOptions.some(option => args.includes(option))) {
+  if (batchOptions.some((option) => args.includes(option))) {
     return true;
   }
 
@@ -115,7 +126,7 @@ function detectBatchOperation(): boolean {
  */
 function existsSync(path: string): boolean {
   try {
-    require('fs').accessSync(path);
+    require("fs").accessSync(path);
     return true;
   } catch {
     return false;
@@ -139,7 +150,7 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
       minSize: 0, // Don't pre-warm browsers
       maxSize: 1, // Single browser for simple API
       idleTimeout: 5000, // 5 seconds - aggressive cleanup
-      cleanupInterval: 10000 // 10 seconds - frequent cleanup checks
+      cleanupInterval: 10000, // 10 seconds - frequent cleanup checks
     });
 
     await globalBrowserManager.initialize();
@@ -155,11 +166,11 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
       }
     };
 
-    process.once('exit', cleanup);
-    process.once('SIGINT', cleanup);
-    process.once('SIGTERM', cleanup);
-    process.once('uncaughtException', cleanup);
-    process.once('unhandledRejection', cleanup);
+    process.once("exit", cleanup);
+    process.once("SIGINT", cleanup);
+    process.once("SIGTERM", cleanup);
+    process.once("uncaughtException", cleanup);
+    process.once("unhandledRejection", cleanup);
   }
 
   return globalBrowserManager;
@@ -169,7 +180,9 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
  * One-shot browser creation (simple, clean, no pool)
  */
 async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
-  let browserOptions = customOptions ? { ...customOptions } : getDefaultBrowserOptions();
+  let browserOptions = customOptions
+    ? { ...customOptions }
+    : getDefaultBrowserOptions();
 
   // Remove pipe option if false (only meaningful when true, causes issues when false)
   if (browserOptions.pipe === false) {
@@ -187,19 +200,30 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
     browserOptions.headless = "new";
   }
 
-  const baseArgs: string[] = Array.isArray(browserOptions.args) ? browserOptions.args : [];
+  const baseArgs: string[] = Array.isArray(browserOptions.args)
+    ? browserOptions.args
+    : [];
   const extraArgs = [
-    baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new'
+    baseArgs.some((a: string) => a.startsWith("--headless"))
+      ? null
+      : "--headless=new",
     // NOTE: Removed --no-startup-window for Windows as it causes "waiting for target" timeouts
     // in headless mode. The flag is redundant in headless mode anyway.
   ].filter(Boolean) as string[];
-  browserOptions.args = Array.from(new Set([...baseArgs, ...extraArgs]));
+  browserOptions.args = ensurePrinteerOwnershipArg(
+    Array.from(new Set([...baseArgs, ...extraArgs])),
+  );
 
   return await puppeteer.launch(browserOptions);
 }
 
-export default async (url: string, outputFile: string, outputType: string | null = null, browserOptions: any) => {
-  const silent = process.env.PRINTEER_SILENT === '1';
+export default async (
+  url: string,
+  outputFile: string,
+  outputType: string | null = null,
+  browserOptions: any,
+) => {
+  const silent = process.env.PRINTEER_SILENT === "1";
   const strategy = getBrowserStrategy();
 
   if (!silent) {
@@ -208,50 +232,71 @@ export default async (url: string, outputFile: string, outputType: string | null
   }
 
   outputFile = normalize(outputFile);
-  if (!url.startsWith('http')) {
-    throw new Error('URL must start with http or https');
+  if (!url.startsWith("http")) {
+    throw new Error("URL must start with http or https");
   }
 
   try {
-    if (strategy === 'oneshot') {
+    if (strategy === "oneshot") {
       // Simple one-shot approach: create → use → destroy
-      return await runOneshotConversion(url, outputFile, outputType, browserOptions);
+      return await runOneshotConversion(
+        url,
+        outputFile,
+        outputType,
+        browserOptions,
+      );
     } else {
       // Pool-based approach for server/API usage
-      return await runPooledConversion(url, outputFile, outputType, browserOptions);
+      return await runPooledConversion(
+        url,
+        outputFile,
+        outputType,
+        browserOptions,
+      );
     }
   } catch (error) {
     // If pool strategy fails, fallback to oneshot
-    if (strategy === 'pool' && !silent) {
+    if (strategy === "pool" && !silent) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      console.warn('Pool strategy failed, falling back to oneshot:', errMsg);
-      return await runOneshotConversion(url, outputFile, outputType, browserOptions);
+      console.warn("Pool strategy failed, falling back to oneshot:", errMsg);
+      return await runOneshotConversion(
+        url,
+        outputFile,
+        outputType,
+        browserOptions,
+      );
     }
     throw error;
   }
-}
+};
 
 async function applyAdvancedPageOptions(page: any, opts: any) {
   const headers = { ...opts.headers };
   if (opts.locale) {
-    headers['Accept-Language'] = opts.locale;
+    headers["Accept-Language"] = opts.locale;
   }
   if (Object.keys(headers).length > 0) {
     await page.setExtraHTTPHeaders(headers);
   }
 
-  if (opts.cookies) await page.setCookie(...(Array.isArray(opts.cookies) ? opts.cookies : [opts.cookies]));
+  if (opts.cookies)
+    await page.setCookie(
+      ...(Array.isArray(opts.cookies) ? opts.cookies : [opts.cookies]),
+    );
   if (opts.auth) await page.authenticate(opts.auth);
   if (opts.userAgent) await page.setUserAgent(opts.userAgent);
   if (opts.mediaType) await page.emulateMediaType(opts.mediaType);
-  if (opts.colorScheme) await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: opts.colorScheme }]);
+  if (opts.colorScheme)
+    await page.emulateMediaFeatures([
+      { name: "prefers-color-scheme", value: opts.colorScheme },
+    ]);
   if (opts.timezone) await page.emulateTimezone(opts.timezone);
   if (opts.javascriptEnabled === false) await page.setJavaScriptEnabled(false);
   if (opts.cacheEnabled === false) await page.setCacheEnabled(false);
 
   if (opts.blockResources && opts.blockResources.length > 0) {
     await page.setRequestInterception(true);
-    page.on('request', (req: any) => {
+    page.on("request", (req: any) => {
       if (opts.blockResources.includes(req.resourceType())) {
         req.abort();
       } else {
@@ -268,7 +313,7 @@ async function runOneshotConversion(
   url: string,
   outputFile: string,
   outputType: string | null,
-  browserOptions: any
+  browserOptions: any,
 ): Promise<string> {
   let browser: Browser | null = null;
   let page: any = null;
@@ -279,7 +324,7 @@ async function runOneshotConversion(
     page = await browser.newPage();
 
     // Navigate and render
-    const waitUntil = browserOptions.waitUntil || 'networkidle0';
+    const waitUntil = browserOptions.waitUntil || "networkidle0";
     const timeout = browserOptions.waitTimeout || 30000;
     const loadTimeout = browserOptions.loadTimeout || timeout;
 
@@ -291,7 +336,7 @@ async function runOneshotConversion(
         deviceScaleFactor: browserOptions.viewport.deviceScaleFactor || 1,
         isMobile: !!browserOptions.viewport.isMobile,
         hasTouch: !!browserOptions.viewport.hasTouch,
-        isLandscape: !!browserOptions.viewport.isLandscape
+        isLandscape: !!browserOptions.viewport.isLandscape,
       });
     }
 
@@ -310,7 +355,9 @@ async function runOneshotConversion(
       await page.waitForFunction(browserOptions.waitFunction, { timeout });
     }
     if (browserOptions.waitDelay) {
-      await new Promise(resolve => setTimeout(resolve, browserOptions.waitDelay));
+      await new Promise((resolve) =>
+        setTimeout(resolve, browserOptions.waitDelay),
+      );
     }
 
     outputType = detectOutputType(outputFile, outputType);
@@ -321,48 +368,57 @@ async function runOneshotConversion(
 
     // Auto-scroll if requested or for full page screenshots
     if (browserOptions.fullPage) {
-       await autoScroll(page);
+      await autoScroll(page);
     }
 
-    if (outputType === 'png') {
+    if (outputType === "png") {
       const screenshotOptions: any = {
         path: outputFile,
         fullPage: !!browserOptions.fullPage,
         omitBackground: !!browserOptions.omitBackground,
-        type: browserOptions.imageType || 'png',
+        type: browserOptions.imageType || "png",
         clip: browserOptions.clip,
-        optimizeForSize: browserOptions.optimizeForSize
+        optimizeForSize: browserOptions.optimizeForSize,
       };
-      if (screenshotOptions.type !== 'png' && browserOptions.quality !== undefined) {
+      if (
+        screenshotOptions.type !== "png" &&
+        browserOptions.quality !== undefined
+      ) {
         screenshotOptions.quality = browserOptions.quality;
       }
       await page.screenshot(screenshotOptions);
     } else {
       await page.pdf({
-        format: browserOptions.format || 'A4',
+        format: browserOptions.format || "A4",
         path: outputFile,
-        printBackground: browserOptions.printBackground !== undefined ? browserOptions.printBackground : true,
-        landscape: browserOptions.orientation === 'landscape',
+        printBackground:
+          browserOptions.printBackground !== undefined
+            ? browserOptions.printBackground
+            : true,
+        landscape: browserOptions.orientation === "landscape",
         margin: browserOptions.margin,
         scale: browserOptions.scale,
-        displayHeaderFooter: browserOptions.displayHeaderFooter !== undefined ? browserOptions.displayHeaderFooter : (!!browserOptions.headerTemplate || !!browserOptions.footerTemplate),
+        displayHeaderFooter:
+          browserOptions.displayHeaderFooter !== undefined
+            ? browserOptions.displayHeaderFooter
+            : !!browserOptions.headerTemplate ||
+              !!browserOptions.footerTemplate,
         headerTemplate: browserOptions.headerTemplate,
         footerTemplate: browserOptions.footerTemplate,
         preferCSSPageSize: browserOptions.preferCSSPageSize,
         tagged: browserOptions.generateTaggedPDF,
-        outline: browserOptions.outline
+        outline: browserOptions.outline,
       });
     }
 
     return normalize(outputFile);
-
   } finally {
     // Guaranteed cleanup - no pools, no lingering processes
     if (page) {
       try {
         await page.close();
       } catch (error) {
-        console.warn('Failed to close page:', error);
+        console.warn("Failed to close page:", error);
       }
     }
 
@@ -374,19 +430,19 @@ async function runOneshotConversion(
         const process = browser.process();
         if (process && !process.killed) {
           // Give it a moment to close gracefully
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
 
           // Force kill if still alive
           if (!process.killed) {
             try {
-              process.kill('SIGKILL');
+              process.kill("SIGKILL");
             } catch (error) {
               // Process might already be dead
             }
           }
         }
       } catch (error) {
-        console.warn('Failed to close browser:', error);
+        console.warn("Failed to close browser:", error);
       }
     }
   }
@@ -399,7 +455,7 @@ async function runPooledConversion(
   url: string,
   outputFile: string,
   outputType: string | null,
-  browserOptions: unknown
+  browserOptions: unknown,
 ): Promise<string> {
   const opts = browserOptions as any;
   const browserManager = await getBrowserManager();
@@ -409,7 +465,7 @@ async function runPooledConversion(
 
   try {
     page = await browserInstance.browser.newPage();
-    const waitUntil = opts.waitUntil || 'networkidle0';
+    const waitUntil = opts.waitUntil || "networkidle0";
     const timeout = opts.waitTimeout || 30000;
     const loadTimeout = opts.loadTimeout || timeout;
 
@@ -421,7 +477,7 @@ async function runPooledConversion(
         deviceScaleFactor: opts.viewport.deviceScaleFactor || 1,
         isMobile: !!opts.viewport.isMobile,
         hasTouch: !!opts.viewport.hasTouch,
-        isLandscape: !!opts.viewport.isLandscape
+        isLandscape: !!opts.viewport.isLandscape,
       });
     }
 
@@ -440,7 +496,7 @@ async function runPooledConversion(
       await page.waitForFunction(opts.waitFunction, { timeout });
     }
     if (opts.waitDelay) {
-      await new Promise(resolve => setTimeout(resolve, opts.waitDelay));
+      await new Promise((resolve) => setTimeout(resolve, opts.waitDelay));
     }
 
     outputType = detectOutputType(outputFile, outputType);
@@ -451,48 +507,51 @@ async function runPooledConversion(
 
     // Auto-scroll if requested or for full page screenshots
     if (opts.fullPage) {
-       await autoScroll(page);
+      await autoScroll(page);
     }
 
-    if (outputType === 'png') {
+    if (outputType === "png") {
       const screenshotOptions: any = {
         path: outputFile,
         fullPage: !!opts.fullPage,
         omitBackground: !!opts.omitBackground,
-        type: opts.imageType || 'png',
+        type: opts.imageType || "png",
         clip: opts.clip,
-        optimizeForSize: opts.optimizeForSize
+        optimizeForSize: opts.optimizeForSize,
       };
-      if (screenshotOptions.type !== 'png' && opts.quality !== undefined) {
+      if (screenshotOptions.type !== "png" && opts.quality !== undefined) {
         screenshotOptions.quality = opts.quality;
       }
       await page.screenshot(screenshotOptions);
     } else {
       await page.pdf({
-        format: opts.format || 'A4',
+        format: opts.format || "A4",
         path: outputFile,
-        printBackground: opts.printBackground !== undefined ? opts.printBackground : true,
-        landscape: opts.orientation === 'landscape',
+        printBackground:
+          opts.printBackground !== undefined ? opts.printBackground : true,
+        landscape: opts.orientation === "landscape",
         margin: opts.margin,
         scale: opts.scale,
-        displayHeaderFooter: opts.displayHeaderFooter !== undefined ? opts.displayHeaderFooter : (!!opts.headerTemplate || !!opts.footerTemplate),
+        displayHeaderFooter:
+          opts.displayHeaderFooter !== undefined
+            ? opts.displayHeaderFooter
+            : !!opts.headerTemplate || !!opts.footerTemplate,
         headerTemplate: opts.headerTemplate,
         footerTemplate: opts.footerTemplate,
         preferCSSPageSize: opts.preferCSSPageSize,
         tagged: opts.generateTaggedPDF,
-        outline: opts.outline
+        outline: opts.outline,
       });
     }
 
     return normalize(outputFile);
-
   } finally {
     // Close page
     if (page) {
       try {
         await page.close();
       } catch (error) {
-        console.warn('Failed to close page:', error);
+        console.warn("Failed to close page:", error);
       }
     }
 
@@ -500,7 +559,7 @@ async function runPooledConversion(
     try {
       await browserManager.releaseBrowser(browserInstance);
     } catch (error) {
-      console.error('Failed to release browser to pool:', error);
+      console.error("Failed to release browser to pool:", error);
     }
 
     // Schedule cleanup for idle browsers
@@ -526,11 +585,11 @@ function scheduleAutomaticCleanup(browserManager: DefaultBrowserManager): void {
         DefaultBrowserManager.setGlobalInstance(null);
 
         if (!process.env.PRINTEER_SILENT) {
-          console.debug('Automatic browser cleanup completed');
+          console.debug("Automatic browser cleanup completed");
         }
       }
     } catch (error) {
-      console.warn('Automatic cleanup failed:', error);
+      console.warn("Automatic cleanup failed:", error);
     }
   }, 2000); // 2 second delay
 }
@@ -540,30 +599,36 @@ function getPackageJson() {
 }
 
 function detectOutputType(fname: string, outputType: string | null) {
-  const validOutputTypes: string[] = ['pdf', 'png']
+  const validOutputTypes: string[] = ["pdf", "png"];
 
   if (!outputType) {
-    const ext = fname.split('.').pop()
-    if (!ext) { return 'pdf' }
-    if (validOutputTypes.includes(ext)) { return ext }
-    return 'pdf'
+    const ext = fname.split(".").pop();
+    if (!ext) {
+      return "pdf";
+    }
+    if (validOutputTypes.includes(ext)) {
+      return ext;
+    }
+    return "pdf";
   }
 
-  if (!validOutputTypes.includes(outputType)) { return 'pdf' }
-  return outputType
+  if (!validOutputTypes.includes(outputType)) {
+    return "pdf";
+  }
+  return outputType;
 }
 
 // Enhanced exports
-export * from '../types';
+export * from "../types";
 // Export interfaces from their domain modules
-export * from '../config/types/command-manager';
-export * from '../printing/types/service';
+export * from "../config/types/command-manager";
+export * from "../printing/types/service";
 
 // Export config types with explicit naming to avoid conflicts
-export * from '../config';
+export * from "../config";
 
 // Export printing types
-export * from '../printing';
+export * from "../printing";
 
 // Export resources with renamed ValidationResult to avoid conflict
 export {
@@ -577,27 +642,29 @@ export {
   DefaultDiskSpaceManager,
   DefaultCleanupManager,
   ProductionMonitor,
-  ValidationResult as ResourceValidationResult
-} from '../resources';
-export * from '../resources/types/resource';
+  ValidationResult as ResourceValidationResult,
+} from "../resources";
+export * from "../resources/types/resource";
 
-export * from '../diagnostics';
-export * from '../utils';
+export * from "../diagnostics";
+export * from "../utils";
 
 // Doctor functionality
 export async function doctor(): Promise<unknown[]> {
-  const { DefaultDoctorModule } = await import('../diagnostics/doctor');
+  const { DefaultDoctorModule } = await import("../diagnostics/doctor");
   const doctorModule = new DefaultDoctorModule();
   return await doctorModule.runFullDiagnostics();
 }
 
 // Enhanced conversion function (placeholder for future implementation)
 export async function convert(_options: unknown): Promise<unknown> {
-  throw new Error('Enhanced convert function not implemented yet - will be implemented in task 8');
+  throw new Error(
+    "Enhanced convert function not implemented yet - will be implemented in task 8",
+  );
 }
 
 // Utility function to get current browser strategy (for debugging)
-export function getCurrentBrowserStrategy(): 'oneshot' | 'pool' {
+export function getCurrentBrowserStrategy(): "oneshot" | "pool" {
   return getBrowserStrategy();
 }
 

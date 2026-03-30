@@ -1,26 +1,41 @@
-import * as os from 'os';
+import * as os from "os";
+
+export const PRINTEER_OWNERSHIP_ARG = "--printeer-owned=1";
+
+export const ensurePrinteerOwnershipArg = function (
+  args: string[] = [],
+): string[] {
+  if (args.some((arg) => arg.startsWith("--printeer-owned="))) {
+    return args;
+  }
+
+  return [...args, PRINTEER_OWNERSHIP_ARG];
+};
 
 // Checks if the current user is root.
-export const isCurrentUserRoot = function():Boolean {
+export const isCurrentUserRoot = function (): Boolean {
   if (process && process.getuid) {
     return process.getuid() === 0; // UID 0 is always root
   }
 
-  if (os.userInfo().username == 'root') {
+  if (os.userInfo().username == "root") {
     return true;
   }
 
   return false;
-}
+};
 
 /**
  * Get the default browser options returns an object with the default options for the browser.
  */
-export const getDefaultBrowserOptions = function():any {
-  const launchOptions:any = {
+export const getDefaultBrowserOptions = function (): any {
+  const launchOptions: any = {
     headless: "new",
-    args: ['--no-sandbox', '--disable-setuid-sandbox'] // <- Handle this better, only for root users!
-  }
+    args: ensurePrinteerOwnershipArg([
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+    ]), // <- Handle this better, only for root users!
+  };
 
   // PUPPETEER_EXECUTABLE_PATH
   // Read the environment variable PUPPETEER_EXECUTABLE_PATH and use it as the path to the executable.
@@ -31,4 +46,4 @@ export const getDefaultBrowserOptions = function():any {
   }
 
   return launchOptions;
-}
+};

@@ -49,6 +49,7 @@
     "doctor": "node scripts/run-cli.js doctor",
     "printeer": "node scripts/run-cli.js",
     "test:cli": "vitest run tests/cli --reporter=verbose",
+    "test:cleanup:cross-os": "vitest run --config vitest.cleanup.config.ts --reporter=verbose",
     "test:cli:watch": "vitest tests/cli --watch",
     "test:cli:coverage": "vitest run tests/cli --coverage",
     "test:browser:strategy": "vitest run tests/browser-*.test.ts tests/batch-strategy.test.ts"
