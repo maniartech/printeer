@@ -1,7 +1,7 @@
 // API domain - Library public surface
 import puppeteer, { Browser } from 'puppeteer';
 import { normalize } from 'path';
-import { getDefaultBrowserOptions, getBrowserExecutablePath } from '../utils';
+import { getDefaultBrowserOptions, getBrowserExecutablePath, isCurrentUserRoot } from '../utils';
 import { DefaultBrowserManager } from '../printing/browser';
 
 // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms
@@ -188,10 +188,15 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
   }
 
   const baseArgs: string[] = Array.isArray(browserOptions.args) ? browserOptions.args : [];
+  // Sandbox is disabled when running as root or when PRINTEER_NO_SANDBOX=1 is
+  // set (required on many CI/container Linux environments).
+  const wantNoSandbox = process.env.PRINTEER_NO_SANDBOX === '1' || isCurrentUserRoot();
   const extraArgs = [
-    baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new'
+    baseArgs.some((a: string) => a.startsWith('--headless')) ? null : '--headless=new',
     // NOTE: Removed --no-startup-window for Windows as it causes "waiting for target" timeouts
     // in headless mode. The flag is redundant in headless mode anyway.
+    wantNoSandbox && !baseArgs.includes('--no-sandbox') ? '--no-sandbox' : null,
+    wantNoSandbox && !baseArgs.includes('--disable-setuid-sandbox') ? '--disable-setuid-sandbox' : null,
   ].filter(Boolean) as string[];
   browserOptions.args = Array.from(new Set([...baseArgs, ...extraArgs]));
 
