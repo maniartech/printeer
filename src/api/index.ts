@@ -198,7 +198,12 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
   return await puppeteer.launch(browserOptions);
 }
 
-export default async (url: string, outputFile: string, outputType: string | null = null, browserOptions: any) => {
+export default async (url: string, outputFile: string, outputType: string | null = null, browserOptions: any = {}) => {
+  // Normalize options so the documented 2-arg / 3-arg calls (and an explicit
+  // `undefined`) never reach the conversion functions as undefined. Both the
+  // oneshot and pool paths dereference `browserOptions.waitUntil` directly, so
+  // a missing object would throw a TypeError before any browser work. (BUG-001)
+  browserOptions = browserOptions ?? {};
   const silent = process.env.PRINTEER_SILENT === '1';
   const strategy = getBrowserStrategy();
 
