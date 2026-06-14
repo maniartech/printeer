@@ -28,12 +28,13 @@ export const getBrowserExecutablePath = function(): string | undefined {
  * (or `0`) launches a headed browser; anything else keeps the default new
  * headless mode. (BUG-010)
  */
-export const getHeadlessFromEnv = function(): boolean | 'new' {
+export const getHeadlessFromEnv = function(): boolean {
   const raw = process.env.PRINTEER_BROWSER_HEADLESS;
   if (raw !== undefined && /^(false|0|no)$/i.test(raw.trim())) {
     return false;
   }
-  return 'new';
+  // puppeteer 22+ : `true` is the new headless mode (formerly "new")
+  return true;
 };
 
 /**

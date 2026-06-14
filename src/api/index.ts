@@ -184,7 +184,7 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
 
   // Ensure headless mode if not already set
   if (!browserOptions.headless) {
-    browserOptions.headless = "new";
+    browserOptions.headless = true;
   }
 
   const baseArgs: string[] = Array.isArray(browserOptions.args) ? browserOptions.args : [];

@@ -8,8 +8,8 @@ import { execSync } from 'child_process';
 import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from './types/diagnostics';
 import { DefaultBrowserFactory } from '../printing/browser';
 import printeer from '../api';
-import type { PuppeteerLaunchOptions } from 'puppeteer';
-type ExtraLaunchOptions = PuppeteerLaunchOptions & { waitForInitialPage?: boolean; dumpio?: boolean };
+import type { LaunchOptions } from 'puppeteer';
+type ExtraLaunchOptions = LaunchOptions & { waitForInitialPage?: boolean; dumpio?: boolean };
 
 export class DefaultDoctorModule implements DoctorModule {
   private browserFactory = new DefaultBrowserFactory();
@@ -36,9 +36,9 @@ export class DefaultDoctorModule implements DoctorModule {
   }
 
   // Build launch options using DefaultBrowserFactory, optionally overriding args and executable
-  private buildLaunchOptions(browserInfo?: BrowserInfo, overrideArgs?: string[]): PuppeteerLaunchOptions {
+  private buildLaunchOptions(browserInfo?: BrowserInfo, overrideArgs?: string[]): LaunchOptions {
     const base = this.browserFactory.getOptimalLaunchOptions();
-    const options: PuppeteerLaunchOptions = { ...base };
+    const options: LaunchOptions = { ...base };
 
     // Only set executablePath if it's a real file path, not the bundled placeholder
     if (browserInfo?.path && browserInfo.path !== 'bundled-chromium') {
@@ -68,7 +68,7 @@ export class DefaultDoctorModule implements DoctorModule {
     options.args = Array.from(new Set(mergedOnce));
 
     // Always force headless at API level as well
-  options.headless = "new" as unknown as boolean; // keep type compatibility across puppeteer versions
+  options.headless = true; // puppeteer 22+ : `true` is the new headless mode
     // In verbose mode, pipe browser stdio to this process for inspection
     if (this.verbose) {
       (options as ExtraLaunchOptions).dumpio = true;
@@ -537,7 +537,7 @@ export class DefaultDoctorModule implements DoctorModule {
       const puppeteer = await import('puppeteer');
       // Try to launch bundled browser briefly to verify it works and get version
       const browser = await puppeteer.launch({
-        headless: "new",
+        headless: true,
         timeout: 10000,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
@@ -1238,9 +1238,9 @@ export class DefaultDoctorModule implements DoctorModule {
   // --- Output validation: Ensure PDF and PNG generation works end-to-end ---
 
   // Headless-safe launch options shared by the output probes.
-  private outputProbeOptions(): PuppeteerLaunchOptions & { pipe?: boolean } {
+  private outputProbeOptions(): LaunchOptions & { pipe?: boolean } {
     return {
-      headless: 'new',
+      headless: true,
       pipe: false, // pipe doesn't work reliably on Windows; use a random port
       timeout: 25000,
       args: [

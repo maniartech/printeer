@@ -7,7 +7,7 @@ import {
   BrowserFactory,
   BrowserPoolState
 } from './types/browser';
-import { Browser, PuppeteerLaunchOptions } from 'puppeteer';
+import { Browser, LaunchOptions } from 'puppeteer';
 import * as NodeFS from 'fs';
 import * as NodeOS from 'os';
 
@@ -539,7 +539,7 @@ export class DefaultBrowserManager implements BrowserManager {
       }
 
       // Check if browser is connected (not closed)
-      if (browserInstance.browser.isConnected && !browserInstance.browser.isConnected()) {
+      if (browserInstance.browser.connected === false) {
         return false;
       }
 
@@ -672,7 +672,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
   private fs: typeof NodeFS;
   private os: typeof NodeOS;
 
-  constructor(private config: PuppeteerLaunchOptions = {}, fsImpl: typeof NodeFS = NodeFS, osImpl: typeof NodeOS = NodeOS) {
+  constructor(private config: LaunchOptions = {}, fsImpl: typeof NodeFS = NodeFS, osImpl: typeof NodeOS = NodeOS) {
     // Allow dependency injection for testing
     this.fs = fsImpl;
     this.os = osImpl;
@@ -763,7 +763,7 @@ export class DefaultBrowserFactory implements BrowserFactory {
     // Try fallback configurations
     for (const config of DefaultBrowserFactory.FALLBACK_CONFIGURATIONS) {
       try {
-        const fallbackOptions: PuppeteerLaunchOptions = {
+        const fallbackOptions: LaunchOptions = {
           ...launchOptions,
           args: config.args
         };
@@ -822,19 +822,19 @@ export class DefaultBrowserFactory implements BrowserFactory {
     }
   }
 
-  getOptimalLaunchOptions(): PuppeteerLaunchOptions {
-    const baseOptions: PuppeteerLaunchOptions = {
-      headless: "new", // Use new headless mode (Chrome 112+)
+  getOptimalLaunchOptions(): LaunchOptions {
+    const baseOptions: LaunchOptions = {
+      headless: true, // puppeteer 22+ : `true` is the new headless mode
       timeout: 30000,
       args: []
     };
 
     // Merge constructor config, allowing it to override defaults
-    const launchOptions: PuppeteerLaunchOptions = { ...baseOptions, ...this.config };
+    const launchOptions: LaunchOptions = { ...baseOptions, ...this.config };
 
     // Force headless mode in test environment to prevent UI windows
     if (process.env.NODE_ENV === 'test') {
-      launchOptions.headless = "new";
+      launchOptions.headless = true;
       // Use minimal args for tests to avoid launch issues
       launchOptions.args = [
         '--no-sandbox',

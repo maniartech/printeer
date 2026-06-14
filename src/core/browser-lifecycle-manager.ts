@@ -177,7 +177,7 @@ export class BrowserLifecycleManager extends EventEmitter {
       }
 
       // Check if browser is still connected
-      if (!managedBrowser.browser.isConnected()) {
+      if (!managedBrowser.browser.connected) {
         browsersToCleanup.push(id);
         continue;
       }
@@ -407,7 +407,7 @@ export class BrowserLifecycleManager extends EventEmitter {
 
     try {
       // Try graceful close first
-      if (browser.isConnected()) {
+      if (browser.connected) {
         await Promise.race([
           browser.close(),
           new Promise((_, reject) =>

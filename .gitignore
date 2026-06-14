@@ -85,3 +85,6 @@ dist/
 printeer-doctor-output.*
 *test*.pdf
 *test*.png
+
+# Puppeteer updater rollback snapshot
+.puppeteer-upgrade-backup/

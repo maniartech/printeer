@@ -36,10 +36,10 @@ describe('browser env options (BUG-010)', () => {
     expect(getHeadlessFromEnv()).toBe(false);
   });
 
-  it('PRINTEER_BROWSER_HEADLESS unset/true keeps new headless', () => {
-    expect(getHeadlessFromEnv()).toBe('new');
+  it('PRINTEER_BROWSER_HEADLESS unset/true keeps new headless (true)', () => {
+    expect(getHeadlessFromEnv()).toBe(true);
     process.env.PRINTEER_BROWSER_HEADLESS = 'true';
-    expect(getHeadlessFromEnv()).toBe('new');
+    expect(getHeadlessFromEnv()).toBe(true);
   });
 
   it('getDefaultBrowserOptions reflects the env vars', () => {

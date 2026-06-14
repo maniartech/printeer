@@ -90,7 +90,7 @@ class BrowserCleanupManager {
 
     try {
       // First, try graceful close
-      if (browser.isConnected()) {
+      if (browser.connected) {
         await Promise.race([
           browser.close(),
           new Promise((_, reject) =>
