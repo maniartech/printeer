@@ -20,29 +20,21 @@ import type { UrlOutputPair, CliOptions, ConversionResult } from './types/cli.ty
 import type { BatchJob, BatchOptions } from '../batch/types/batch.types';
 import type { EnhancedPrintConfiguration } from '../config/types/enhanced-config.types';
 import { SkipFileError } from './types/cli.types';
+import { getPackageVersion } from './version';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'yaml';
 
 const program = new Command();
 
-// Get package version
-function getVersion(): string {
-  try {
-    const packagePath = path.join(process.cwd(), 'package.json');
-    const packageContent = require('fs').readFileSync(packagePath, 'utf8');
-    const packageJson = JSON.parse(packageContent);
-    return packageJson.version;
-  } catch {
-    return '1.0.0';
-  }
-}
-
 // Setup enhanced CLI program
 program
   .name('printeer')
   .description('🎯 Enhanced Web-to-PDF/PNG conversion utility with comprehensive configuration, batch processing, and template management')
-  .version(getVersion(), '-v, --version', 'Display version number');
+  .version(getPackageVersion(), '-v, --version', 'Display version number')
+  // Global --quiet so it is recognised for every enhanced command and is never
+  // reported as an "unknown option" (BUG-007).
+  .option('-q, --quiet', 'Suppress non-essential output');
 
 // Utility function to collect multiple option values
 function collect(value: string, previous: string[] = []): string[] {

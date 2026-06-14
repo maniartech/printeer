@@ -5,24 +5,16 @@ import printeer from '../api';
 import { DefaultDoctorModule } from '../diagnostics/doctor';
 import type { DiagnosticResult } from '../diagnostics/types/diagnostics';
 import { program as enhancedProgram } from './enhanced-cli';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { getPackageVersion } from './version';
 import process from 'process';
 
 // Runtime environment detection
 const isInteractive = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI;
 const isQuiet = process.argv.includes('--quiet') || process.argv.includes('-q');
 
-// Get package version
+// Get package version (module-relative, never the consumer's cwd — see BUG-002)
 function getVersion(): string {
-  try {
-    const packagePath = join(process.cwd(), 'package.json');
-    const packageContent = readFileSync(packagePath, 'utf8');
-    const packageJson = JSON.parse(packageContent);
-    return packageJson.version;
-  } catch {
-    return '1.0.0';
-  }
+  return getPackageVersion();
 }
 
 // Lazy-load interactive UI components only when needed
@@ -570,10 +562,14 @@ program.configureOutput({
 // Parse and execute
 export async function runCLI() {
   try {
-    // Check if legacy CLI commands are being used
+    // Check if legacy CLI commands are being used. We look at the first
+    // NON-FLAG token so global options like `--quiet`/`-q`/`--verbose` placed
+    // before the subcommand still route correctly, e.g. `printeer --quiet
+    // doctor` (BUG-007).
     const args = process.argv.slice(2);
     const legacyCommands = ['doctor', 'interactive', 'i'];
-    const isLegacyCommand = args.length > 0 && legacyCommands.includes(args[0]);
+    const firstNonFlag = args.find(a => !a.startsWith('-'));
+    const isLegacyCommand = firstNonFlag !== undefined && legacyCommands.includes(firstNonFlag);
 
     // Check if it's a direct conversion (two arguments without commands)
     const isDirectConversion = args.length >= 2 &&
