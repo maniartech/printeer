@@ -3,6 +3,7 @@
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as http from 'http';
 import { execSync } from 'child_process';
 import { DoctorModule, DiagnosticResult, SystemEnvironment, BrowserInfo } from './types/diagnostics';
 import { DefaultBrowserFactory } from '../printing/browser';
@@ -1235,105 +1236,89 @@ export class DefaultDoctorModule implements DoctorModule {
   }
 
   // --- Output validation: Ensure PDF and PNG generation works end-to-end ---
-  private async testPdfOutput(): Promise<DiagnosticResult> {
+
+  // Headless-safe launch options shared by the output probes.
+  private outputProbeOptions(): PuppeteerLaunchOptions & { pipe?: boolean } {
+    return {
+      headless: 'new',
+      pipe: false, // pipe doesn't work reliably on Windows; use a random port
+      timeout: 25000,
+      args: [
+        '--headless=new',
+        // NOTE: --no-startup-window removed - causes "waiting for target" timeouts (BUG-003)
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-background-networking',
+        '--disable-extensions',
+        '--remote-debugging-port=0'
+      ]
+    };
+  }
+
+  /**
+   * Serve a minimal page from an ephemeral localhost server so the output probes
+   * work fully offline (no dependency on example.com), then close it. (BUG-009)
+   */
+  private async withLocalPage<T>(fn: (url: string) => Promise<T>): Promise<T> {
+    const server = http.createServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end('<!doctype html><html><body><h1>Printeer Doctor</h1></body></html>');
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
     try {
-      const url = 'https://example.com';
-      const out = path.resolve(process.cwd(), 'printeer-doctor-output.pdf');
-      try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
-      // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
-      // Note: pipe:true doesn't work reliably on Windows, so we use pipe:false with a random port
-      const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
-        headless: "new",
-        pipe: false,  // Changed from true - pipe doesn't work reliably on Windows
-        timeout: 25000,
-        args: [
-          '--headless=new',
-          // NOTE: --no-startup-window removed - causes "waiting for target" timeouts in headless mode
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--no-first-run',
-          '--no-default-browser-check',
-          '--disable-background-networking',
-          '--disable-extensions',
-          '--remote-debugging-port=0'  // Use random port for WebSocket connection
-        ]
-      };
-      // Silence library-level logs for doctor checks
-      const prevSilent = process.env.PRINTEER_SILENT;
-      process.env.PRINTEER_SILENT = '1';
-      try {
-        await printeer(url, out, 'pdf', options as unknown as Record<string, unknown>);
-      } finally {
-        if (prevSilent === undefined) delete process.env.PRINTEER_SILENT; else process.env.PRINTEER_SILENT = prevSilent;
-      }
-      const ok = fs.existsSync(out) && fs.statSync(out).size > 0;
-      if (!ok) throw new Error('PDF file not created or empty');
-      return {
-        status: 'pass',
-        component: 'print-pdf',
-        message: 'PDF generated successfully',
-        details: { file: out, url }
-      };
-    } catch (error) {
-      return {
-        status: 'fail',
-        component: 'print-pdf',
-        message: `PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        remediation: 'Check write permissions and headless Chrome availability',
-        details: { url: 'https://example.com' }
-      };
+      const { port } = server.address() as import('net').AddressInfo;
+      return await fn(`http://127.0.0.1:${port}/`);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   }
 
-  private async testPngOutput(): Promise<DiagnosticResult> {
+  /**
+   * Run an output probe: convert the local page to `type`, validate the file, and
+   * ALWAYS remove the temp artifact afterwards so nothing is left in the user's
+   * working directory (or anywhere). (BUG-009)
+   */
+  private async testOutput(type: 'pdf' | 'png'): Promise<DiagnosticResult> {
+    const component = type === 'pdf' ? 'print-pdf' : 'print-png';
+    const out = path.join(os.tmpdir(), `printeer-doctor-output-${process.pid}.${type}`);
+    const options = this.outputProbeOptions();
+    const prevSilent = process.env.PRINTEER_SILENT;
+    process.env.PRINTEER_SILENT = '1';
     try {
-      const url = 'https://example.com';
-      const out = path.resolve(process.cwd(), 'printeer-doctor-output.png');
-      try { fs.existsSync(out) && fs.unlinkSync(out); } catch { /* ignore */ }
-      // Use conservative, headless-safe options - let Puppeteer use bundled Chromium
-      // Note: pipe:true doesn't work reliably on Windows, so we use pipe:false with a random port
-      const options: PuppeteerLaunchOptions & { pipe?: boolean } = {
-        headless: "new",
-        pipe: false,  // Changed from true - pipe doesn't work reliably on Windows
-        timeout: 25000,
-        args: [
-          '--headless=new',
-          // NOTE: --no-startup-window removed - causes "waiting for target" timeouts in headless mode
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--no-first-run',
-          '--no-default-browser-check',
-          '--disable-background-networking',
-          '--disable-extensions',
-          '--remote-debugging-port=0'  // Use random port for WebSocket connection
-        ]
-      };
-      const prevSilent = process.env.PRINTEER_SILENT;
-      process.env.PRINTEER_SILENT = '1';
-      try {
-        await printeer(url, out, 'png', options as unknown as Record<string, unknown>);
-      } finally {
-        if (prevSilent === undefined) delete process.env.PRINTEER_SILENT; else process.env.PRINTEER_SILENT = prevSilent;
-      }
+      await this.withLocalPage((url) =>
+        printeer(url, out, type, options as unknown as Record<string, unknown>)
+      );
       const ok = fs.existsSync(out) && fs.statSync(out).size > 0;
-      if (!ok) throw new Error('PNG file not created or empty');
+      if (!ok) throw new Error(`${type.toUpperCase()} file not created or empty`);
       return {
         status: 'pass',
-        component: 'print-png',
-        message: 'PNG generated successfully',
-        details: { file: out, url }
+        component,
+        message: `${type.toUpperCase()} generated successfully`,
+        details: { file: out }
       };
     } catch (error) {
       return {
         status: 'fail',
-        component: 'print-png',
-        message: `PNG generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        remediation: 'Check write permissions and headless Chrome availability',
-        details: { url: 'https://example.com' }
+        component,
+        message: `${type.toUpperCase()} generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        remediation: 'Check write permissions and headless Chrome availability'
       };
+    } finally {
+      if (prevSilent === undefined) delete process.env.PRINTEER_SILENT;
+      else process.env.PRINTEER_SILENT = prevSilent;
+      this.removeIfExists(out); // never leave the sample artifact behind
     }
+  }
+
+  private async testPdfOutput(): Promise<DiagnosticResult> {
+    return this.testOutput('pdf');
+  }
+
+  private async testPngOutput(): Promise<DiagnosticResult> {
+    return this.testOutput('png');
   }
 
   private removeIfExists(filePath: string): void {
