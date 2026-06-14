@@ -7,7 +7,10 @@ export default defineConfig({
     environment: 'node',
     pool: 'forks', // Use child processes (not threads) so each test file gets its own process.env
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', 'bin', '**/tests/isolated/**', 'tests/isolated/**', '**/isolated/**'],
+    // The browser-driven e2e suite runs under its own serial config
+    // (vitest.e2e.config.ts) to avoid Chrome-launch contention when dozens of
+    // unit-test forks run in parallel. Keep it out of the default (parallel) run.
+    exclude: ['node_modules', 'dist', 'bin', '**/tests/isolated/**', 'tests/isolated/**', '**/isolated/**', 'tests/e2e/**'],
     testTimeout: 30000, // 30 seconds for browser tests
     hookTimeout: 10000, // 10 seconds for hooks
     setupFiles: ['./tests/setup.ts'],

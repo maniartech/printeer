@@ -47,6 +47,8 @@
     "build": "npm run clean && npm run build:lib && npm run build:cli && npm run build:types",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
+    "test:e2e": "npm run build && vitest run --config vitest.e2e.config.ts",
+    "test:all": "npm run test && npm run test:e2e",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:browser": "vitest run tests/isolated/*.manual.ts --reporter=verbose",
