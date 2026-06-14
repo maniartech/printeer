@@ -1,9 +1,18 @@
 {
   "name": "printeer",
   "version": "1.2.15",
-  "description": "Prints specified web url to PDF (or Image - Coming Soon)!",
+  "description": "Convert any web page to a pixel-perfect PDF or PNG screenshot — CLI and Node.js library.",
   "main": "./dist/lib/index.js",
   "types": "./dist/lib/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/maniartech/printeer.git"
@@ -36,6 +45,7 @@
     "build:cli:silent": "npm run esbuild -- ./src/cli/index.ts --outfile=./dist/bin/cli.js --bundle --platform=node --packages=external --target=node16.8 --format=esm --sourcemap --log-level=error",
     "build:types": "tsc --project tsconfig.build.json",
     "build": "npm run clean && npm run build:lib && npm run build:cli && npm run build:types",
+    "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

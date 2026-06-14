@@ -5,7 +5,7 @@
 **Web-to-PDF/PNG conversion done right**
 
 [![npm version](https://img.shields.io/npm/v/printeer.svg?style=flat-square)](https://www.npmjs.com/package/printeer)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](https://opensource.org/licenses/ISC)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js Version](https://img.shields.io/node/v/printeer.svg?style=flat-square)](https://nodejs.org)
 
 *Convert any web page to pixel-perfect PDFs or high-quality screenshots with a single command.*
@@ -302,7 +302,7 @@ node scripts/run-cli.js convert https://example.com test.pdf
 
 ## License
 
-[ISC](LICENSE) © [ManiarTech](https://maniartech.com)
+[Apache-2.0](LICENSE) © [ManiarTech](https://maniartech.com)
 
 ---
 

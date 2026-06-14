@@ -43,11 +43,11 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-005 | high | batch | Batch exit code is 0 even when jobs fail | GREEN | [link](BUG-005-batch-exit-code.md) |
 | BUG-006 | high | batch | Fail-fast leaks an unhandled rejection, doesn't abort | GREEN | [link](BUG-006-batch-failfast-unhandled-rejection.md) |
 | BUG-007 | high | cli | `--quiet doctor` errors `unknown option '--quiet'` | GREEN | [link](BUG-007-quiet-doctor-unknown-option.md) |
-| BUG-008 | high | packaging | `npm publish` ships ~1MB junk; no `files` field | TODO | |
+| BUG-008 | high | packaging | `npm publish` ships ~1MB junk; no `files` field | GREEN | [link](BUG-008-packaging-junk.md) |
 | BUG-009 | high | diagnostics | Doctor leaves `printeer-doctor-output.*` in CWD | TODO | |
 | BUG-010 | high | config | Documented env vars / `.printeerrc.json` not applied | TODO | |
 | BUG-011 | high | templates | `--header-template`/`--footer-template` never applied | TODO | |
-| BUG-012 | high | docs | README license says ISC; package is Apache-2.0 | TODO | |
+| BUG-012 | high | docs | README license says ISC; package is Apache-2.0 | GREEN | [link](BUG-012-license-mismatch.md) |
 | BUG-013 | high | core-api | Public throw-stubs exported (convert/DefaultConfigurationManager/DefaultConverter) | TODO | |
 
 > Remaining medium/low findings (the full 80) are appended to this table as each phase lands.
