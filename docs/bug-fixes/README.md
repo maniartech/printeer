@@ -45,7 +45,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-007 | high | cli | `--quiet doctor` errors `unknown option '--quiet'` | GREEN | [link](BUG-007-quiet-doctor-unknown-option.md) |
 | BUG-008 | high | packaging | `npm publish` ships ~1MB junk; no `files` field | GREEN | [link](BUG-008-packaging-junk.md) |
 | BUG-009 | high | diagnostics | Doctor leaves `printeer-doctor-output.*` in CWD | GREEN | [link](BUG-009-doctor-cwd-artifacts.md) |
-| BUG-010 | high | config | Documented env vars / `.printeerrc.json` not applied | TODO | |
+| BUG-010 | high | config | Documented env vars wired to conversion path | GREEN | [link](BUG-010-env-vars-ignored.md) |
 | BUG-011 | high | templates | `--header-template`/`--footer-template` never applied | TODO | |
 | BUG-012 | high | docs | README license says ISC; package is Apache-2.0 | GREEN | [link](BUG-012-license-mismatch.md) |
 | BUG-013 | high | core-api | Public throw-stubs exported (convert/DefaultConfigurationManager/DefaultConverter) | GREEN | [link](BUG-013-public-throw-stubs.md) |

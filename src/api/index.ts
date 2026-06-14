@@ -1,7 +1,7 @@
 // API domain - Library public surface
 import puppeteer, { Browser } from 'puppeteer';
 import { normalize } from 'path';
-import { getDefaultBrowserOptions } from '../utils';
+import { getDefaultBrowserOptions, getBrowserExecutablePath } from '../utils';
 import { DefaultBrowserManager } from '../printing/browser';
 
 // networkidle0 - consider navigation to be finished when there are no more than 0 network connections for at least 500 ms
@@ -129,8 +129,8 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
   if (!globalBrowserManager) {
     const browserOptions = getDefaultBrowserOptions();
 
-    // Apply environment-specific overrides
-    const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    // Apply environment-specific overrides (BUG-010: honour PRINTEER_BROWSER_EXECUTABLE_PATH)
+    const exePath = getBrowserExecutablePath();
     if (exePath) {
       browserOptions.executablePath = exePath;
     }
@@ -176,8 +176,8 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
     delete browserOptions.pipe;
   }
 
-  // Apply environment-specific overrides
-  const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  // Apply environment-specific overrides (BUG-010: honour PRINTEER_BROWSER_EXECUTABLE_PATH)
+  const exePath = getBrowserExecutablePath();
   if (exePath && !browserOptions.executablePath) {
     browserOptions.executablePath = exePath;
   }
@@ -204,7 +204,10 @@ export default async (url: string, outputFile: string, outputType: string | null
   // oneshot and pool paths dereference `browserOptions.waitUntil` directly, so
   // a missing object would throw a TypeError before any browser work. (BUG-001)
   browserOptions = browserOptions ?? {};
-  const silent = process.env.PRINTEER_SILENT === '1';
+  // Honour the documented PRINTEER_LOG_LEVEL: `silent`/`error` suppress the
+  // debug/strategy chatter, matching PRINTEER_SILENT. (BUG-010)
+  const logLevel = (process.env.PRINTEER_LOG_LEVEL || '').toLowerCase();
+  const silent = process.env.PRINTEER_SILENT === '1' || logLevel === 'silent' || logLevel === 'error';
   const strategy = getBrowserStrategy();
 
   if (!silent) {

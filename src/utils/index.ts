@@ -14,18 +14,40 @@ export const isCurrentUserRoot = function():Boolean {
 }
 
 /**
+ * Resolve a custom browser executable path from the environment.
+ *
+ * Honours the documented `PRINTEER_BROWSER_EXECUTABLE_PATH` first, then the
+ * Puppeteer-native `PUPPETEER_EXECUTABLE_PATH` as a fallback. (BUG-010)
+ */
+export const getBrowserExecutablePath = function(): string | undefined {
+  return process.env.PRINTEER_BROWSER_EXECUTABLE_PATH || process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+};
+
+/**
+ * Resolve headless mode from the environment. `PRINTEER_BROWSER_HEADLESS=false`
+ * (or `0`) launches a headed browser; anything else keeps the default new
+ * headless mode. (BUG-010)
+ */
+export const getHeadlessFromEnv = function(): boolean | 'new' {
+  const raw = process.env.PRINTEER_BROWSER_HEADLESS;
+  if (raw !== undefined && /^(false|0|no)$/i.test(raw.trim())) {
+    return false;
+  }
+  return 'new';
+};
+
+/**
  * Get the default browser options returns an object with the default options for the browser.
  */
 export const getDefaultBrowserOptions = function():any {
   const launchOptions:any = {
-    headless: "new",
+    headless: getHeadlessFromEnv(),
     args: ['--no-sandbox', '--disable-setuid-sandbox'] // <- Handle this better, only for root users!
   }
 
-  // PUPPETEER_EXECUTABLE_PATH
-  // Read the environment variable PUPPETEER_EXECUTABLE_PATH and use it as the path to the executable.
-  // If the environment variable is not set, the default executable path is used.
-  const exePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  // Honour the documented executable-path env vars (PRINTEER_BROWSER_EXECUTABLE_PATH
+  // preferred, PUPPETEER_EXECUTABLE_PATH as fallback). (BUG-010)
+  const exePath = getBrowserExecutablePath();
   if (exePath) {
     launchOptions.executablePath = exePath;
   }
