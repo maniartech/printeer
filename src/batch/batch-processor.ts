@@ -112,11 +112,14 @@ export class BatchProcessor extends EventEmitter {
     jobs: BatchJob[],
     options: BatchOptions
   ): Promise<void> {
-    // Build dependency graph for intelligent job scheduling
-    const dependencyGraph = this.buildDependencyGraph(jobs);
     const processedJobs = new Set<string>();
     const processingJobs = new Set<string>();
     const jobQueue: BatchJob[] = [];
+    // In-flight worker promises, keyed by job id, so we can await them and
+    // never leave a dangling (unhandled) rejection. (BUG-006)
+    const inFlight = new Map<string, Promise<void>>();
+    // First fail-fast error, captured to abort scheduling.
+    let abortError: unknown = null;
 
     // Initialize queue with jobs that have no dependencies
     jobs.forEach(job => {
@@ -125,34 +128,46 @@ export class BatchProcessor extends EventEmitter {
       }
     });
 
-    while (jobQueue.length > 0 || processingJobs.size > 0) {
-      // Calculate optimal concurrency based on resource availability
-      const actualConcurrency = Math.min(
-        this.maxConcurrency,
-        Math.min(options.concurrency, this.activeJobs + Math.max(1, jobQueue.length))
-      );
+    const concurrency = Math.max(1, options.concurrency || this.maxConcurrency);
 
-      // Process jobs while respecting resource limits
-      while (this.activeJobs < actualConcurrency && jobQueue.length > 0) {
+    while ((jobQueue.length > 0 || inFlight.size > 0) && !abortError) {
+      // Fill up to the concurrency limit.
+      while (inFlight.size < concurrency && jobQueue.length > 0 && !abortError) {
         const job = jobQueue.shift()!;
-
-        if (!processedJobs.has(job.id) && !processingJobs.has(job.id)) {
-          processingJobs.add(job.id);
-          // Process job asynchronously
-          this.processJobWithResourceMonitoring(job, options, processedJobs, processingJobs, jobQueue, jobs)
-            .catch(error => {
-              this.emit('job-failed', job, error);
-              if (!options.continueOnError) {
-                throw error;
-              }
-            });
+        if (processedJobs.has(job.id) || processingJobs.has(job.id) || inFlight.has(job.id)) {
+          continue;
         }
+        processingJobs.add(job.id);
+        const promise = this.processJobWithResourceMonitoring(
+          job, options, processedJobs, processingJobs, jobQueue, jobs
+        )
+          .catch(error => {
+            // The worker already records the failed result and emits
+            // 'job-failed'. In fail-fast mode we capture the first error here
+            // (awaited, so it never becomes an unhandled rejection) and let the
+            // outer loop stop scheduling new jobs. (BUG-006)
+            if (!options.continueOnError && !abortError) {
+              abortError = error;
+            }
+          })
+          .finally(() => {
+            inFlight.delete(job.id);
+          });
+        inFlight.set(job.id, promise);
       }
 
-      // Brief pause to allow resource metrics to update
-      if (jobQueue.length > 0 || processingJobs.size > 0) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for at least one in-flight job to settle before scheduling more.
+      if (inFlight.size > 0) {
+        await Promise.race(inFlight.values());
       }
+    }
+
+    // Allow any still-running jobs to finish so nothing is left dangling.
+    await Promise.allSettled(inFlight.values());
+
+    // Fail-fast: surface the first failure to the caller (→ non-zero exit).
+    if (abortError) {
+      throw abortError;
     }
   }
 
@@ -369,13 +384,26 @@ export class BatchProcessor extends EventEmitter {
       case '.csv':
         return this.parseCSVBatch(content);
       case '.json':
-        return JSON.parse(content);
+        return this.normalizeBatchData(JSON.parse(content));
       case '.yaml':
       case '.yml':
-        return yaml.parse(content);
+        return this.normalizeBatchData(yaml.parse(content));
       default:
         throw new Error(`Unsupported batch file format: ${ext}`);
     }
+  }
+
+  /**
+   * Accept either the documented bare-array form `[{url, output}, …]` or the
+   * wrapped object form `{ jobs: [...], defaults?, variables? }`. The README and
+   * docs show the bare array, so a top-level array must be treated as the job
+   * list. (BUG-004)
+   */
+  private normalizeBatchData(parsed: unknown): BatchData {
+    if (Array.isArray(parsed)) {
+      return { jobs: parsed as BatchJob[] };
+    }
+    return (parsed || {}) as BatchData;
   }
 
   /**

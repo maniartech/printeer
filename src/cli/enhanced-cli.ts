@@ -168,7 +168,7 @@ program
   .alias('b')
   .description('Batch processing of multiple URLs from file')
   .argument('<batchFile>', 'Batch file (CSV, JSON, or YAML)')
-  .option('-o, --output-dir <dir>', 'Output directory', './output')
+  .option('-o, --output-dir <dir>', 'Output directory (default: job output paths are used as-is)')
   .option('-c, --concurrency <num>', 'Concurrent processes', '3')
   .option('--max-memory <amount>', 'Maximum memory usage (e.g., "2GB")')
   .option('--continue-on-error', 'Continue processing on individual failures')
@@ -655,6 +655,14 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
     if (report.totalJobs > 1) {
       console.log(`\n${report.successfulJobs}/${report.totalJobs} jobs completed successfully`);
     }
+  }
+
+  // A batch with any failed job must exit non-zero so CI/scripts can detect it.
+  // With --continue-on-error we still reach here (the run completes), so the
+  // exit code is the only failure signal. Fail-fast throws before this point.
+  // (BUG-005)
+  if (report.failedJobs > 0) {
+    process.exitCode = 1;
   }
 }
 
