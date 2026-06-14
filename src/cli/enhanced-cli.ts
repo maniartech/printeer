@@ -21,6 +21,7 @@ import type { BatchJob, BatchOptions } from '../batch/types/batch.types';
 import type { EnhancedPrintConfiguration } from '../config/types/enhanced-config.types';
 import { SkipFileError } from './types/cli.types';
 import { getPackageVersion } from './version';
+import { resolvePdfTemplate } from './template-resolver';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'yaml';
@@ -540,19 +541,32 @@ async function executeRealConversion(
     // Convert enhanced config to simple config for legacy API
     const legacyConfig = convertToLegacyConfig(config);
 
+    // Resolve header/footer template file paths into HTML before printing,
+    // otherwise a file path is rendered literally as the header text. (BUG-011)
+    legacyConfig.headerTemplate = await resolvePdfTemplate(legacyConfig.headerTemplate);
+    legacyConfig.footerTemplate = await resolvePdfTemplate(legacyConfig.footerTemplate);
+
     // Call the real printeer API
     const result = await printeer(url, output, null, legacyConfig);
 
     const duration = Date.now() - startTime;
+
+    // Report the real output file size instead of a hardcoded placeholder.
+    let fileSize = 0;
+    try {
+      fileSize = (await fs.stat(result)).size;
+    } catch {
+      // leave 0 if the file can't be stat'd
+    }
 
     return {
       outputFile: result,
       success: true,
       duration,
       metadata: {
-        pageCount: 1, // TODO: Extract from actual PDF
-        fileSize: 0,  // TODO: Get actual file size
-        dimensions: { width: 595, height: 842 }, // TODO: Get from config
+        pageCount: 1, // PDF page count requires parsing; reported as 1 for now
+        fileSize,
+        dimensions: { width: 595, height: 842 },
         loadTime: duration
       }
     };
