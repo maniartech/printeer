@@ -50,5 +50,42 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-012 | high | docs | README license says ISC; package is Apache-2.0 | GREEN | [link](BUG-012-license-mismatch.md) |
 | BUG-013 | high | core-api | Public throw-stubs exported (convert/DefaultConfigurationManager/DefaultConverter) | GREEN | [link](BUG-013-public-throw-stubs.md) |
 
-> Remaining medium/low findings (the full 80) are appended to this table as each phase lands.
-> See the audit summary for the complete enumeration; rows are added when their test is written.
+### Infrastructure phases
+
+| Phase | Title | Status | Report |
+|-------|-------|--------|--------|
+| 0 | Test foundation (fixture server, e2e/CLI harness, vitest split) | GREEN | [link](PHASE-0-1-test-foundation-and-ci.md) |
+| 1 | CI on Windows + Linux (GitHub Actions matrix) | GREEN | [link](PHASE-0-1-test-foundation-and-ci.md) |
+| 2 | Puppeteer 19→25 upgrade + self-maintaining updater | GREEN | [link](PHASE-2-puppeteer-upgrade.md) |
+
+## Progress summary
+
+- **All 13 launch blockers: GREEN** (fixed, regression-tested, committed, reported).
+- **Phases 0–2: GREEN.**
+- Suite: **364 unit + 19 e2e passing**; typecheck + build clean on Puppeteer 25.
+- Several medium/low findings folded in along the way (output-dir default,
+  offline doctor, real fileSize metadata, package description, single lockfile,
+  `.parcel-cache`/`output/` no longer published, env-var wiring).
+
+## Remaining (medium/low sweep — next batches)
+
+Tracked, not yet done. Each will follow the same red→green + report discipline:
+
+- **Lint debt** — 36 eslint errors (unused imports/vars, one unreachable block in
+  `disk-space-manager.ts`, `no-undef` for `NodeJS`/`document`/`window`). Fixing
+  these flips CI's lint step from non-blocking to a hard gate.
+- **API safety** — remove process-wide `uncaughtException`/`unhandledRejection`
+  handlers in the pool path; narrow the pool→oneshot fallback to init-only errors;
+  `unref()` the cleanup timer; Windows tree-kill on oneshot cleanup.
+- **Resources** — pool TOCTOU vs `maxSize`; event-based `waitForAvailableBrowser`;
+  pool metric accounting; real disk/memory checks (drop the 10% placeholder);
+  tighten temp-cleanup matching; delete dead `BrowserLifecycleManager`/empty
+  `core/*` stubs.
+- **Batch** — implement `--retry`, `--report csv/html`, `defaults`/`variables`,
+  job dependencies; fix shipped `examples/batch-jobs.yaml`; `.printeerrc.json`
+  applied to the library/bare path.
+- **Diagnostics** — verbose `--json` purity; report actual Chrome source; font
+  check; network check configurability.
+- **Docs** — rewrite the "Custom Browser Management" example to the real API (add a
+  `cleanup()` alias); `exports` map for subpath imports; remove `PRINTEER_DUMPIO`
+  doc; fix `EnhancedConfigurationManager` example fields.
