@@ -3,8 +3,8 @@
 // Browser management
 export { DefaultBrowserManager, DefaultBrowserFactory } from './browser';
 
-// Converter
-export { DefaultConverter } from './converter';
+// NOTE (BUG-013): `DefaultConverter` was an all-methods-throw stub and has been
+// removed from the public surface until a real implementation exists.
 
 // Types
 export type {

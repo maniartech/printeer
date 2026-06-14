@@ -596,10 +596,9 @@ export async function doctor(): Promise<unknown[]> {
   return await doctorModule.runFullDiagnostics();
 }
 
-// Enhanced conversion function (placeholder for future implementation)
-export async function convert(_options: unknown): Promise<unknown> {
-  throw new Error('Enhanced convert function not implemented yet - will be implemented in task 8');
-}
+// NOTE (BUG-013): the previous `convert()` export was an unimplemented stub that
+// always threw. It has been removed from the public API until a real
+// implementation exists, rather than advertising a function that cannot be used.
 
 // Utility function to get current browser strategy (for debugging)
 export function getCurrentBrowserStrategy(): 'oneshot' | 'pool' {

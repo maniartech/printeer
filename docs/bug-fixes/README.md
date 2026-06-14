@@ -48,7 +48,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-010 | high | config | Documented env vars / `.printeerrc.json` not applied | TODO | |
 | BUG-011 | high | templates | `--header-template`/`--footer-template` never applied | TODO | |
 | BUG-012 | high | docs | README license says ISC; package is Apache-2.0 | GREEN | [link](BUG-012-license-mismatch.md) |
-| BUG-013 | high | core-api | Public throw-stubs exported (convert/DefaultConfigurationManager/DefaultConverter) | TODO | |
+| BUG-013 | high | core-api | Public throw-stubs exported (convert/DefaultConfigurationManager/DefaultConverter) | GREEN | [link](BUG-013-public-throw-stubs.md) |
 
 > Remaining medium/low findings (the full 80) are appended to this table as each phase lands.
 > See the audit summary for the complete enumeration; rows are added when their test is written.

@@ -686,7 +686,8 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
 export const configManager = new PrinteerConfigurationManager();
 
 // Configuration module barrel exports
-export * from './configuration';
+// NOTE (BUG-013): './configuration' (DefaultConfigurationManager) was an
+// all-methods-throw stub shadowing the real managers; its export was removed.
 export { ConfigurationManager } from './manager';
 export * from './cli-config-loader';
 export * from './types/configuration';
