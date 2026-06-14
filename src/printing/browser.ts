@@ -65,8 +65,13 @@ export class DefaultBrowserManager implements BrowserManager {
       // Pre-warm the pool with minimum browsers
       await this.warmUp();
 
-      // Check if we have any browsers after warm-up
-      if (this.pool.total === 0) {
+      // Only treat an empty pool as a failure if we were actually asked to
+      // pre-warm at least one browser. With minSize=0 (the lazy configuration
+      // the API uses to avoid pre-warming) warmUp() intentionally creates no
+      // browsers — they are created on demand in getBrowser(). Throwing here
+      // made pool initialization always fail and silently fall back to oneshot
+      // for every server/library conversion. (BUG-003)
+      if (this.config.minSize! > 0 && this.pool.total === 0) {
         throw new Error('Failed to create any browsers during initialization');
       }
 
@@ -864,9 +869,12 @@ export class DefaultBrowserFactory implements BrowserFactory {
     if (!(launchOptions.args || []).some(a => a.startsWith('--headless'))) {
       alwaysArgs.push('--headless=new');
     }
-    if (this.os.platform() === 'win32') {
-      alwaysArgs.push('--no-startup-window');
-    }
+    // NOTE (BUG-003): do NOT add `--no-startup-window` on Windows. In headless
+    // mode it prevents the initial target from being created, so the very first
+    // `newPage()` (used by browser validation) times out — the pool then fails
+    // to initialize and every conversion silently falls back to oneshot. The
+    // flag is redundant in headless mode anyway. The oneshot path already
+    // removed it for the same reason.
     const allArgs = (launchOptions.args || []).concat(optimizedArgs).concat(alwaysArgs);
     launchOptions.args = Array.from(new Set(allArgs));
 
