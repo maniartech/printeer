@@ -81,6 +81,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-038 | low | config/batch | `.printeerrc` library-scope doc clarity + `priority` ignored | GREEN | [link](BUG-038-config-scope-and-priority.md) |
 | BUG-039 | low | tests-quality | Eliminate all 117 `no-explicit-any`; make it a hard gate | GREEN | [link](BUG-039-eliminate-explicit-any.md) |
 | BUG-040 | low | dependencies | Dev-tooling refresh: drop EOL Node 18 (engines>=20, CI 20/22/24), vitest 4 → `npm audit` 0 | GREEN | [link](BUG-040-dev-tooling-refresh.md) |
+| BUG-041 | low | tests-quality | Remove default CircleCI hello-world stub (no tests; red noise) | GREEN | [link](BUG-041-remove-circleci-stub.md) |
 
 ### Infrastructure phases
 
