@@ -66,6 +66,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-025 | low | resources | Pool used 100ms busy-wait instead of event-based waiter queue | GREEN | [link](BUG-022-025-pool-concurrency.md) |
 | BUG-023 | medium | resources | Temp-cleanup substring match could delete user files | GREEN | [link](BUG-023-temp-cleanup-overmatch.md) |
 | BUG-024 | medium | resources | `getTotalDiskUsage()` hardcoded 10% → disk decisions no-op | GREEN | [link](BUG-024-disk-usage-placeholder.md) |
+| BUG-026 | low | resources | Dead `src/core` module (unused 536-line manager + empty stubs) | GREEN | [link](BUG-026-dead-core-module.md) |
 
 ### Infrastructure phases
 
