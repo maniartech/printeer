@@ -1,0 +1,32 @@
+# Normalize line endings to LF in the repo and on checkout for ALL platforms.
+#
+# Why: GitHub's Windows CI runners default to `core.autocrlf=true`, which
+# rewrites text files to CRLF on checkout. vite-node's transform of a shebang'd
+# `.mjs` (e.g. scripts/update-puppeteer.mjs) throws
+# `SyntaxError: Invalid or unexpected token` when the source has CRLF endings,
+# so the unit suite failed on Windows CI but passed on LF dev boxes. Forcing LF
+# makes the working tree identical across OSes and removes the whole class of
+# CRLF-induced parse/transform bugs. (BUG-020)
+
+* text=auto eol=lf
+
+# Explicit text types (belt-and-suspenders; covered by text=auto above).
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.cjs  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Binary assets must never be line-ending normalized.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary
