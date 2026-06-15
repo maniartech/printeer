@@ -15,13 +15,10 @@ import type {
   BatchResult,
   BatchData,
   BatchReport,
-  ResourceMetrics,
-  ResourcePressure
+  ResourceMetrics
 } from './types/batch.types';
 import {
-  BatchValidationError,
-  JobValidationError,
-  SkipFileError
+  BatchValidationError
 } from './types/batch.types';
 import type { EnhancedPrintConfiguration, ValidationResult } from '../config/types/enhanced-config.types';
 
@@ -556,7 +553,7 @@ export class BatchProcessor extends EventEmitter {
    */
   private async prepareJobs(
     jobs: BatchJob[],
-    options: BatchOptions
+    _options: BatchOptions
   ): Promise<BatchJob[]> {
     const preparedJobs: BatchJob[] = [];
 
@@ -653,7 +650,7 @@ export class BatchProcessor extends EventEmitter {
    */
   private generateDryRunReport(
     jobs: BatchJob[],
-    options: BatchOptions
+    _options: BatchOptions
   ): BatchReport {
     const results: BatchResult[] = jobs.map(job => ({
       jobId: job.id,
@@ -680,7 +677,7 @@ export class BatchProcessor extends EventEmitter {
   /**
    * Generate comprehensive batch report
    */
-  private async generateBatchReport(options: BatchOptions): Promise<BatchReport> {
+  private async generateBatchReport(_options: BatchOptions): Promise<BatchReport> {
     const results = Array.from(this.results.values());
     const totalJobs = results.length;
     const successfulJobs = results.filter(r => r.status === 'completed').length;

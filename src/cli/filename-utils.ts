@@ -122,7 +122,7 @@ export async function generateFilenameFromPattern(
 export async function fetchWebpageTitle(
   url: string,
   options: CliOptions,
-  timeout: number = 10000
+  _timeout: number = 10000
 ): Promise<string | null> {
   // For now, return null to use URL fallback
   // This would be implemented with actual Puppeteer integration
@@ -255,7 +255,7 @@ export async function findUniqueFilename(
       throw new Error(`Unable to generate unique filename after 1000 attempts for: ${parsedPath.name}`);
     }
 
-  } while (true);
+  } while (true); // eslint-disable-line no-constant-condition
 
   return uniqueFilename;
 }
@@ -266,7 +266,7 @@ export async function findUniqueFilename(
 export async function createUrlOutputPairs(
   urls: string[],
   outputs: string[],
-  options: CliOptions
+  _options: CliOptions
 ): Promise<UrlOutputPair[]> {
   const pairs: UrlOutputPair[] = [];
 

@@ -428,7 +428,7 @@ export class DefaultBrowserManager implements BrowserManager {
   /**
    * System-level browser process termination (last resort)
    */
-  private async systemKillBrowserProcess(browserInstance: BrowserInstance): Promise<void> {
+  private async systemKillBrowserProcess(_browserInstance: BrowserInstance): Promise<void> {
     const { exec } = await import('child_process');
     const { promisify } = await import('util');
     const execAsync = promisify(exec);

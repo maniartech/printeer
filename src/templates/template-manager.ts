@@ -4,12 +4,10 @@
  */
 
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import type {
   Template,
   TemplateType,
   TemplateValidationResult,
-  TemplateRenderContext,
   BuiltInTemplate
 } from './types/template.types';
 import {

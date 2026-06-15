@@ -4,7 +4,7 @@
  */
 
 import { Command } from 'commander';
-import { EnhancedConfigurationManager, ConfigurationError } from '../config/enhanced-config-manager';
+import { EnhancedConfigurationManager } from '../config/enhanced-config-manager';
 import { BatchProcessor } from '../batch/batch-processor';
 import { TemplateManager } from '../templates/template-manager';
 import { ConfigurationConverter, buildConfigFromCliOptions } from './config-mapping';
@@ -12,12 +12,10 @@ import printeer from '../api';
 import {
   determineOutputFilename,
   handleOutputConflicts,
-  createUrlOutputPairs,
-  detectOutputExtension,
-  sanitizeFilename
+  createUrlOutputPairs
 } from './filename-utils';
 import type { UrlOutputPair, CliOptions, ConversionResult } from './types/cli.types';
-import type { BatchJob, BatchOptions } from '../batch/types/batch.types';
+import type { BatchJob } from '../batch/types/batch.types';
 import type { EnhancedPrintConfiguration } from '../config/types/enhanced-config.types';
 import { SkipFileError } from './types/cli.types';
 import { getPackageVersion } from './version';
@@ -571,7 +569,6 @@ async function executeRealConversion(
       }
     };
   } catch (error) {
-    const duration = Date.now() - startTime;
     throw new Error(`Conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -642,7 +639,7 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
       }
     });
 
-    batchProcessor.on('job-completed', (job, result, progress) => {
+    batchProcessor.on('job-completed', (job, result, _progress) => {
       console.log(`✓ Completed: ${job.id} (${result.duration}ms)`);
     });
 
@@ -684,7 +681,6 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
  * Initialize configuration file
  */
 async function initializeConfig(options: any): Promise<void> {
-  const configManager = new EnhancedConfigurationManager();
   const template = options.template || 'basic';
   const format = options.format || 'json';
   const outputPath = options.output || `printeer.config.${format}`;
@@ -756,7 +752,7 @@ async function validateConfig(configFile: string | undefined, options: any): Pro
     const resolved = await configManager.loadConfiguration(configFile, options.env);
 
     if (options.preset) {
-      const preset = await configManager.getPreset(options.preset);
+      await configManager.getPreset(options.preset); // validates the preset exists
       console.log('Preset validation successful');
     }
 

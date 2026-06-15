@@ -77,7 +77,7 @@ export const CONFIG_MAPPINGS: ConfigMapping[] = [
  */
 export async function buildConfigFromCliOptions(
   options: CliOptions,
-  configManager: EnhancedConfigurationManager
+  _configManager: EnhancedConfigurationManager
 ): Promise<Partial<EnhancedPrintConfiguration>> {
   const config: Partial<EnhancedPrintConfiguration> = {};
 

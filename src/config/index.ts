@@ -1,7 +1,6 @@
 import { readFile, access, watch } from 'fs/promises';
 import { resolve, join } from 'path';
 import { homedir } from 'os';
-import { FSWatcher } from 'fs';
 import type {
   Configuration,
   ConfigurationManager,
@@ -632,7 +631,7 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
   /**
    * Watch a specific configuration file for changes
    */
-  private async watchConfigFile(watcher: any, filePath: string): Promise<void> {
+  private async watchConfigFile(watcher: any, _filePath: string): Promise<void> {
     try {
       for await (const event of watcher) {
         if ((event as any).eventType === 'change') {

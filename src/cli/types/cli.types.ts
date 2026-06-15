@@ -3,8 +3,6 @@
  * Type definitions for enhanced CLI system
  */
 
-import type { EnhancedPrintConfiguration } from '../../config/types/enhanced-config.types';
-
 export interface UrlOutputPair {
   url: string;
   output?: string;

@@ -1,5 +1,5 @@
-import { readFile, writeFile, access } from 'fs/promises';
-import { join, resolve } from 'path';
+import { readFile, access } from 'fs/promises';
+import { join } from 'path';
 import { homedir } from 'os';
 import { CliConfigLoader } from './cli-config-loader.js';
 import type {
@@ -10,8 +10,7 @@ import type {
   BrowserConfig,
   ResourceLimits,
   LoggingConfig,
-  SecurityConfig,
-  LongRunningConfig
+  SecurityConfig
 } from './types/configuration.js';
 
 /**
@@ -603,7 +602,7 @@ export class ConfigurationManager implements IConfigurationManager {
    * Disable hot-reloading
    */
   disableHotReload(): void {
-    for (const [path, intervalId] of this.watchers) {
+    for (const [, intervalId] of this.watchers) {
       if (typeof intervalId === 'number') {
         clearInterval(intervalId);
       }

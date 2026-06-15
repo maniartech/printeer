@@ -43,10 +43,7 @@ jobs:
         run: npm ci
 
       - name: Lint
-        # Non-blocking until the lint debt (tracked in docs/bug-fixes) is cleared,
-        # then this becomes a hard gate.
         run: npm run lint
-        continue-on-error: true
 
       - name: Typecheck
         run: npx tsc --noEmit

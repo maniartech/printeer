@@ -146,11 +146,8 @@ export class DefaultDiskSpaceManager implements DiskSpaceManager {
   private readonly tempDir = os.tmpdir();
 
   async getTotalDiskUsage(): Promise<number> {
-    try {
-      return 0.1; // 10% as placeholder
-    } catch (error) {
-      return 0.1;
-    }
+    // Placeholder: real per-volume disk usage is tracked in the resources sweep.
+    return 0.1; // 10%
   }
 
   async cleanupOldTempFiles(maxAgeMs: number): Promise<number> {

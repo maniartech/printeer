@@ -3,6 +3,11 @@
     "es2021": true,
     "node": true
   },
+  "globals": {
+    "NodeJS": "readonly",
+    "document": "readonly",
+    "window": "readonly"
+  },
   "extends": [
     "eslint:recommended"
   ],
