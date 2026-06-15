@@ -1,5 +1,5 @@
 // API domain - Library public surface
-import puppeteer, { Browser } from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import { normalize } from 'path';
 import { getDefaultBrowserOptions, getBrowserExecutablePath, isCurrentUserRoot } from '../utils';
 import { DefaultBrowserManager } from '../printing/browser';
@@ -170,8 +170,8 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
 /**
  * One-shot browser creation (simple, clean, no pool)
  */
-async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
-  let browserOptions = customOptions ? { ...customOptions } : getDefaultBrowserOptions();
+async function createOneshotBrowser(customOptions?: Record<string, unknown>): Promise<Browser> {
+  const browserOptions: Record<string, unknown> = customOptions ? { ...customOptions } : getDefaultBrowserOptions() as Record<string, unknown>;
 
   // Remove pipe option if false (only meaningful when true, causes issues when false)
   if (browserOptions.pipe === false) {
@@ -202,10 +202,10 @@ async function createOneshotBrowser(customOptions?: any): Promise<Browser> {
   ].filter(Boolean) as string[];
   browserOptions.args = Array.from(new Set([...baseArgs, ...extraArgs]));
 
-  return await puppeteer.launch(browserOptions);
+  return await puppeteer.launch(browserOptions as Parameters<typeof puppeteer.launch>[0]);
 }
 
-export default async (url: string, outputFile: string, outputType: string | null = null, browserOptions: any = {}) => {
+export default async (url: string, outputFile: string, outputType: string | null = null, browserOptions: Record<string, unknown> = {}) => {
   // Normalize options so the documented 2-arg / 3-arg calls (and an explicit
   // `undefined`) never reach the conversion functions as undefined. Both the
   // oneshot and pool paths dereference `browserOptions.waitUntil` directly, so
@@ -246,28 +246,29 @@ export default async (url: string, outputFile: string, outputType: string | null
   }
 }
 
-async function applyAdvancedPageOptions(page: any, opts: any) {
-  const headers = { ...opts.headers };
+async function applyAdvancedPageOptions(page: Page, opts: Record<string, unknown>) {
+  const headers: Record<string, string> = { ...(opts.headers as Record<string, string> | undefined) };
   if (opts.locale) {
-    headers['Accept-Language'] = opts.locale;
+    headers['Accept-Language'] = opts.locale as string;
   }
   if (Object.keys(headers).length > 0) {
     await page.setExtraHTTPHeaders(headers);
   }
 
-  if (opts.cookies) await page.setCookie(...(Array.isArray(opts.cookies) ? opts.cookies : [opts.cookies]));
-  if (opts.auth) await page.authenticate(opts.auth);
-  if (opts.userAgent) await page.setUserAgent(opts.userAgent);
-  if (opts.mediaType) await page.emulateMediaType(opts.mediaType);
-  if (opts.colorScheme) await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: opts.colorScheme }]);
-  if (opts.timezone) await page.emulateTimezone(opts.timezone);
+  if (opts.cookies) await page.setCookie(...((Array.isArray(opts.cookies) ? opts.cookies : [opts.cookies]) as Parameters<Page['setCookie']>));
+  if (opts.auth) await page.authenticate(opts.auth as Parameters<Page['authenticate']>[0]);
+  if (opts.userAgent) await page.setUserAgent(opts.userAgent as string);
+  if (opts.mediaType) await page.emulateMediaType(opts.mediaType as string);
+  if (opts.colorScheme) await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: opts.colorScheme as string }]);
+  if (opts.timezone) await page.emulateTimezone(opts.timezone as string);
   if (opts.javascriptEnabled === false) await page.setJavaScriptEnabled(false);
   if (opts.cacheEnabled === false) await page.setCacheEnabled(false);
 
-  if (opts.blockResources && opts.blockResources.length > 0) {
+  const blockResources = opts.blockResources as string[] | undefined;
+  if (blockResources && blockResources.length > 0) {
     await page.setRequestInterception(true);
-    page.on('request', (req: any) => {
-      if (opts.blockResources.includes(req.resourceType())) {
+    page.on('request', (req) => {
+      if (blockResources.includes(req.resourceType())) {
         req.abort();
       } else {
         req.continue();
@@ -283,10 +284,10 @@ async function runOneshotConversion(
   url: string,
   outputFile: string,
   outputType: string | null,
-  browserOptions: any
+  browserOptions: Record<string, unknown>
 ): Promise<string> {
   let browser: Browser | null = null;
-  let page: any = null;
+  let page: Page | null = null;
 
   try {
     // Create browser with custom options if provided
@@ -294,38 +295,39 @@ async function runOneshotConversion(
     page = await browser.newPage();
 
     // Navigate and render
-    const waitUntil = browserOptions.waitUntil || 'networkidle0';
-    const timeout = browserOptions.waitTimeout || 30000;
-    const loadTimeout = browserOptions.loadTimeout || timeout;
+    const waitUntil = (browserOptions.waitUntil || 'networkidle0') as string;
+    const timeout = (browserOptions.waitTimeout || 30000) as number;
+    const loadTimeout = (browserOptions.loadTimeout || timeout) as number;
 
     // Apply viewport if provided
     if (browserOptions.viewport) {
+      const viewport = browserOptions.viewport as Record<string, unknown>;
       await page.setViewport({
-        width: browserOptions.viewport.width || 1920,
-        height: browserOptions.viewport.height || 1080,
-        deviceScaleFactor: browserOptions.viewport.deviceScaleFactor || 1,
-        isMobile: !!browserOptions.viewport.isMobile,
-        hasTouch: !!browserOptions.viewport.hasTouch,
-        isLandscape: !!browserOptions.viewport.isLandscape
+        width: (viewport.width as number) || 1920,
+        height: (viewport.height as number) || 1080,
+        deviceScaleFactor: (viewport.deviceScaleFactor as number) || 1,
+        isMobile: !!viewport.isMobile,
+        hasTouch: !!viewport.hasTouch,
+        isLandscape: !!viewport.isLandscape
       });
     }
 
     await applyAdvancedPageOptions(page, browserOptions);
 
-    const res = await page.goto(url, { waitUntil, timeout: loadTimeout });
+    const res = await page.goto(url, { waitUntil, timeout: loadTimeout } as Parameters<Page['goto']>[1]);
 
     if (!res) {
       throw new Error("Could not load the page.");
     }
 
     if (browserOptions.waitSelector) {
-      await page.waitForSelector(browserOptions.waitSelector, { timeout });
+      await page.waitForSelector(browserOptions.waitSelector as string, { timeout });
     }
     if (browserOptions.waitFunction) {
-      await page.waitForFunction(browserOptions.waitFunction, { timeout });
+      await page.waitForFunction(browserOptions.waitFunction as string, { timeout });
     }
     if (browserOptions.waitDelay) {
-      await new Promise(resolve => setTimeout(resolve, browserOptions.waitDelay));
+      await new Promise(resolve => setTimeout(resolve, browserOptions.waitDelay as number));
     }
 
     outputType = detectOutputType(outputFile, outputType);
@@ -340,7 +342,7 @@ async function runOneshotConversion(
     }
 
     if (outputType === 'png') {
-      const screenshotOptions: any = {
+      const screenshotOptions: Record<string, unknown> = {
         path: outputFile,
         fullPage: !!browserOptions.fullPage,
         omitBackground: !!browserOptions.omitBackground,
@@ -351,7 +353,7 @@ async function runOneshotConversion(
       if (screenshotOptions.type !== 'png' && browserOptions.quality !== undefined) {
         screenshotOptions.quality = browserOptions.quality;
       }
-      await page.screenshot(screenshotOptions);
+      await page.screenshot(screenshotOptions as Parameters<Page['screenshot']>[0]);
     } else {
       await page.pdf({
         format: browserOptions.format || 'A4',
@@ -366,7 +368,7 @@ async function runOneshotConversion(
         preferCSSPageSize: browserOptions.preferCSSPageSize,
         tagged: browserOptions.generateTaggedPDF,
         outline: browserOptions.outline
-      });
+      } as Parameters<Page['pdf']>[0]);
     }
 
     return normalize(outputFile);
@@ -416,46 +418,47 @@ async function runPooledConversion(
   outputType: string | null,
   browserOptions: unknown
 ): Promise<string> {
-  const opts = browserOptions as any;
+  const opts = browserOptions as Record<string, unknown>;
   const browserManager = await getBrowserManager();
   const browserInstance = await browserManager.getBrowser();
 
-  let page: any = null;
+  let page: Page | null = null;
 
   try {
     page = await browserInstance.browser.newPage();
-    const waitUntil = opts.waitUntil || 'networkidle0';
-    const timeout = opts.waitTimeout || 30000;
-    const loadTimeout = opts.loadTimeout || timeout;
+    const waitUntil = (opts.waitUntil || 'networkidle0') as string;
+    const timeout = (opts.waitTimeout || 30000) as number;
+    const loadTimeout = (opts.loadTimeout || timeout) as number;
 
     // Apply viewport if provided
     if (opts.viewport) {
+      const viewport = opts.viewport as Record<string, unknown>;
       await page.setViewport({
-        width: opts.viewport.width || 1920,
-        height: opts.viewport.height || 1080,
-        deviceScaleFactor: opts.viewport.deviceScaleFactor || 1,
-        isMobile: !!opts.viewport.isMobile,
-        hasTouch: !!opts.viewport.hasTouch,
-        isLandscape: !!opts.viewport.isLandscape
+        width: (viewport.width as number) || 1920,
+        height: (viewport.height as number) || 1080,
+        deviceScaleFactor: (viewport.deviceScaleFactor as number) || 1,
+        isMobile: !!viewport.isMobile,
+        hasTouch: !!viewport.hasTouch,
+        isLandscape: !!viewport.isLandscape
       });
     }
 
     await applyAdvancedPageOptions(page, opts);
 
-    const res = await page.goto(url, { waitUntil, timeout: loadTimeout });
+    const res = await page.goto(url, { waitUntil, timeout: loadTimeout } as Parameters<Page['goto']>[1]);
 
     if (!res) {
       throw new Error("Could not load the page.");
     }
 
     if (opts.waitSelector) {
-      await page.waitForSelector(opts.waitSelector, { timeout });
+      await page.waitForSelector(opts.waitSelector as string, { timeout });
     }
     if (opts.waitFunction) {
-      await page.waitForFunction(opts.waitFunction, { timeout });
+      await page.waitForFunction(opts.waitFunction as string, { timeout });
     }
     if (opts.waitDelay) {
-      await new Promise(resolve => setTimeout(resolve, opts.waitDelay));
+      await new Promise(resolve => setTimeout(resolve, opts.waitDelay as number));
     }
 
     outputType = detectOutputType(outputFile, outputType);
@@ -470,7 +473,7 @@ async function runPooledConversion(
     }
 
     if (outputType === 'png') {
-      const screenshotOptions: any = {
+      const screenshotOptions: Record<string, unknown> = {
         path: outputFile,
         fullPage: !!opts.fullPage,
         omitBackground: !!opts.omitBackground,
@@ -481,7 +484,7 @@ async function runPooledConversion(
       if (screenshotOptions.type !== 'png' && opts.quality !== undefined) {
         screenshotOptions.quality = opts.quality;
       }
-      await page.screenshot(screenshotOptions);
+      await page.screenshot(screenshotOptions as Parameters<Page['screenshot']>[0]);
     } else {
       await page.pdf({
         format: opts.format || 'A4',
@@ -496,7 +499,7 @@ async function runPooledConversion(
         preferCSSPageSize: opts.preferCSSPageSize,
         tagged: opts.generateTaggedPDF,
         outline: opts.outline
-      });
+      } as Parameters<Page['pdf']>[0]);
     }
 
     return normalize(outputFile);
@@ -632,7 +635,7 @@ export function hasBrowserManager(): boolean {
 /**
  * Auto-scroll the page to trigger lazy loading
  */
-async function autoScroll(page: any) {
+async function autoScroll(page: Page) {
   await page.evaluate(async () => {
     // @ts-ignore
     await new Promise<void>((resolve) => {

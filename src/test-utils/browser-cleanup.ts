@@ -5,7 +5,7 @@
  * memory leaks and zombie processes during testing.
  */
 
-import { Browser } from 'puppeteer';
+import { Browser, LaunchOptions } from 'puppeteer';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -422,7 +422,7 @@ export function wrapBrowserForCleanup(browser: Browser, id?: string): string {
 /**
  * Create a test-safe browser launcher that ensures cleanup
  */
-export async function createTestBrowser(launchOptions: any = {}): Promise<{ browser: Browser; cleanup: () => Promise<void> }> {
+export async function createTestBrowser(launchOptions: unknown = {}): Promise<{ browser: Browser; cleanup: () => Promise<void> }> {
   const puppeteer = await import('puppeteer');
 
   // Ensure test-friendly options
@@ -435,10 +435,10 @@ export async function createTestBrowser(launchOptions: any = {}): Promise<{ brow
       '--disable-gpu',
       '--headless=new'
     ],
-    ...launchOptions
+    ...(launchOptions as Record<string, unknown>)
   };
 
-  const browser = await puppeteer.launch(testOptions);
+  const browser = await puppeteer.launch(testOptions as LaunchOptions);
   const browserId = browserCleanup.registerBrowser(browser);
 
   return {

@@ -1,0 +1,9 @@
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mE:/Projects/printeer[39m
+
+[2mfilter:  [22m[33mtests/cli[39m
+[2minclude: [22m[33msrc/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}[2m, [22mtests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}[39m
+[2mexclude:  [22m[33mnode_modules[2m, [22mdist[2m, [22mbin[2m, [22m**/tests/isolated/**[2m, [22mtests/isolated/**[2m, [22m**/isolated/**[39m
+[2mwatch exclude:  [22m[33m**/node_modules/**[2m, [22m**/dist/**[39m
+[31m
+No test files found, exiting with code 1[39m

@@ -40,8 +40,8 @@ export const getHeadlessFromEnv = function(): boolean {
 /**
  * Get the default browser options returns an object with the default options for the browser.
  */
-export const getDefaultBrowserOptions = function():any {
-  const launchOptions:any = {
+export const getDefaultBrowserOptions = function(): Record<string, unknown> {
+  const launchOptions: Record<string, unknown> = {
     headless: getHeadlessFromEnv(),
     args: ['--no-sandbox', '--disable-setuid-sandbox'] // <- Handle this better, only for root users!
   }

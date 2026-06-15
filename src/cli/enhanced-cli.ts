@@ -577,7 +577,7 @@ async function executeRealConversion(
 /**
  * Convert enhanced configuration to legacy format for printeer API
  */
-function convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
+function convertToLegacyConfig(config: EnhancedPrintConfiguration) {
   return {
     format: config.page?.format || 'A4',
     orientation: config.page?.orientation || 'portrait',
@@ -619,16 +619,27 @@ function convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
 /**
  * Run batch processing from file
  */
-async function runBatchProcess(batchFile: string, options: any): Promise<void> {
+async function runBatchProcess(batchFile: string, options: {
+  concurrency?: string;
+  retry?: string;
+  continueOnError?: boolean;
+  outputDir?: string;
+  report?: string;
+  progress?: boolean;
+  dryRun?: boolean;
+  cleanup?: boolean;
+  quiet?: boolean;
+  reportFile?: string;
+}): Promise<void> {
   const batchProcessor = new BatchProcessor({
-    concurrency: parseInt(options.concurrency, 10),
-    retryAttempts: parseInt(options.retry, 10),
-    continueOnError: options.continueOnError,
-    outputDirectory: options.outputDir,
-    reportFormat: options.report,
-    progressTracking: options.progress,
-    dryRun: options.dryRun,
-    cleanup: options.cleanup
+    concurrency: parseInt(options.concurrency as string, 10),
+    retryAttempts: parseInt(options.retry as string, 10),
+    continueOnError: options.continueOnError as boolean,
+    outputDirectory: options.outputDir as string,
+    reportFormat: options.report as 'json' | 'csv' | 'html',
+    progressTracking: options.progress as boolean,
+    dryRun: options.dryRun as boolean,
+    cleanup: options.cleanup as boolean
   });
 
   // Set up event listeners for progress tracking
@@ -682,7 +693,12 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
 /**
  * Initialize configuration file
  */
-async function initializeConfig(options: any): Promise<void> {
+async function initializeConfig(options: {
+  template?: string;
+  format?: string;
+  output?: string;
+  overwrite?: boolean;
+}): Promise<void> {
   const template = options.template || 'basic';
   const format = options.format || 'json';
   const outputPath = options.output || `printeer.config.${format}`;
@@ -713,7 +729,7 @@ async function initializeConfig(options: any): Promise<void> {
 /**
  * Generate configuration template
  */
-async function generateConfigurationTemplate(template: string): Promise<any> {
+async function generateConfigurationTemplate(template: string): Promise<Record<string, unknown>> {
   const configManager = new EnhancedConfigurationManager();
 
   switch (template) {
@@ -747,7 +763,11 @@ async function generateConfigurationTemplate(template: string): Promise<any> {
 /**
  * Validate configuration file
  */
-async function validateConfig(configFile: string | undefined, options: any): Promise<void> {
+async function validateConfig(configFile: string | undefined, options: {
+  env?: string;
+  preset?: string;
+  verbose?: boolean;
+}): Promise<void> {
   const configManager = new EnhancedConfigurationManager();
 
   try {
@@ -788,7 +808,11 @@ async function validateConfig(configFile: string | undefined, options: any): Pro
 /**
  * List available presets
  */
-async function listPresets(options: any): Promise<void> {
+async function listPresets(options: {
+  config?: string;
+  builtIn?: boolean;
+  custom?: boolean;
+}): Promise<void> {
   const configManager = new EnhancedConfigurationManager();
 
   try {
@@ -820,7 +844,12 @@ async function listPresets(options: any): Promise<void> {
 /**
  * Show resolved configuration
  */
-async function showConfiguration(options: any): Promise<void> {
+async function showConfiguration(options: {
+  config?: string;
+  env?: string;
+  preset?: string;
+  format: string;
+}): Promise<void> {
   const configManager = new EnhancedConfigurationManager();
 
   try {
@@ -874,7 +903,11 @@ async function showConfiguration(options: any): Promise<void> {
 /**
  * Export CLI command to configuration
  */
-async function exportCliToConfig(cliCommand: string, options: any): Promise<void> {
+async function exportCliToConfig(cliCommand: string, options: {
+  format: string;
+  pretty?: boolean;
+  output?: string;
+}): Promise<void> {
   try {
     const configManager = new EnhancedConfigurationManager();
     const converter = new ConfigurationConverter(configManager);
@@ -915,7 +948,11 @@ async function exportCliToConfig(cliCommand: string, options: any): Promise<void
 /**
  * Generate CLI command from configuration
  */
-async function generateCliFromConfig(configFile: string, options: any): Promise<void> {
+async function generateCliFromConfig(configFile: string, options: {
+  url?: string;
+  output?: string;
+  save?: string;
+}): Promise<void> {
   try {
     const configManager = new EnhancedConfigurationManager();
     const converter = new ConfigurationConverter(configManager);
@@ -947,7 +984,10 @@ async function generateCliFromConfig(configFile: string, options: any): Promise<
 /**
  * List available templates
  */
-async function listTemplates(options: any): Promise<void> {
+async function listTemplates(options: {
+  builtIn?: boolean;
+  custom?: boolean;
+}): Promise<void> {
   const templateManager = new TemplateManager();
 
   try {

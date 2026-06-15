@@ -84,7 +84,7 @@ export async function performTestCleanup(): Promise<void> {
 
     // 3. Clear any global state
     if (typeof global !== 'undefined') {
-      delete (global as any).__printeerBrowserManager;
+      delete (global as unknown as Record<string, unknown>).__printeerBrowserManager;
     }
 
     // 4. Force garbage collection if available

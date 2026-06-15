@@ -380,7 +380,7 @@ export class ConfigurationLoader {
 export class PrinteerConfigurationManager implements ConfigurationManager {
   private config: Configuration | null = null;
   private watchers: Array<() => void> = [];
-  private fileWatchers: any[] = [];
+  private fileWatchers: unknown[] = [];
   private hotReloadEnabled = false;
   private reloadDebounceTimer: NodeJS.Timeout | null = null;
   private readonly RELOAD_DEBOUNCE_MS = 500;
@@ -396,11 +396,11 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
     }
 
     const keys = key.split('.');
-    let value: any = this.config;
+    let value: unknown = this.config;
 
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
-        value = value[k];
+        value = (value as Record<string, unknown>)[k];
       } else {
         throw new Error(`Configuration key '${key}' not found`);
       }
@@ -409,20 +409,20 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
     return value as T;
   }
 
-  set(key: string, value: any): void {
+  set(key: string, value: unknown): void {
     if (!this.config) {
       throw new Error('Configuration not loaded. Call load() first.');
     }
 
     const keys = key.split('.');
-    let target: any = this.config;
+    let target: Record<string, unknown> = this.config as unknown as Record<string, unknown>;
 
     for (let i = 0; i < keys.length - 1; i++) {
       const k = keys[i];
       if (!target[k] || typeof target[k] !== 'object') {
         target[k] = {};
       }
-      target = target[k];
+      target = target[k] as Record<string, unknown>;
     }
 
     target[keys[keys.length - 1]] = value;
@@ -551,10 +551,10 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
     for (const filePath of configFilePaths) {
       try {
         const watcher = await watch(filePath);
-        this.fileWatchers.push(watcher as any);
+        this.fileWatchers.push(watcher as unknown);
 
         // Set up async iterator to handle file changes
-        this.watchConfigFile(watcher as any, filePath);
+        this.watchConfigFile(watcher as AsyncIterable<unknown>, filePath);
       } catch (error) {
         // File doesn't exist or can't be watched, skip silently
         continue;
@@ -581,8 +581,8 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
     // Close all file watchers
     for (const watcher of this.fileWatchers) {
       try {
-        if ('close' in watcher && typeof watcher.close === 'function') {
-          await watcher.close();
+        if ('close' in (watcher as object) && typeof (watcher as { close?: unknown }).close === 'function') {
+          await (watcher as { close: () => unknown }).close();
         }
       } catch {
         // Ignore cleanup errors
@@ -631,10 +631,10 @@ export class PrinteerConfigurationManager implements ConfigurationManager {
   /**
    * Watch a specific configuration file for changes
    */
-  private async watchConfigFile(watcher: any, _filePath: string): Promise<void> {
+  private async watchConfigFile(watcher: AsyncIterable<unknown>, _filePath: string): Promise<void> {
     try {
       for await (const event of watcher) {
-        if ((event as any).eventType === 'change') {
+        if ((event as { eventType?: string }).eventType === 'change') {
           this.debouncedReload();
         }
       }

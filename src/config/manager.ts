@@ -10,7 +10,10 @@ import type {
   BrowserConfig,
   ResourceLimits,
   LoggingConfig,
-  SecurityConfig
+  SecurityConfig,
+  OperationMode,
+  LogLevel,
+  LogFormat
 } from './types/configuration.js';
 
 /**
@@ -68,7 +71,7 @@ function mergeSecurityConfig(existing: Partial<SecurityConfig> | undefined, upda
 export class ConfigurationManager implements IConfigurationManager {
   private config: Configuration | null = null;
   private configPaths: string[] = [];
-  private watchers: Map<string, any> = new Map();
+  private watchers: Map<string, unknown> = new Map();
 
   constructor(private baseDir: string = process.cwd()) {
     this.initializeConfigPaths();
@@ -142,11 +145,11 @@ export class ConfigurationManager implements IConfigurationManager {
     }
 
     const keys = key.split('.');
-    let value: any = this.config;
+    let value: unknown = this.config;
 
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
-        value = value[k];
+        value = (value as Record<string, unknown>)[k];
       } else {
         throw new Error(`Configuration key '${key}' not found`);
       }
@@ -158,20 +161,20 @@ export class ConfigurationManager implements IConfigurationManager {
   /**
    * Set a configuration value by key path
    */
-  set(key: string, value: any): void {
+  set(key: string, value: unknown): void {
     if (!this.config) {
       throw new Error('Configuration not loaded. Call load() first.');
     }
 
     const keys = key.split('.');
     const lastKey = keys.pop()!;
-    let target: any = this.config;
+    let target: Record<string, unknown> = this.config as unknown as Record<string, unknown>;
 
     for (const k of keys) {
       if (!target[k] || typeof target[k] !== 'object') {
         target[k] = {};
       }
-      target = target[k];
+      target = target[k] as Record<string, unknown>;
     }
 
     target[lastKey] = value;
@@ -318,7 +321,7 @@ export class ConfigurationManager implements IConfigurationManager {
 
     // Mode
     if (process.env.PRINTEER_MODE) {
-      config.mode = process.env.PRINTEER_MODE as any;
+      config.mode = process.env.PRINTEER_MODE as OperationMode;
     }
 
     // Browser configuration
@@ -363,13 +366,13 @@ export class ConfigurationManager implements IConfigurationManager {
     // Logging
     if (process.env.PRINTEER_LOG_LEVEL) {
       config.logging = mergeLoggingConfig(config.logging, {
-        level: process.env.PRINTEER_LOG_LEVEL as any
+        level: process.env.PRINTEER_LOG_LEVEL as LogLevel
       });
     }
 
     if (process.env.PRINTEER_LOG_FORMAT) {
       config.logging = mergeLoggingConfig(config.logging, {
-        format: process.env.PRINTEER_LOG_FORMAT as any
+        format: process.env.PRINTEER_LOG_FORMAT as LogFormat
       });
     }
 
@@ -398,12 +401,12 @@ export class ConfigurationManager implements IConfigurationManager {
     for (const [key, value] of Object.entries(override)) {
       if (value !== undefined && value !== null) {
         if (typeof value === 'object' && !Array.isArray(value) &&
-          key in result && typeof (result as any)[key] === 'object' &&
-          !Array.isArray((result as any)[key])) {
+          key in result && typeof (result as Record<string, unknown>)[key] === 'object' &&
+          !Array.isArray((result as Record<string, unknown>)[key])) {
           // Deep merge nested objects
-          (result as any)[key] = this.deepMerge((result as any)[key], value);
+          (result as Record<string, unknown>)[key] = this.deepMerge((result as Record<string, unknown>)[key], value);
         } else {
-          (result as any)[key] = value;
+          (result as Record<string, unknown>)[key] = value;
         }
       }
     }
@@ -414,10 +417,10 @@ export class ConfigurationManager implements IConfigurationManager {
   /**
    * Recursively merge two objects
    */
-  private deepMerge(target: any, source: any): unknown {
-    const result = { ...target };
+  private deepMerge(target: unknown, source: unknown): unknown {
+    const result: Record<string, unknown> = { ...(target as Record<string, unknown>) };
 
-    for (const [key, value] of Object.entries(source)) {
+    for (const [key, value] of Object.entries(source as Record<string, unknown>)) {
       if (value !== undefined && value !== null) {
         if (typeof value === 'object' && !Array.isArray(value) &&
           key in result && typeof result[key] === 'object' &&
@@ -585,7 +588,7 @@ export class ConfigurationManager implements IConfigurationManager {
           const lastModified = stats.mtime.getTime();
 
           if (!this.watchers.has(`${configPath}_lastModified`) ||
-            this.watchers.get(`${configPath}_lastModified`) < lastModified) {
+            (this.watchers.get(`${configPath}_lastModified`) as number) < lastModified) {
             this.watchers.set(`${configPath}_lastModified`, lastModified);
             await this.reload();
           }

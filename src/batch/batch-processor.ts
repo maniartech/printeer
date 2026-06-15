@@ -332,7 +332,7 @@ export class BatchProcessor extends EventEmitter {
   /**
    * Convert enhanced configuration to legacy format for printeer API
    */
-  private convertToLegacyConfig(config: EnhancedPrintConfiguration): any {
+  private convertToLegacyConfig(config: EnhancedPrintConfiguration): Record<string, unknown> {
     return {
       format: config.page?.format || 'A4',
       orientation: config.page?.orientation || 'portrait',
@@ -665,7 +665,7 @@ export class BatchProcessor extends EventEmitter {
 
     // Expand array variables (handle first array variable)
     const arrayVar = arrayVariables[0];
-    const arrayValues = job.variables[arrayVar] as any[];
+    const arrayValues = job.variables[arrayVar] as unknown[];
 
     for (const value of arrayValues) {
       const variableSet = { ...job.variables, [arrayVar]: value };

@@ -77,13 +77,13 @@ export class EnhancedConfigurationManager {
 
             // Start with defaults
             if (result.config.defaults) {
-                config = merge(config as Record<string, any>, result.config.defaults as Record<string, any>) as Partial<EnhancedPrintConfiguration>;
+                config = merge(config as Record<string, unknown>, result.config.defaults as Record<string, unknown>) as Partial<EnhancedPrintConfiguration>;
                 sources.push({ type: 'default' });
             }
 
             // Apply environment-specific overrides
             if (environment && result.config.environments?.[environment]) {
-                config = merge(config as Record<string, any>, result.config.environments[environment] as Record<string, any>) as Partial<EnhancedPrintConfiguration>;
+                config = merge(config as Record<string, unknown>, result.config.environments[environment] as Record<string, unknown>) as Partial<EnhancedPrintConfiguration>;
                 sources.push({
                     type: 'environment',
                     name: environment
@@ -128,7 +128,7 @@ export class EnhancedConfigurationManager {
         // Handle preset inheritance
         if (preset.extends) {
             const basePreset = await this.getPreset(preset.extends);
-            return merge({} as Record<string, any>, basePreset as Record<string, any>, preset.config as Record<string, any>) as Partial<EnhancedPrintConfiguration>;
+            return merge({} as Record<string, unknown>, basePreset as Record<string, unknown>, preset.config as Record<string, unknown>) as Partial<EnhancedPrintConfiguration>;
         }
 
         return preset.config;
@@ -137,9 +137,10 @@ export class EnhancedConfigurationManager {
     /**
      * Validate configuration against schema
      */
-    validateConfiguration(config: any): ValidationResult {
+    validateConfiguration(config: unknown): ValidationResult {
         // Check if this looks like a configuration file (has expected structure)
-        const isConfigFile = config && (config.defaults || config.environments || config.presets || config.$schema);
+        const configObj = config as Record<string, unknown> | null | undefined;
+        const isConfigFile = configObj && (configObj.defaults || configObj.environments || configObj.presets || configObj.$schema);
 
         // If it's a configuration file, validate against the config file schema
         // If it's a configuration object, validate against the configuration schema
@@ -210,7 +211,7 @@ export class EnhancedConfigurationManager {
         base: Partial<EnhancedPrintConfiguration>,
         ...overrides: Partial<EnhancedPrintConfiguration>[]
     ): EnhancedPrintConfiguration {
-        const merged = merge({} as Record<string, any>, base as Record<string, any>, ...overrides.map(o => o as Record<string, any>)) as Partial<EnhancedPrintConfiguration>;
+        const merged = merge({} as Record<string, unknown>, base as Record<string, unknown>, ...overrides.map(o => o as Record<string, unknown>)) as Partial<EnhancedPrintConfiguration>;
         return this.ensureCompleteConfiguration(merged);
     }
 
@@ -409,7 +410,7 @@ export class EnhancedConfigurationManager {
         config: Partial<EnhancedPrintConfiguration>
     ): EnhancedPrintConfiguration {
         const defaults = this.getDefaultConfiguration();
-        return merge({} as Record<string, any>, defaults as Record<string, any>, config as Record<string, any>) as EnhancedPrintConfiguration;
+        return merge({} as Record<string, unknown>, defaults as Record<string, unknown>, config as Record<string, unknown>) as EnhancedPrintConfiguration;
     }
 
     /**
@@ -622,7 +623,7 @@ export class EnhancedConfigurationManager {
 }
 
 // Simple merge function to replace lodash-es dependency
-function merge(target: Record<string, any>, ...sources: Record<string, any>[]): Record<string, any> {
+function merge(target: Record<string, unknown>, ...sources: Record<string, unknown>[]): Record<string, unknown> {
     if (!target) target = {};
 
     for (const source of sources) {
@@ -631,7 +632,7 @@ function merge(target: Record<string, any>, ...sources: Record<string, any>[]): 
         for (const key in source) {
             if (Object.prototype.hasOwnProperty.call(source, key)) {
                 if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
-                    target[key] = merge(target[key] || {}, source[key] as Record<string, any>);
+                    target[key] = merge((target[key] as Record<string, unknown>) || {}, source[key] as Record<string, unknown>);
                 } else {
                     target[key] = source[key];
                 }

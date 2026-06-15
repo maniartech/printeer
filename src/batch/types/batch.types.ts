@@ -11,8 +11,8 @@ export interface BatchJob {
   output: string;
   config?: Partial<EnhancedPrintConfiguration>;
   preset?: string;
-  variables?: Record<string, any>;
-  metadata?: Record<string, any>;
+  variables?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   priority?: number;
   dependencies?: string[];
   retryCount?: number;
@@ -56,7 +56,7 @@ export interface BatchData {
     description?: string;
   };
   defaults?: Partial<BatchJob>;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
   jobs: BatchJob[];
 }
 

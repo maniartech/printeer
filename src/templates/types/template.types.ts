@@ -24,9 +24,9 @@ export interface TemplateValidationResult {
 }
 
 export interface TemplateRenderContext {
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   functions?: Record<string, Function>;
-  helpers?: Record<string, any>;
+  helpers?: Record<string, unknown>;
 }
 
 export interface BuiltInTemplate {

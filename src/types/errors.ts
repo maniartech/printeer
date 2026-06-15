@@ -14,7 +14,7 @@ export enum ErrorType {
 export interface PrinteerError extends Error {
   type: ErrorType;
   code: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   remediation?: string;
   retryable: boolean;
 }
@@ -22,12 +22,12 @@ export interface PrinteerError extends Error {
 export interface ErrorHandler {
   handleError(error: PrinteerError): Promise<void>;
   classifyError(error: Error): ErrorType;
-  createError(type: ErrorType, message: string, details?: Record<string, any>): PrinteerError;
+  createError(type: ErrorType, message: string, details?: Record<string, unknown>): PrinteerError;
   shouldRetry(error: PrinteerError): boolean;
 }
 
 export interface FallbackStrategy {
   canHandle(error: PrinteerError): boolean;
-  execute(originalOptions: any): Promise<any>;
+  execute(originalOptions: unknown): Promise<unknown>;
   getPriority(): number;
 }

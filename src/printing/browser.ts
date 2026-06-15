@@ -330,14 +330,14 @@ export class DefaultBrowserManager implements BrowserManager {
    */
   static getGlobalInstance(): DefaultBrowserManager | null {
     // This will be set by the API when it creates the global manager
-    return (global as any).__printeerBrowserManager || null;
+    return (global as unknown as { __printeerBrowserManager?: DefaultBrowserManager | null }).__printeerBrowserManager || null;
   }
 
   /**
    * Set global browser manager instance
    */
   static setGlobalInstance(manager: DefaultBrowserManager | null): void {
-    (global as any).__printeerBrowserManager = manager;
+    (global as unknown as { __printeerBrowserManager?: DefaultBrowserManager | null }).__printeerBrowserManager = manager;
   }
 
   getPoolStatus(): PoolStatus {

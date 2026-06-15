@@ -85,11 +85,11 @@ export async function buildConfigFromCliOptions(
   for (const mapping of CONFIG_MAPPINGS) {
     // Convert kebab-case cliOption to camelCase to match Commander/CLI parser behavior
     const cliKey = mapping.cliOption.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
-    const cliValue = (options as any)[cliKey];
+    const cliValue = (options as Record<string, unknown>)[cliKey];
 
     if (cliValue !== undefined) {
       // Parse the value if a parser is provided
-      const parsedValue = mapping.parser ? mapping.parser(cliValue) : cliValue;
+      const parsedValue = mapping.parser ? mapping.parser(cliValue as string) : cliValue;
 
       // Validate the value if a validator is provided
       if (mapping.validator && !mapping.validator(parsedValue)) {
@@ -103,7 +103,7 @@ export async function buildConfigFromCliOptions(
   }
 
   // Apply mobile defaults when --mobile is set (unless viewport is explicitly specified)
-  if ((options as any).mobile && !(options as any).viewport) {
+  if ((options as Record<string, unknown>).mobile && !(options as Record<string, unknown>).viewport) {
     // Get current viewport or create new one with mobile defaults
     const existingViewport = config.viewport || {};
     config.viewport = {
@@ -117,7 +117,7 @@ export async function buildConfigFromCliOptions(
   }
 
   // Apply tablet defaults when --tablet is set (unless viewport is explicitly specified)
-  if ((options as any).tablet && !(options as any).viewport && !(options as any).mobile) {
+  if ((options as Record<string, unknown>).tablet && !(options as Record<string, unknown>).viewport && !(options as Record<string, unknown>).mobile) {
     // Get current viewport or create new one with tablet defaults
     const existingViewport = config.viewport || {};
     config.viewport = {
@@ -257,7 +257,7 @@ export class ConfigurationConverter {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-function setNestedValue(obj: any, path: string, value: any): void {
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split('.');
   let current = obj;
 
@@ -266,47 +266,47 @@ function setNestedValue(obj: any, path: string, value: any): void {
     if (!(key in current) || typeof current[key] !== 'object') {
       current[key] = {};
     }
-    current = current[key];
+    current = current[key] as Record<string, unknown>;
   }
 
   current[keys[keys.length - 1]] = value;
 }
 
-function getNestedValue(obj: any, path: string): any {
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split('.');
-  let current = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
-    if (current === null || current === undefined || !(key in current)) {
+    if (current === null || current === undefined || !(key in (current as object))) {
       return undefined;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
 
   return current;
 }
 
-function sortObjectKeys(obj: any): any {
+function sortObjectKeys(obj: unknown): unknown {
   if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
     return obj;
   }
 
-  const sorted: any = {};
-  Object.keys(obj).sort().forEach(key => {
-    sorted[key] = sortObjectKeys(obj[key]);
+  const sorted: Record<string, unknown> = {};
+  Object.keys(obj as Record<string, unknown>).sort().forEach(key => {
+    sorted[key] = sortObjectKeys((obj as Record<string, unknown>)[key]);
   });
 
   return sorted;
 }
 
-function flattenObject(obj: any, prefix = ''): Record<string, any> {
-  const flattened: Record<string, any> = {};
+function flattenObject(obj: Record<string, unknown>, prefix = ''): Record<string, unknown> {
+  const flattened: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     const newKey = prefix ? `${prefix}.${key}` : key;
 
     if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      Object.assign(flattened, flattenObject(value, newKey));
+      Object.assign(flattened, flattenObject(value as Record<string, unknown>, newKey));
     } else {
       flattened[newKey] = value;
     }
@@ -316,7 +316,7 @@ function flattenObject(obj: any, prefix = ''): Record<string, any> {
 }
 
 export function parseCliOptions(cliArray: string[]): CliOptions {
-  const options: any = {};
+  const options: Record<string, unknown> = {};
 
   for (let i = 0; i < cliArray.length; i++) {
     const arg = cliArray[i];
@@ -344,10 +344,12 @@ export function parseCliOptions(cliArray: string[]): CliOptions {
 // PARSER AND SERIALIZER FUNCTIONS
 // ============================================================================
 
-function parseMargins(marginStr: string): any {
+type MarginObject = { top?: string; right?: string; bottom?: string; left?: string };
+
+function parseMargins(marginStr: string): MarginObject {
   if (marginStr.includes(',')) {
     // Parse individual margins: "top:1in,right:0.5in,bottom:1in,left:0.5in"
-    const margins: any = {};
+    const margins: Record<string, string> = {};
     marginStr.split(',').forEach(part => {
       const [side, value] = part.split(':');
       margins[side.trim()] = value.trim();
@@ -359,12 +361,13 @@ function parseMargins(marginStr: string): any {
   }
 }
 
-function serializeMargins(margins: any): string {
-  if (typeof margins === 'string') return margins;
-  if (typeof margins === 'object') {
-    return `top:${margins.top},right:${margins.right},bottom:${margins.bottom},left:${margins.left}`;
+function serializeMargins(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value !== null) {
+    const m = value as MarginObject;
+    return `top:${m.top},right:${m.right},bottom:${m.bottom},left:${m.left}`;
   }
-  return String(margins);
+  return String(value);
 }
 
 function parseCustomSize(sizeStr: string): { width: string; height: string } {
@@ -372,16 +375,18 @@ function parseCustomSize(sizeStr: string): { width: string; height: string } {
   return { width, height };
 }
 
-function serializeCustomSize(size: { width: string; height: string }): string {
+function serializeCustomSize(value: unknown): string {
+  const size = value as { width: string; height: string };
   return `${size.width},${size.height}`;
 }
 
-function parseViewportConfig(viewportStr: string): any {
+function parseViewportConfig(viewportStr: string): { width: number; height: number } {
   const [width, height] = viewportStr.split('x').map(s => parseInt(s.trim(), 10));
   return { width, height };
 }
 
-function serializeViewportConfig(viewport: any): string {
+function serializeViewportConfig(value: unknown): string {
+  const viewport = value as { width: number; height: number };
   return `${viewport.width}x${viewport.height}`;
 }
 
@@ -390,7 +395,8 @@ function parseClipRegion(clipStr: string): { x: number; y: number; width: number
   return { x, y, width, height };
 }
 
-function serializeClipRegion(clip: any): string {
+function serializeClipRegion(value: unknown): string {
+  const clip = value as { x: number; y: number; width: number; height: number };
   return `${clip.x},${clip.y},${clip.width},${clip.height}`;
 }
 
@@ -399,7 +405,8 @@ function parseBasicAuth(authStr: string): { username: string; password: string }
   return { username, password };
 }
 
-function serializeBasicAuth(auth: { username: string; password: string }): string {
+function serializeBasicAuth(value: unknown): string {
+  const auth = value as { username: string; password: string };
   return `${auth.username}:${auth.password}`;
 }
 
@@ -407,6 +414,6 @@ function parseResourceTypes(typesStr: string): string[] {
   return typesStr.split(',').map(t => t.trim());
 }
 
-function serializeResourceTypes(types: string[]): string {
-  return types.join(',');
+function serializeResourceTypes(value: unknown): string {
+  return (value as string[]).join(',');
 }

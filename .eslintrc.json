@@ -21,9 +21,17 @@
   ],
   "rules": {
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-explicit-any": "error",
     "no-unused-vars": "off"
   },
+  "overrides": [
+    {
+      "files": ["tests/**", "**/*.test.ts", "src/test-utils/**"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn"
+      }
+    }
+  ],
   "ignorePatterns": [
     "dist/",
     "bin/",

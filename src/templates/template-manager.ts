@@ -55,7 +55,7 @@ export class TemplateManager {
    */
   renderTemplate(
     name: string,
-    variables: Record<string, any>
+    variables: Record<string, unknown>
   ): string {
     const template = this.templates.get(name) ||
                     this.getBuiltInTemplate(name);
@@ -72,7 +72,7 @@ export class TemplateManager {
    */
   renderTemplateContent(
     content: string,
-    variables: Record<string, any>
+    variables: Record<string, unknown>
   ): string {
     let rendered = content;
 
@@ -217,9 +217,10 @@ export class TemplateManager {
   /**
    * Get nested value from object using dot notation
    */
-  private getNestedValue(obj: any, path: string): unknown {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : undefined;
+  private getNestedValue(obj: unknown, path: string): unknown {
+    return path.split('.').reduce<unknown>((current, key) => {
+      const record = current as Record<string, unknown> | undefined;
+      return record && record[key] !== undefined ? record[key] : undefined;
     }, obj);
   }
 

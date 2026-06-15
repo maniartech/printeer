@@ -13,9 +13,12 @@ export interface ConfigMapping {
   cliOption: string;
   jsonPath: string;
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-  parser?: (value: any) => any;
-  serializer?: (value: any) => string;
-  validator?: (value: any) => boolean;
+  // CLI values arrive as strings (or are ignored by flag parsers); parsers
+  // produce an arbitrary config value, serializers render any config value back
+  // to a string for round-tripping.
+  parser?: (value: string) => unknown;
+  serializer?: (value: unknown) => string;
+  validator?: (value: unknown) => boolean;
 }
 
 export interface CliOptions {

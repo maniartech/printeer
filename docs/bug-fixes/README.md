@@ -79,6 +79,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-036 | medium | batch | `--report csv/html` always wrote JSON (no formatters) | GREEN | [link](BUG-033-037-batch-features.md) |
 | BUG-037 | medium | batch | Shipped `examples/batch-jobs.yaml` would not run | GREEN | [link](BUG-033-037-batch-features.md) |
 | BUG-038 | low | config/batch | `.printeerrc` library-scope doc clarity + `priority` ignored | GREEN | [link](BUG-038-config-scope-and-priority.md) |
+| BUG-039 | low | tests-quality | Eliminate all 117 `no-explicit-any`; make it a hard gate | GREEN | [link](BUG-039-eliminate-explicit-any.md) |
 
 ### Infrastructure phases
 

@@ -1,4 +1,4 @@
-import type { Configuration, BrowserConfig, ResourceLimits, LoggingConfig, SecurityConfig, LongRunningConfig } from './types/configuration.js';
+import type { Configuration, BrowserConfig, ResourceLimits, LoggingConfig, SecurityConfig, LongRunningConfig, OperationMode, Environment, LogLevel, LogFormat, LogDestination } from './types/configuration.js';
 
 /**
  * Helper function to merge browser config safely
@@ -76,7 +76,7 @@ export class CliConfigLoader {
       switch (arg) {
         case '--mode':
           if (nextArg && ['single-shot', 'long-running'].includes(nextArg)) {
-            config.mode = nextArg as any;
+            config.mode = nextArg as OperationMode;
             i++; // Skip next argument
           }
           break;
@@ -84,7 +84,7 @@ export class CliConfigLoader {
         case '--environment':
         case '--env':
           if (nextArg && ['development', 'production', 'test'].includes(nextArg)) {
-            config.environment = nextArg as any;
+            config.environment = nextArg as Environment;
             i++; // Skip next argument
           }
           break;
@@ -140,21 +140,21 @@ export class CliConfigLoader {
 
         case '--log-level':
           if (nextArg && ['error', 'warn', 'info', 'debug'].includes(nextArg)) {
-            config.logging = mergeLoggingConfig(config.logging, { level: nextArg as any });
+            config.logging = mergeLoggingConfig(config.logging, { level: nextArg as LogLevel });
             i++; // Skip next argument
           }
           break;
 
         case '--log-format':
           if (nextArg && ['json', 'text'].includes(nextArg)) {
-            config.logging = mergeLoggingConfig(config.logging, { format: nextArg as any });
+            config.logging = mergeLoggingConfig(config.logging, { format: nextArg as LogFormat });
             i++; // Skip next argument
           }
           break;
 
         case '--log-destination':
           if (nextArg && ['console', 'file', 'both'].includes(nextArg)) {
-            config.logging = mergeLoggingConfig(config.logging, { destination: nextArg as any });
+            config.logging = mergeLoggingConfig(config.logging, { destination: nextArg as LogDestination });
             i++; // Skip next argument
           }
           break;

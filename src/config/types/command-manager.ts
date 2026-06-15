@@ -6,13 +6,13 @@ export type CommandType = 'convert' | 'doctor' | 'serve' | 'config';
 
 export interface CommandContext {
     command: CommandType;
-    options: any;
+    options: Record<string, unknown>;
     config: Configuration;
 }
 
 export interface CommandResult {
     success: boolean;
-    data?: any;
+    data?: unknown;
     error?: string;
     duration: number;
 }

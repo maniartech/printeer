@@ -59,7 +59,7 @@ export interface Configuration {
 export interface ConfigurationManager {
   load(): Promise<Configuration>;
   get<T>(key: string): T;
-  set(key: string, value: any): void;
+  set(key: string, value: unknown): void;
   validate(): ValidationResult;
   reload(): Promise<void>;
   getEnvironment(): Environment;
