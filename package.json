@@ -77,10 +77,10 @@
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
-    "@types/node": "^20.19.43",
+    "@types/node": "^18.19.130",
     "@typescript-eslint/eslint-plugin": "^8.61.0",
     "@typescript-eslint/parser": "^8.61.0",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "^3.2.6",
     "assert": "^2.0.0",
     "browserify-zlib": "^0.2.0",
     "constants-browserify": "^1.0.0",
@@ -97,6 +97,9 @@
     "typescript": "^5.9.3",
     "url": "^0.11.0",
     "util": "^0.12.4",
-    "vitest": "^4.1.9"
+    "vitest": "^3.2.6"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }
