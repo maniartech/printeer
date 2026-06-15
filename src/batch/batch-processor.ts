@@ -122,12 +122,16 @@ export class BatchProcessor extends EventEmitter {
     // First fail-fast error, captured to abort scheduling.
     let abortError: unknown = null;
 
-    // Initialize queue with jobs that have no dependencies
+    // Initialize queue with jobs that have no dependencies, ordered by `priority`
+    // (lower number = higher priority; unset runs last). Priority is a hint —
+    // dependency edges still gate ordering, and concurrency means several run at
+    // once — but it was previously parsed and ignored. (BUG-038)
     jobs.forEach(job => {
       if (!job.dependencies || job.dependencies.length === 0) {
         jobQueue.push(job);
       }
     });
+    jobQueue.sort((a, b) => (a.priority ?? Number.POSITIVE_INFINITY) - (b.priority ?? Number.POSITIVE_INFINITY));
 
     const concurrency = Math.max(1, options.concurrency || this.maxConcurrency);
 

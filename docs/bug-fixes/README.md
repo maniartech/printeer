@@ -78,6 +78,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-035 | medium | batch | File `variables` + `{{var}}` templating not applied | GREEN | [link](BUG-033-037-batch-features.md) |
 | BUG-036 | medium | batch | `--report csv/html` always wrote JSON (no formatters) | GREEN | [link](BUG-033-037-batch-features.md) |
 | BUG-037 | medium | batch | Shipped `examples/batch-jobs.yaml` would not run | GREEN | [link](BUG-033-037-batch-features.md) |
+| BUG-038 | low | config/batch | `.printeerrc` library-scope doc clarity + `priority` ignored | GREEN | [link](BUG-038-config-scope-and-priority.md) |
 
 ### Infrastructure phases
 

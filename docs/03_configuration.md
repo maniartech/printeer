@@ -12,6 +12,15 @@ Printeer resolves settings in a specific priority order (Cascading Configuration
 4.  **User Configuration**: A global file at `~/.printeer/config.json`.
 5.  **Built-in Defaults**: Printeer's safe fallbacks (A4, Portrait, etc.).
 
+> **Where this cascade applies.** Config-file discovery, presets, and environments
+> are resolved by the **CLI** (the `convert`/`batch` commands), and programmatically
+> by the `EnhancedConfigurationManager` (exported from `'printeer'`). The low-level
+> library primitive — the default `printeer(url, output, type, options)` call — is
+> intentionally explicit: it uses only the `options` you pass and does **not**
+> auto-discover `.printeerrc.json`. To apply file/preset/env config from the library,
+> resolve it first with `EnhancedConfigurationManager.loadConfiguration()` and pass
+> the result into your call (see Chapter 5).
+
 ## The Configuration File
 
 To create a starter configuration, run:
@@ -126,6 +135,13 @@ For 12-factor apps and containerized deployments, every configuration option can
 
 ## Hot Reloading
 
-When running Printeer in **Long-Running Mode** (e.g., as part of a service using the library API), the configuration manager monitors the loaded config files.
+The `ConfigurationManager` can watch loaded config files and reload them in place
+(`enableHotReload()` / `disableHotReload()`), re-validating the schema on change.
+This is useful in a long-running service that drives conversions from a manager
+instance.
 
-If you edit `.printeerrc.json`, Printeer detects the change, re-validates the schema, and seamlessly updates the active configuration without needing a process restart. This is particularly useful for tweaking PDF margins or timeouts in a live development environment.
+Note that hot-reload operates on a configuration-manager instance you create and
+hold; it is not wired into the stateless `printeer()` primitive, which reads only
+the options passed to each call. Enable it explicitly on your manager when you want
+live config updates without a process restart (handy for tweaking margins or
+timeouts during development).

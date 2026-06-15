@@ -117,6 +117,28 @@ describe('batch --retry (BUG-033)', () => {
   }, 10000);
 });
 
+describe('batch priority ordering (BUG-038)', () => {
+  it('starts no-dependency jobs in priority order (lower number first)', async () => {
+    const p = newProcessor({ concurrency: 1, dryRun: false });
+    (p as any).resolveJobConfiguration = async () => ({});
+    (p as any).executeRealConversion = async () => { /* succeed immediately */ };
+
+    const started: string[] = [];
+    p.on('job-started', (job: any) => started.push(job.id));
+
+    await p.processBatch(
+      [
+        { id: 'low', url: 'http://x/3', output: '3.pdf', priority: 3 },
+        { id: 'high', url: 'http://x/1', output: '1.pdf', priority: 1 },
+        { id: 'mid', url: 'http://x/2', output: '2.pdf', priority: 2 },
+      ],
+      (p as any).options
+    );
+
+    expect(started).toEqual(['high', 'mid', 'low']);
+  }, 10000);
+});
+
 describe('batch dry-run pipeline integration (BUG-034/035)', () => {
   let dir: string;
   beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'printeer-batch-')); });
