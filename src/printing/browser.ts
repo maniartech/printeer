@@ -17,6 +17,16 @@ export class DefaultBrowserManager implements BrowserManager {
   private cleanupInterval?: ReturnType<typeof setInterval>;
   private isInitialized = false;
   private isShuttingDown = false;
+  // Acquirers blocked at capacity, served FIFO when a browser frees up (BUG-025).
+  private waiters: Array<{
+    resolve: (instance: BrowserInstance) => void;
+    reject: (err: Error) => void;
+    timer: ReturnType<typeof setTimeout>;
+  }> = [];
+  // Slots reserved for in-flight createBrowser() calls. Counted against maxSize
+  // *synchronously* so concurrent acquirers can't all pass the capacity check
+  // before any create lands (BUG-022 TOCTOU).
+  private pendingCreations = 0;
 
   constructor(
     factory?: BrowserFactory,
@@ -93,25 +103,94 @@ export class DefaultBrowserManager implements BrowserManager {
       await this.initialize();
     }
 
-    // Try to get an available browser from the pool
-    let browserInstance = this.getAvailableBrowser();
-
-    if (!browserInstance) {
-      // Create a new browser if pool is not at max capacity
-      if (this.pool.total < this.pool.maxSize) {
-        browserInstance = await this.createBrowserInstance();
-      } else {
-        // Wait for a browser to become available
-        browserInstance = await this.waitForAvailableBrowser();
-      }
-    }
+    const browserInstance = await this.acquireBrowser();
 
     // Mark browser as busy
     this.pool.busy.set(browserInstance.id, browserInstance);
     browserInstance.lastUsed = new Date();
-    this.pool.metrics.reused++;
 
     return browserInstance;
+  }
+
+  /**
+   * Acquire a browser, respecting maxSize under concurrency.
+   *
+   * Order of preference: (1) reuse an idle browser; (2) if there's spare
+   * capacity — counting both live browsers AND in-flight creations — reserve a
+   * slot and create one; (3) otherwise block in the FIFO waiter queue until a
+   * release or a freed slot wakes us. Reserving the slot *before* the async
+   * create is what prevents the TOCTOU overflow (BUG-022).
+   */
+  private async acquireBrowser(): Promise<BrowserInstance> {
+    const existing = this.getAvailableBrowser();
+    if (existing) {
+      this.pool.metrics.reused++;
+      return existing;
+    }
+
+    if (this.pool.total + this.pendingCreations < this.pool.maxSize) {
+      return this.createReserved();
+    }
+
+    return this.enqueueWaiter();
+  }
+
+  /** Create a browser while holding a reserved capacity slot. */
+  private async createReserved(): Promise<BrowserInstance> {
+    this.pendingCreations++;
+    try {
+      return await this.createBrowserInstance();
+    } catch (error) {
+      // The reserved slot is now free again — let a blocked acquirer retry.
+      this.notifyWaiters();
+      throw error;
+    } finally {
+      this.pendingCreations--;
+    }
+  }
+
+  /** Block until a browser becomes available (event-based, not polling). */
+  private enqueueWaiter(timeout = 30000): Promise<BrowserInstance> {
+    return new Promise<BrowserInstance>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        const i = this.waiters.findIndex((w) => w.timer === timer);
+        if (i > -1) this.waiters.splice(i, 1);
+        reject(new Error('Timeout waiting for available browser'));
+      }, timeout);
+      if (typeof timer.unref === 'function') timer.unref();
+      this.waiters.push({ resolve, reject, timer });
+    });
+  }
+
+  /**
+   * Wake blocked acquirers when capacity frees up. Hands an idle browser
+   * directly to the oldest waiter; if none is idle but a slot is free, lets the
+   * oldest waiter create one. Called whenever a browser is released or destroyed.
+   */
+  private notifyWaiters(): void {
+    while (this.waiters.length > 0) {
+      const reusable = this.getAvailableBrowser();
+      if (reusable) {
+        const waiter = this.waiters.shift()!;
+        clearTimeout(waiter.timer);
+        this.pool.metrics.reused++;
+        waiter.resolve(reusable);
+        continue;
+      }
+
+      if (this.pool.total + this.pendingCreations < this.pool.maxSize) {
+        const waiter = this.waiters.shift()!;
+        clearTimeout(waiter.timer);
+        this.createReserved().then(
+          (inst) => waiter.resolve(inst),
+          (err) => waiter.reject(err instanceof Error ? err : new Error(String(err)))
+        );
+        continue;
+      }
+
+      // No idle browser and no free slot — stop; a later event will wake us.
+      break;
+    }
   }
 
   async releaseBrowser(browser: BrowserInstance): Promise<void> {
@@ -135,6 +214,12 @@ export class DefaultBrowserManager implements BrowserManager {
       // Destroy unhealthy browser
       await this.destroyBrowserInstance(browser);
     }
+
+    // A browser became available (reuse) or a slot opened (destroy) — wake any
+    // acquirers blocked at capacity. (BUG-025)
+    if (!this.isShuttingDown) {
+      this.notifyWaiters();
+    }
   }
 
   async shutdown(): Promise<void> {
@@ -143,6 +228,13 @@ export class DefaultBrowserManager implements BrowserManager {
     }
 
     this.isShuttingDown = true;
+
+    // Fail fast any acquirers still blocked at capacity — no browser is coming.
+    const pending = this.waiters.splice(0, this.waiters.length);
+    for (const waiter of pending) {
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error('Browser manager is shutting down'));
+    }
 
     // Stop cleanup interval
     if (this.cleanupInterval) {
@@ -485,22 +577,6 @@ export class DefaultBrowserManager implements BrowserManager {
     } catch (error) {
       console.debug('Could not verify remaining processes:', (error as Error).message);
     }
-  }
-
-  private async waitForAvailableBrowser(timeout = 30000): Promise<BrowserInstance> {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      const browser = this.getAvailableBrowser();
-      if (browser) {
-        return browser;
-      }
-
-      // Wait a bit before checking again
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    throw new Error('Timeout waiting for available browser');
   }
 
   private async checkBrowserHealth(browserInstance: BrowserInstance): Promise<boolean> {

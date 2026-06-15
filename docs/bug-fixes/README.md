@@ -62,6 +62,8 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-019 | high | tests-quality | E2E helper stripped infra env flags → Chromium dead on CI Linux | GREEN | [link](BUG-019-e2e-strips-infra-env.md) |
 | BUG-020 | medium | tests-quality | CRLF-on-checkout breaks shebang'd .mjs parse on Windows CI (.gitattributes) | GREEN | [link](BUG-020-non-ascii-script-parse.md) |
 | BUG-021 | high | resources | Pool browser path ignored PRINTEER_NO_SANDBOX → hang on CI Linux | GREEN | [link](BUG-021-pool-path-ignores-no-sandbox.md) |
+| BUG-022 | medium | resources | Pool acquisition TOCTOU exceeds maxSize under concurrency | GREEN | [link](BUG-022-025-pool-concurrency.md) |
+| BUG-025 | low | resources | Pool used 100ms busy-wait instead of event-based waiter queue | GREEN | [link](BUG-022-025-pool-concurrency.md) |
 
 ### Infrastructure phases
 
