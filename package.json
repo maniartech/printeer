@@ -77,14 +77,14 @@
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
-    "@types/node": "^18.11.18",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vitest/coverage-v8": "^1.0.0",
+    "@types/node": "^20.19.43",
+    "@typescript-eslint/eslint-plugin": "^8.61.0",
+    "@typescript-eslint/parser": "^8.61.0",
+    "@vitest/coverage-v8": "^4.1.9",
     "assert": "^2.0.0",
     "browserify-zlib": "^0.2.0",
     "constants-browserify": "^1.0.0",
-    "esbuild": "^0.16.13",
+    "esbuild": "^0.28.1",
     "eslint": "^8.0.0",
     "events": "^3.3.0",
     "https-browserify": "^1.0.0",
@@ -97,6 +97,6 @@
     "typescript": "^5.9.3",
     "url": "^0.11.0",
     "util": "^0.12.4",
-    "vitest": "^1.0.0"
+    "vitest": "^4.1.9"
   }
 }
