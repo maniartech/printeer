@@ -50,6 +50,14 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-012 | high | docs | README license says ISC; package is Apache-2.0 | GREEN | [link](BUG-012-license-mismatch.md) |
 | BUG-013 | high | core-api | Public throw-stubs exported (convert/DefaultConfigurationManager/DefaultConverter) | GREEN | [link](BUG-013-public-throw-stubs.md) |
 
+### Medium/low fixes (sweep, in progress)
+
+| ID | Severity | Area | Title | Status | Report |
+|----|----------|------|-------|--------|--------|
+| BUG-014 | medium | tests-quality | Lint debt (36 errors); CI lint now a hard gate | GREEN | [link](BUG-014-lint-debt.md) |
+| BUG-015 | medium | core-api | Pool path installed crash-swallowing process handlers | GREEN | [link](BUG-015-016-api-safety.md) |
+| BUG-016 | low | core-api | Auto-cleanup timer not unref'd (delayed process exit) | GREEN | [link](BUG-015-016-api-safety.md) |
+
 ### Infrastructure phases
 
 | Phase | Title | Status | Report |
