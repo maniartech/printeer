@@ -263,21 +263,30 @@ describe('Resource Management Integration Tests', () => {
     it('should handle resource optimization under different system conditions', async () => {
       const optimizer = new DefaultResourceOptimizer();
 
-      // Test with different simulated conditions
-      const lowResourceMetrics = await resourceManager.getLatestMetrics();
-      const highResourceMetrics = {
-        ...lowResourceMetrics,
-        memoryUsage: Math.min(lowResourceMetrics.memoryUsage + 0.3, 0.9),
-        cpuUsage: Math.min(lowResourceMetrics.cpuUsage + 0.3, 0.9),
+      // Compare two conditions that differ ONLY in resource pressure
+      // (memory/cpu), holding the load (activeRequests/browserInstances)
+      // constant. Pool size grows with activeRequests and shrinks with
+      // resource pressure; if we vary both at once the signals fight and the
+      // result depends on the host machine's real baseline metrics (BUG-018).
+      const base = await resourceManager.getLatestMetrics();
+      const lowResourceMetrics = {
+        ...base,
+        memoryUsage: 0.3,
+        cpuUsage: 0.3,
         activeRequests: 5,
         browserInstances: 3
+      };
+      const highResourceMetrics = {
+        ...lowResourceMetrics,
+        memoryUsage: 0.9,
+        cpuUsage: 0.9
       };
 
       const lowResourcePoolSize = await optimizer.optimizeBrowserPoolSize(lowResourceMetrics);
       const highResourcePoolSize = await optimizer.optimizeBrowserPoolSize(highResourceMetrics);
 
-      // High resource usage should generally result in smaller pool size
-      expect(highResourcePoolSize).toBeLessThanOrEqual(lowResourcePoolSize + 1);
+      // Under higher resource pressure (same load), the pool must not grow.
+      expect(highResourcePoolSize).toBeLessThanOrEqual(lowResourcePoolSize);
 
       console.log('Pool size comparison:', {
         lowResource: lowResourcePoolSize,

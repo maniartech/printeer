@@ -57,6 +57,8 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-014 | medium | tests-quality | Lint debt (36 errors); CI lint now a hard gate | GREEN | [link](BUG-014-lint-debt.md) |
 | BUG-015 | medium | core-api | Pool path installed crash-swallowing process handlers | GREEN | [link](BUG-015-016-api-safety.md) |
 | BUG-016 | low | core-api | Auto-cleanup timer not unref'd (delayed process exit) | GREEN | [link](BUG-015-016-api-safety.md) |
+| BUG-017 | medium | tests-quality | Config tests fail on CI (CI/Docker env signal not cleared) | GREEN | [link](BUG-017-config-tests-ci-env-leak.md) |
+| BUG-018 | low | tests-quality | Resource-optimizer test confounds load + pressure (machine-dependent) | GREEN | [link](BUG-018-resource-optimizer-test-confounded.md) |
 
 ### Infrastructure phases
 

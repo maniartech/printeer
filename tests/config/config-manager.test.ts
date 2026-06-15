@@ -36,9 +36,15 @@ describe('ConfigurationManager', () => {
     // Save original environment
     originalEnv = { ...process.env };
 
-    // Clear environment variables more thoroughly
+    // Clear environment variables more thoroughly.
+    // NOTE: also neutralize the environment *signals* that getEnvironment()
+    // falls back to (CI/DOCKER/KUBERNETES_SERVICE_HOST). Otherwise, on a CI
+    // runner (where CI=true) the "default" environment resolves to
+    // 'production' instead of 'development' and the baseline-default tests
+    // below fail — even though the detection logic is correct. (BUG-017)
+    const ENV_SIGNALS = ['NODE_ENV', 'CI', 'DOCKER', 'KUBERNETES_SERVICE_HOST'];
     Object.keys(process.env).forEach(key => {
-      if (key.startsWith('PRINTEER_') || key === 'NODE_ENV') {
+      if (key.startsWith('PRINTEER_') || ENV_SIGNALS.includes(key)) {
         delete process.env[key];
       }
     });
