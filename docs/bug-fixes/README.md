@@ -75,7 +75,14 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 
 - **All 13 launch blockers: GREEN** (fixed, regression-tested, committed, reported).
 - **Phases 0–2: GREEN.**
-- Suite: **364 unit + 19 e2e passing**; typecheck + build clean on Puppeteer 25.
+- **CI is GREEN on real runners** — Windows + Linux × Node 18/20/22, all steps
+  (lint / typecheck / build / unit / e2e / pack). Verified on commit `d3d52d5`.
+- Suite: **364 unit + 20 e2e passing**; typecheck + build clean on Puppeteer 25.
+- **BUG-017–021** were found by the *first real CI run* (things local verification
+  could not see): CI-env leak in config tests, a machine-dependent optimizer
+  assertion, the e2e helper stripping infra env, CRLF-on-checkout breaking a
+  shebang'd `.mjs` on Windows, and the pool path ignoring `PRINTEER_NO_SANDBOX`
+  on Linux. All fixed, tested, and green.
 - Several medium/low findings folded in along the way (output-dir default,
   offline doctor, real fileSize metadata, package description, single lockfile,
   `.parcel-cache`/`output/` no longer published, env-var wiring).
