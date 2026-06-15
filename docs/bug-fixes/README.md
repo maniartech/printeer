@@ -72,6 +72,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-029 | low | docs | `PRINTEER_DUMPIO=1` documented but not implemented | GREEN | [link](BUG-028-031-library-docs-api.md) |
 | BUG-030 | medium | docs | Documented subpath imports / config field didn't exist | GREEN | [link](BUG-028-031-library-docs-api.md) |
 | BUG-031 | low | diagnostics | Doctor reported `bundled-chromium` placeholder, not real path | GREEN | [link](BUG-028-031-library-docs-api.md) |
+| BUG-032 | moderate | dependencies | `npm audit`: shipped `yaml` vuln patched; dev-only ones triaged | GREEN | [link](BUG-032-dependency-audit.md) |
 
 ### Infrastructure phases
 
