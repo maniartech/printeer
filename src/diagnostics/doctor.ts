@@ -18,7 +18,9 @@ export class DefaultDoctorModule implements DoctorModule {
   private vlog(stage: string, msg: string, extra?: Record<string, unknown>): void {
     if (!this.verbose) return;
     const payload = { doctorTrace: true, stage, msg, ...(extra || {}) };
-    try { console.log(JSON.stringify(payload)); } catch { /* noop */ }
+    // Verbose traces go to STDERR so they never corrupt the machine-readable
+    // report on stdout (e.g. `doctor --json --verbose`). (BUG-027)
+    try { console.error(JSON.stringify(payload)); } catch { /* noop */ }
   }
 
   private async withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -40,8 +42,10 @@ export class DefaultDoctorModule implements DoctorModule {
     const base = this.browserFactory.getOptimalLaunchOptions();
     const options: LaunchOptions = { ...base };
 
-    // Only set executablePath if it's a real file path, not the bundled placeholder
-    if (browserInfo?.path && browserInfo.path !== 'bundled-chromium') {
+    // For the bundled browser, let Puppeteer resolve Chromium itself (don't pin
+    // executablePath even though we now *report* the resolved path). Only pin an
+    // explicitly-specified browser (source 'env'/'system'). (BUG-031)
+    if (browserInfo?.path && browserInfo.source !== 'bundled' && browserInfo.path !== 'bundled-chromium') {
       options.executablePath = browserInfo.path;
     }
 
@@ -69,8 +73,9 @@ export class DefaultDoctorModule implements DoctorModule {
 
     // Always force headless at API level as well
   options.headless = true; // puppeteer 22+ : `true` is the new headless mode
-    // In verbose mode, pipe browser stdio to this process for inspection
-    if (this.verbose) {
+    // Pipe the browser's stdio to this process for inspection when running
+    // verbose, or when the documented PRINTEER_DUMPIO=1 is set. (BUG-029)
+    if (this.verbose || process.env.PRINTEER_DUMPIO === '1') {
       (options as ExtraLaunchOptions).dumpio = true;
     }
 
@@ -440,9 +445,11 @@ export class DefaultDoctorModule implements DoctorModule {
     try {
       const version = await this.getBrowserVersionFromBundled();
       if (version) {
+        // Report the ACTUAL resolved bundled Chromium path, not a placeholder
+        // string, so the report is actionable. (BUG-031)
         return {
           available: true,
-          path: 'bundled-chromium',
+          path: await this.resolveBundledExecutablePath(),
           version: version || 'unknown',
           launchable: true,
           source: 'bundled'
@@ -532,6 +539,19 @@ export class DefaultDoctorModule implements DoctorModule {
   }
 
   // Get version from bundled Chromium by trying to launch it
+  /** Resolve the on-disk path to the bundled Chromium, or a safe label. */
+  private async resolveBundledExecutablePath(): Promise<string> {
+    try {
+      const puppeteer = await import('puppeteer');
+      // Puppeteer's executablePath() is sync in some versions and async in
+      // others (it returns a Promise<string> in v25). Await-unwrap either shape.
+      const exe = await Promise.resolve(puppeteer.executablePath());
+      return exe || 'bundled-chromium';
+    } catch {
+      return 'bundled-chromium';
+    }
+  }
+
   private async getBrowserVersionFromBundled(): Promise<string | null> {
     try {
       const puppeteer = await import('puppeteer');
@@ -744,8 +764,8 @@ export class DefaultDoctorModule implements DoctorModule {
       }
       launchOptions.timeout = 25000;
       if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-        // Minimal structured trace
-        console.log(JSON.stringify({ doctorTrace: true, step: 'launch-basic', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
+        // Minimal structured trace -> STDERR so it never corrupts --json (BUG-027)
+        console.error(JSON.stringify({ doctorTrace: true, step: 'launch-basic', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
       }
       let browser;
       try {
@@ -761,7 +781,7 @@ export class DefaultDoctorModule implements DoctorModule {
           }
         }
         if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-basic-fallback', mode: 'ws', exe: fallback.executablePath, args: fallback.args }));
+          console.error(JSON.stringify({ doctorTrace: true, step: 'launch-basic-fallback', mode: 'ws', exe: fallback.executablePath, args: fallback.args }));
         }
         browser = await puppeteer.launch(fallback);
       }
@@ -844,7 +864,7 @@ export class DefaultDoctorModule implements DoctorModule {
       }
       launchOptions.timeout = 25000;
       if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-        console.log(JSON.stringify({ doctorTrace: true, step: 'launch-config', name: config.name, headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
+        console.error(JSON.stringify({ doctorTrace: true, step: 'launch-config', name: config.name, headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
       }
       let browser;
       try {
@@ -858,7 +878,7 @@ export class DefaultDoctorModule implements DoctorModule {
           }
         }
         if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-config-fallback', name: config.name, mode: 'ws', exe: fallback.executablePath, args: fallback.args }));
+          console.error(JSON.stringify({ doctorTrace: true, step: 'launch-config-fallback', name: config.name, mode: 'ws', exe: fallback.executablePath, args: fallback.args }));
         }
         browser = await puppeteer.launch(fallback);
       }
@@ -964,7 +984,7 @@ export class DefaultDoctorModule implements DoctorModule {
       }
       launchOptions.timeout = 25000;
       if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-        console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox', mode: 'with-sandbox', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
+        console.error(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox', mode: 'with-sandbox', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
       }
       let browser;
       try {
@@ -978,7 +998,7 @@ export class DefaultDoctorModule implements DoctorModule {
           }
         }
         if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox-fallback', mode: 'with-sandbox-ws', exe: fallback.executablePath, args: fallback.args }));
+          console.error(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox-fallback', mode: 'with-sandbox-ws', exe: fallback.executablePath, args: fallback.args }));
         }
         browser = await puppeteer.launch(fallback);
       }
@@ -1005,7 +1025,7 @@ export class DefaultDoctorModule implements DoctorModule {
         }
         launchOptions.timeout = 25000;
         if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-          console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox', mode: 'no-sandbox', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
+          console.error(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox', mode: 'no-sandbox', headless: launchOptions.headless, exe: launchOptions.executablePath, args: launchOptions.args }));
         }
         let browser;
         try {
@@ -1019,7 +1039,7 @@ export class DefaultDoctorModule implements DoctorModule {
             }
           }
           if (process.env.PRINTEER_DOCTOR_VERBOSE) {
-            console.log(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox-fallback', mode: 'no-sandbox-ws', exe: fallback.executablePath, args: fallback.args }));
+            console.error(JSON.stringify({ doctorTrace: true, step: 'launch-sandbox-fallback', mode: 'no-sandbox-ws', exe: fallback.executablePath, args: fallback.args }));
           }
           browser = await puppeteer.launch(fallback);
         }

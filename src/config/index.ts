@@ -691,3 +691,9 @@ export { ConfigurationManager } from './manager';
 export * from './cli-config-loader';
 export * from './types/configuration';
 export * from './types/command-manager';
+
+// The enhanced, cosmiconfig-backed configuration manager is part of the public
+// library API (documented in docs/05_library.md). Re-exported by name to avoid
+// colliding with other modules' ConfigurationError. (BUG-030)
+export { EnhancedConfigurationManager } from './enhanced-config-manager';
+export type { EnhancedPrintConfiguration } from './types/enhanced-config.types';

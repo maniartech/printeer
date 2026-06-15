@@ -603,6 +603,10 @@ export * from '../resources/types/resource';
 export * from '../diagnostics';
 export * from '../utils';
 
+// Batch processor — a documented extension point (docs/05_library.md). Exported
+// by name from the main entry so consumers don't need a non-existent subpath. (BUG-030)
+export { BatchProcessor } from '../batch/batch-processor';
+
 // Doctor functionality
 export async function doctor(): Promise<unknown[]> {
   const { DefaultDoctorModule } = await import('../diagnostics/doctor');

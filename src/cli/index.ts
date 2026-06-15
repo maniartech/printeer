@@ -288,14 +288,16 @@ async function runStandardDoctor(verbose = false, json = false, quiet = false) {
     const hasFailures = results.some(r => r.status === 'fail');
     const hasWarnings = results.some(r => r.status === 'warn');
 
+    // In --json mode the report on stdout must stay pure: suppress the trailing
+    // human summary (the success line went to stdout and corrupted it). (BUG-027)
     if (hasFailures) {
-      if (!quiet) console.error('\nFailures found. Please address the items above.');
+      if (!quiet && !json) console.error('\nFailures found. Please address the items above.');
       process.exit(1);
     } else if (hasWarnings) {
-      if (!quiet) console.warn('\nSome warnings detected. Consider addressing them for best results.');
+      if (!quiet && !json) console.warn('\nSome warnings detected. Consider addressing them for best results.');
       process.exit(0);
     } else {
-      if (!quiet) console.log('\nAll checks passed. Your system is ready.');
+      if (!quiet && !json) console.log('\nAll checks passed. Your system is ready.');
       process.exit(0);
     }
 

@@ -27,4 +27,12 @@ describe('public API surface (BUG-013)', () => {
     expect(typeof mod.doctor).toBe('function');
     expect(typeof mod.DefaultBrowserManager).toBe('function');
   });
+
+  it('exports the documented advanced API from the main entry (BUG-030)', async () => {
+    // docs/05_library.md imports these from 'printeer' (no subpath packages exist).
+    const mod: Record<string, unknown> = await import(pathToFileURL(LIB).href);
+    expect(typeof mod.EnhancedConfigurationManager).toBe('function');
+    expect(typeof mod.BatchProcessor).toBe('function');
+    expect(typeof mod.DefaultDoctorModule).toBe('function');
+  });
 });

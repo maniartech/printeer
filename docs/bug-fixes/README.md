@@ -67,6 +67,11 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-023 | medium | resources | Temp-cleanup substring match could delete user files | GREEN | [link](BUG-023-temp-cleanup-overmatch.md) |
 | BUG-024 | medium | resources | `getTotalDiskUsage()` hardcoded 10% → disk decisions no-op | GREEN | [link](BUG-024-disk-usage-placeholder.md) |
 | BUG-026 | low | resources | Dead `src/core` module (unused 536-line manager + empty stubs) | GREEN | [link](BUG-026-dead-core-module.md) |
+| BUG-027 | medium | diagnostics | `doctor --json` stdout not pure JSON (summary + traces) | GREEN | [link](BUG-027-doctor-json-purity.md) |
+| BUG-028 | low | docs | README browser-mgmt example + missing `cleanup()` alias | GREEN | [link](BUG-028-031-library-docs-api.md) |
+| BUG-029 | low | docs | `PRINTEER_DUMPIO=1` documented but not implemented | GREEN | [link](BUG-028-031-library-docs-api.md) |
+| BUG-030 | medium | docs | Documented subpath imports / config field didn't exist | GREEN | [link](BUG-028-031-library-docs-api.md) |
+| BUG-031 | low | diagnostics | Doctor reported `bundled-chromium` placeholder, not real path | GREEN | [link](BUG-028-031-library-docs-api.md) |
 
 ### Infrastructure phases
 

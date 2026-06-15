@@ -27,4 +27,21 @@ describe('doctor (e2e)', () => {
       tmp.cleanup();
     }
   }, 90000);
+
+  it('BUG-027: `doctor --json --verbose` keeps stdout pure JSON (traces go to stderr)', async () => {
+    const tmp = tempDir('printeer-doctor-json-');
+    try {
+      const r = await runCli(['doctor', '--json', '--verbose'], { cwd: tmp.dir });
+      expect([0, 1]).toContain(r.code);
+
+      // stdout must parse as a single JSON document — no interleaved trace lines.
+      const out = r.stdout.trim();
+      expect(out.length).toBeGreaterThan(0);
+      expect(() => JSON.parse(out)).not.toThrow();
+      // And it must NOT contain the verbose trace markers (those belong on stderr).
+      expect(out).not.toContain('doctorTrace');
+    } finally {
+      tmp.cleanup();
+    }
+  }, 90000);
 });

@@ -270,6 +270,15 @@ export class DefaultBrowserManager implements BrowserManager {
     await this.verifyNoRemainingProcesses();
   }
 
+  /**
+   * Gracefully tear down the manager and release all browsers. Alias for
+   * {@link shutdown} — the conventional name library consumers reach for, and the
+   * name used in the README's browser-management example. (BUG-028)
+   */
+  async cleanup(): Promise<void> {
+    await this.shutdown();
+  }
+
   // Note: Primary implementation of destroyBrowserInstanceAggressively is at line ~430
 
   // Note: Primary implementation of verifyNoRemainingProcesses is at line ~475

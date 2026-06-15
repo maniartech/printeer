@@ -82,4 +82,22 @@ describe('browser pool concurrency (BUG-022/025)', () => {
     expect(final.metrics.created).toBeLessThanOrEqual(2);
     expect(final.metrics.reused).toBeGreaterThanOrEqual(3);
   }, 20000);
+
+  it('BUG-028: cleanup() is a graceful-shutdown alias (idempotent, releases the pool)', async () => {
+    const factory = new FakeFactory();
+    manager = new DefaultBrowserManager(factory, { minSize: 0, maxSize: 2 });
+    await manager.initialize();
+
+    const inst = await manager.getBrowser();
+    await manager.releaseBrowser(inst);
+    expect(manager.getPoolStatus().totalBrowsers).toBeGreaterThan(0);
+
+    // cleanup() must exist (README uses it) and behave like shutdown().
+    expect(typeof (manager as unknown as { cleanup?: () => Promise<void> }).cleanup).toBe('function');
+    await (manager as unknown as { cleanup: () => Promise<void> }).cleanup();
+    expect(manager.getPoolStatus().totalBrowsers).toBe(0);
+
+    // Idempotent — a second call must not throw.
+    await expect((manager as unknown as { cleanup: () => Promise<void> }).cleanup()).resolves.toBeUndefined();
+  }, 20000);
 });

@@ -38,7 +38,29 @@ try {
 
 ### Custom Browser Management
 
-By default, the library uses the **One-Shot Strategy** (opens/closes browser per call) for simple calls, and **Pool Strategy** for detected high-load scenarios. You can control this explicitly via environment variables (`PRINTEER_BROWSER_STRATEGY=pool`) or by using the internal managers.
+By default, the library uses the **One-Shot Strategy** (opens/closes browser per call) for simple calls, and **Pool Strategy** for detected high-load scenarios. You can control this explicitly via the environment variable `PRINTEER_BROWSER_STRATEGY=pool`.
+
+For advanced use you can also drive the pooled `DefaultBrowserManager` directly — e.g. to reuse browsers across many conversions and tear everything down cleanly:
+
+```typescript
+import { DefaultBrowserManager } from 'printeer';
+
+const manager = new DefaultBrowserManager(undefined, { minSize: 1, maxSize: 4 });
+await manager.initialize();
+
+try {
+  const instance = await manager.getBrowser();   // reuses or creates, never exceeds maxSize
+  const page = await instance.browser.newPage();
+  await page.goto('https://example.com', { waitUntil: 'networkidle0' });
+  await page.pdf({ path: '/tmp/example.pdf', format: 'A4' });
+  await page.close();
+  await manager.releaseBrowser(instance);         // returns it to the pool
+} finally {
+  await manager.cleanup();                         // graceful shutdown (alias for shutdown())
+}
+```
+
+Acquisition is bounded by `maxSize` even under concurrency, and callers that arrive while the pool is saturated wait for a browser to be released rather than spawning new ones.
 
 ### Integrating with Express.js
 
@@ -73,17 +95,18 @@ app.get('/pdf', async (req, res) => {
 For complex apps, you shouldn't hardcode options. Use Printeer's config manager to load settings from the host environment:
 
 ```typescript
-import { EnhancedConfigurationManager } from 'printeer/config';
+import { EnhancedConfigurationManager } from 'printeer';
 
 async function setup() {
   const cm = new EnhancedConfigurationManager();
 
-  // Load from .printeerrc, ENV, and defaults
+  // Load from .printeerrc / printeer.config.*, environment overrides, and defaults
   const { config } = await cm.loadConfiguration();
 
-  // Access resolved settings
-  console.log('Using timeout:', config.wait.timeout);
-  console.log('Headless mode:', config.browser.headless);
+  // Access resolved settings (all sections are optional; see EnhancedPrintConfiguration)
+  console.log('Wait timeout:', config.wait?.timeout);
+  console.log('Viewport width:', config.viewport?.width);
+  console.log('PDF format:', config.pdf?.format);
 }
 ```
 
@@ -96,7 +119,7 @@ Printeer exports comprehensive TypeScript interfaces. Key types include:
 -   `DiagnosticResult`: Output from the doctor module.
 
 ```typescript
-import type { EnhancedPrintConfiguration } from 'printeer/config/types/enhanced-config.types';
+import type { EnhancedPrintConfiguration } from 'printeer';
 
 const myConfig: EnhancedPrintConfiguration = {
   pdf: {
@@ -108,10 +131,14 @@ const myConfig: EnhancedPrintConfiguration = {
 
 ## Internal Architecture & Extension
 
-For advanced users, Printeer exports its internal modules:
+For advanced users, Printeer re-exports its internal classes from the main entry point (`'printeer'`) — there are no separate subpath packages:
 
--   **`printeer/printing`**: Browser management classes (`DefaultBrowserManager`).
--   **`printeer/batch`**: The `BatchProcessor` class.
--   **`printeer/diagnostics`**: The `DoctorModule`.
+```typescript
+import {
+  DefaultBrowserManager,   // pooled browser management
+  BatchProcessor,          // batch job processing
+  DefaultDoctorModule,     // diagnostics
+} from 'printeer';
+```
 
 You can subclass `BatchProcessor` to create custom reporting logic or extended retry mechanisms specific to your business rules.
