@@ -147,7 +147,7 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
     // Register as global instance for cleanup commands
     DefaultBrowserManager.setGlobalInstance(globalBrowserManager);
 
-    // Setup cleanup on process exit
+    // Setup cleanup on process exit / termination signals.
     const cleanup = async () => {
       if (globalBrowserManager) {
         await globalBrowserManager.shutdown();
@@ -158,8 +158,10 @@ async function getBrowserManager(): Promise<DefaultBrowserManager> {
     process.once('exit', cleanup);
     process.once('SIGINT', cleanup);
     process.once('SIGTERM', cleanup);
-    process.once('uncaughtException', cleanup);
-    process.once('unhandledRejection', cleanup);
+    // NOTE (BUG-015): we deliberately do NOT register `uncaughtException` or
+    // `unhandledRejection` handlers. As a library, doing so would suppress the
+    // host application's own crash semantics (an uncaughtException listener
+    // stops Node from exiting), silently swallowing real errors.
   }
 
   return globalBrowserManager;
@@ -528,7 +530,7 @@ async function runPooledConversion(
 function scheduleAutomaticCleanup(browserManager: DefaultBrowserManager): void {
   // Use a short delay to allow for potential follow-up commands
   // but ensure cleanup happens for one-off commands
-  setTimeout(async () => {
+  const timer = setTimeout(async () => {
     try {
       const status = browserManager.getPoolStatus();
 
@@ -546,6 +548,10 @@ function scheduleAutomaticCleanup(browserManager: DefaultBrowserManager): void {
       console.warn('Automatic cleanup failed:', error);
     }
   }, 2000); // 2 second delay
+
+  // Don't let this housekeeping timer keep the process alive (BUG-016): a
+  // finished one-off conversion should exit immediately, not linger ~2s.
+  if (typeof timer.unref === 'function') timer.unref();
 }
 
 function getPackageJson() {
