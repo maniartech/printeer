@@ -125,12 +125,12 @@ import { CleanupManager } from './types/resource';
 
 export class DefaultCleanupManager implements CleanupManager {
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
-  private tempFilePatterns: string[] = [
+  // Artifact-name prefixes (match at START) vs temp extensions (match at END).
+  private tempFilePrefixes: string[] = [
     'printeer-',
-    'puppeteer_dev_chrome_profile-',
-    '.tmp',
-    '.temp'
+    'puppeteer_dev_chrome_profile-'
   ];
+  private tempFileSuffixes: string[] = ['.tmp', '.temp'];
 
   async cleanupTempFiles(): Promise<void> {
     const tempDir = os.tmpdir();
@@ -196,7 +196,11 @@ export class DefaultCleanupManager implements CleanupManager {
   }
 
   private shouldCleanupFile(filename: string): boolean {
-    return this.tempFilePatterns.some(pattern => filename.includes(pattern));
+    // Precise matching gates real deletion: prefixes at the START, temp
+    // extensions at the END. Substring matching would delete unrelated user
+    // files (e.g. `report.tmp.docx`). (BUG-023)
+    return this.tempFilePrefixes.some(p => filename.startsWith(p))
+      || this.tempFileSuffixes.some(s => filename.endsWith(s));
   }
 
   private async safeDelete(filePath: string): Promise<void> {

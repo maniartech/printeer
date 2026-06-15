@@ -30,7 +30,8 @@ vi.mock('fs/promises', () => ({
   stat: vi.fn(),
   unlink: vi.fn(),
   rmdir: vi.fn(),
-  rm: vi.fn()
+  rm: vi.fn(),
+  statfs: vi.fn()
 }));
 
 // Mock path.join to handle cross-platform paths in tests
@@ -1402,6 +1403,7 @@ describe('DefaultDiskSpaceManager', () => {
   const mockTmpdir = vi.mocked(os.tmpdir);
   const mockReaddir = vi.mocked(fs.readdir);
   const mockStat = vi.mocked(fs.stat);
+  const mockStatfs = vi.mocked((fs as unknown as { statfs: ReturnType<typeof vi.fn> }).statfs);
   const mockUnlink = vi.mocked(fs.unlink);
   const mockRm = vi.mocked(fs.rm);
 
@@ -1412,18 +1414,20 @@ describe('DefaultDiskSpaceManager', () => {
   });
 
   describe('disk usage calculation', () => {
-    it('should get total disk usage', async () => {
-      mockStat.mockResolvedValue({ size: 1000 } as any);
+    it('should compute real disk usage from statfs (BUG-024)', async () => {
+      // 200 blocks total, 50 free -> 150 used -> 0.75
+      mockStatfs.mockResolvedValue({ blocks: 200, bfree: 50 } as any);
 
       const usage = await diskManager.getTotalDiskUsage();
-      expect(usage).toBe(0.1); // Conservative placeholder
+      expect(usage).toBeCloseTo(0.75, 5);
+      expect(usage).not.toBe(0.1); // no longer the hardcoded placeholder
     });
 
-    it('should handle disk usage calculation errors', async () => {
-      mockStat.mockRejectedValue(new Error('Permission denied'));
+    it('returns 0 (no pressure) when statfs fails (BUG-024)', async () => {
+      mockStatfs.mockRejectedValue(new Error('Permission denied'));
 
       const usage = await diskManager.getTotalDiskUsage();
-      expect(usage).toBe(0.1); // Default fallback
+      expect(usage).toBe(0);
     });
   });
 
@@ -2646,9 +2650,14 @@ describe('DefaultDiskSpaceManager', () => {
   });
 
   describe('disk usage calculation', () => {
-    it('should return conservative disk usage estimate', async () => {
+    it('should compute real disk usage from statfs (BUG-024)', async () => {
+      // 80 blocks total, 20 free -> 60 used -> 0.75
+      vi.mocked((fs as unknown as { statfs: ReturnType<typeof vi.fn> }).statfs)
+        .mockResolvedValue({ blocks: 80, bfree: 20 } as any);
+
       const usage = await diskSpaceManager.getTotalDiskUsage();
-      expect(usage).toBe(0.1); // 10% conservative estimate
+      expect(usage).toBeCloseTo(0.75, 5);
+      expect(usage).not.toBe(0.1);
     });
   });
 

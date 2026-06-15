@@ -142,12 +142,46 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { DiskSpaceManager } from './types/resource';
 
+/**
+ * Pure fraction-in-use from statfs-style block counts. Separated from the IO so
+ * the math is unit-testable without mocking the (non-configurable) fs module.
+ * Returns 0 for an empty/unknown volume; clamps to [0, 1]. (BUG-024)
+ */
+export function diskUsageRatio(blocks: number, bfree: number): number {
+  if (!Number.isFinite(blocks) || blocks <= 0) {
+    return 0;
+  }
+  const used = blocks - bfree;
+  return Math.min(1, Math.max(0, used / blocks));
+}
+
 export class DefaultDiskSpaceManager implements DiskSpaceManager {
   private readonly tempDir = os.tmpdir();
 
+  /**
+   * Fraction (0..1) of the volume backing the temp dir that is in use.
+   *
+   * Previously hardcoded to 0.1, which made every disk-pressure decision a no-op
+   * (cleanup would never trigger even on a full disk). Now reads real filesystem
+   * stats via fs.statfs (Node 18.15+), cross-platform. On the rare runtime
+   * without statfs, or on error, returns 0 ("no measurable pressure") so we never
+   * trigger aggressive cleanup on a bad reading. (BUG-024)
+   */
   async getTotalDiskUsage(): Promise<number> {
-    // Placeholder: real per-volume disk usage is tracked in the resources sweep.
-    return 0.1; // 10%
+    try {
+      const statfs = (fs as { statfs?: (p: string) => Promise<{ blocks: number; bfree: number }> }).statfs;
+      if (typeof statfs !== 'function') {
+        return 0;
+      }
+      const stats = await statfs(this.tempDir);
+      if (!stats) {
+        return 0;
+      }
+      return diskUsageRatio(stats.blocks, stats.bfree);
+    } catch (error) {
+      console.debug('getTotalDiskUsage: statfs failed, assuming no disk pressure:', error instanceof Error ? error.message : error);
+      return 0;
+    }
   }
 
   async cleanupOldTempFiles(maxAgeMs: number): Promise<number> {
@@ -226,16 +260,20 @@ export class DefaultDiskSpaceManager implements DiskSpaceManager {
   }
 
   private shouldCleanupTempFile(filename: string): boolean {
-    const tempPatterns = [
+    // These gate REAL deletion, so match precisely: known artifact names match at
+    // the START (prefix), temp extensions match at the END (suffix). Substring
+    // `includes()` would delete unrelated user files such as
+    // `my_chrome_settings.json` or `report.tmp.docx`. (BUG-023)
+    const prefixes = [
       'printeer-',
       'puppeteer_dev_chrome_profile-',
       'chrome_',
-      'chromium_',
-      '.tmp',
-      '.temp'
+      'chromium_'
     ];
+    const suffixes = ['.tmp', '.temp'];
 
-    return tempPatterns.some(pattern => filename.includes(pattern));
+    return prefixes.some(p => filename.startsWith(p))
+      || suffixes.some(s => filename.endsWith(s));
   }
 
   private async cleanupOldFile(filePath: string, cutoffTime: number): Promise<boolean> {
