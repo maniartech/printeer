@@ -34,9 +34,9 @@ try {
   if (!buf.subarray(0, 5).toString('latin1').startsWith('%PDF-') || buf.length < 1000) {
     throw new Error('smoke conversion did not produce a valid PDF');
   }
-  console.log('[smoke] ✓ valid PDF produced');
+  console.log('[smoke] [ok] valid PDF produced');
 } catch (e) {
-  console.error('[smoke] ✗', e.message);
+  console.error('[smoke] [fail]', e.message);
   code = 1;
 } finally {
   try { rmSync(out, { force: true }); } catch { /* ignore */ }

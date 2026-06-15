@@ -59,6 +59,8 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-016 | low | core-api | Auto-cleanup timer not unref'd (delayed process exit) | GREEN | [link](BUG-015-016-api-safety.md) |
 | BUG-017 | medium | tests-quality | Config tests fail on CI (CI/Docker env signal not cleared) | GREEN | [link](BUG-017-config-tests-ci-env-leak.md) |
 | BUG-018 | low | tests-quality | Resource-optimizer test confounds load + pressure (machine-dependent) | GREEN | [link](BUG-018-resource-optimizer-test-confounded.md) |
+| BUG-019 | high | tests-quality | E2E helper stripped infra env flags → Chromium dead on CI Linux | GREEN | [link](BUG-019-e2e-strips-infra-env.md) |
+| BUG-020 | medium | tests-quality | Non-ASCII glyphs in tooling scripts break parse on Windows CI | GREEN | [link](BUG-020-non-ascii-script-parse.md) |
 
 ### Infrastructure phases
 

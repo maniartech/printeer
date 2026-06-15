@@ -37,11 +37,18 @@ export function runCli(
   }
   return new Promise((resolvePromise, reject) => {
     const baseEnv: Record<string, string> = { ...(process.env as Record<string, string>) };
-    // Remove vitest-injected forcing so the CLI exercises its real defaults.
+    // Remove the vitest-injected *behavioral forcing* (pool sizing, strategy,
+    // CLI-mode marker, NODE_ENV) so the CLI exercises its real defaults.
+    //
+    // Do NOT strip the *infrastructure* flags PRINTEER_BUNDLED_ONLY /
+    // PRINTEER_NO_SANDBOX: on CI Linux the bundled Chromium only launches
+    // reliably with the sandbox disabled, and bundled-only is what points the
+    // CLI at the downloaded Chromium in the first place. Stripping them makes
+    // the spawned CLI fail to launch a browser (empty output / timeout) — which
+    // is exactly how this surfaced on the first real CI run. (BUG-019)
     for (const k of [
       'NODE_ENV',
       'PRINTEER_BROWSER_STRATEGY',
-      'PRINTEER_BUNDLED_ONLY',
       'PRINTEER_CLI_MODE',
       'PRINTEER_BROWSER_POOL_MIN',
       'PRINTEER_BROWSER_POOL_MAX',

@@ -2,7 +2,7 @@
 /**
  * Self-maintaining Puppeteer updater.
  *
- * Goals: idempotent, low-maintenance (no hardcoded versions — reads the latest
+ * Goals: idempotent, low-maintenance (no hardcoded versions - reads the latest
  * from the npm registry), and rollback-safe (snapshots package.json +
  * lockfile before changing anything and restores them automatically if the
  * post-upgrade verification fails).
@@ -41,7 +41,7 @@ export function compareVersions(a, b) {
   return 0;
 }
 
-/** Decide what to do given current/latest versions. Pure → easy to test. */
+/** Decide what to do given current/latest versions. Pure -> easy to test. */
 export function planUpgrade(current, latest) {
   if (!latest) return { action: 'error', reason: 'could not resolve latest version' };
   const cmp = compareVersions(current, latest);
@@ -129,14 +129,14 @@ async function main() {
   const current = readCurrentVersion();
   const latest = fetchLatestVersion();
   const plan = planUpgrade(current, latest);
-  log(`current=${current} latest=${latest || 'unknown'} → ${plan.action}${plan.reason ? ` (${plan.reason})` : ''}`);
+  log(`current=${current} latest=${latest || 'unknown'} -> ${plan.action}${plan.reason ? ` (${plan.reason})` : ''}`);
 
   if (plan.action !== 'upgrade') {
     process.exit(plan.action === 'error' ? 1 : 0);
   }
 
   if (mode === 'check') {
-    log(`run with --apply to upgrade puppeteer ${plan.from} → ${plan.to}`);
+    log(`run with --apply to upgrade puppeteer ${plan.from} -> ${plan.to}`);
     process.exit(0);
   }
 
@@ -154,11 +154,11 @@ async function main() {
   }
 
   if (verify()) {
-    log(`✓ upgraded to puppeteer@${plan.to} and verified`);
+    log(`[ok] upgraded to puppeteer@${plan.to} and verified`);
     rmSync(BACKUP_DIR, { recursive: true, force: true });
     process.exit(0);
   } else {
-    log('✗ verification failed; rolling back to the snapshot');
+    log('[fail] verification failed; rolling back to the snapshot');
     restore();
     process.exit(1);
   }
