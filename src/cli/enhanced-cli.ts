@@ -6,6 +6,7 @@
 import { Command } from 'commander';
 import { EnhancedConfigurationManager } from '../config/enhanced-config-manager';
 import { BatchProcessor } from '../batch/batch-processor';
+import { formatBatchReport } from '../batch/report-formatters';
 import { TemplateManager } from '../templates/template-manager';
 import { ConfigurationConverter, buildConfigFromCliOptions } from './config-mapping';
 import printeer from '../api';
@@ -650,9 +651,10 @@ async function runBatchProcess(batchFile: string, options: any): Promise<void> {
 
   const report = await batchProcessor.processBatchFile(batchFile, batchProcessor.options);
 
-  // Output report
+  // Output report in the requested format (json | csv | html). (BUG-036)
   if (options.reportFile) {
-    await fs.writeFile(options.reportFile, JSON.stringify(report, null, 2));
+    const format = (options.report || 'json') as 'json' | 'csv' | 'html';
+    await fs.writeFile(options.reportFile, formatBatchReport(report, format));
   }
 
   if (!options.quiet) {

@@ -73,6 +73,11 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-030 | medium | docs | Documented subpath imports / config field didn't exist | GREEN | [link](BUG-028-031-library-docs-api.md) |
 | BUG-031 | low | diagnostics | Doctor reported `bundled-chromium` placeholder, not real path | GREEN | [link](BUG-028-031-library-docs-api.md) |
 | BUG-032 | moderate | dependencies | `npm audit`: shipped `yaml` vuln patched; dev-only ones triaged | GREEN | [link](BUG-032-dependency-audit.md) |
+| BUG-033 | medium | batch | `--retry` was a no-op (parsed, never retried) | GREEN | [link](BUG-033-037-batch-features.md) |
+| BUG-034 | medium | batch | File-level `defaults` block parsed but never applied | GREEN | [link](BUG-033-037-batch-features.md) |
+| BUG-035 | medium | batch | File `variables` + `{{var}}` templating not applied | GREEN | [link](BUG-033-037-batch-features.md) |
+| BUG-036 | medium | batch | `--report csv/html` always wrote JSON (no formatters) | GREEN | [link](BUG-033-037-batch-features.md) |
+| BUG-037 | medium | batch | Shipped `examples/batch-jobs.yaml` would not run | GREEN | [link](BUG-033-037-batch-features.md) |
 
 ### Infrastructure phases
 

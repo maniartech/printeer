@@ -606,6 +606,7 @@ export * from '../utils';
 // Batch processor — a documented extension point (docs/05_library.md). Exported
 // by name from the main entry so consumers don't need a non-existent subpath. (BUG-030)
 export { BatchProcessor } from '../batch/batch-processor';
+export { formatBatchReport } from '../batch/report-formatters';
 
 // Doctor functionality
 export async function doctor(): Promise<unknown[]> {

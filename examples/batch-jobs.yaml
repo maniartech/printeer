@@ -1,3 +1,14 @@
+# Printeer batch file.
+#
+# - `defaults` are merged into every job (a job's own value wins; `config` is
+#   deep-merged). Only per-job fields are valid here (preset, config, timeout,
+#   retryCount, priority, variables).
+# - `variables` are available to every job for `{{name}}` substitution in url,
+#   output, and any string inside `config`. Per-job `variables` override these.
+# - Set the output directory with the CLI's `--output-dir`, or bake it into the
+#   `output` paths (as below via `{{outputPath}}`).
+# - Per-job retries also come from the CLI's `--retry`.
+
 metadata:
   name: "Comprehensive Website Conversion"
   version: "1.0"
@@ -6,9 +17,8 @@ metadata:
 
 defaults:
   preset: "web-article"
-  outputDirectory: "./batch-output"
   timeout: 30000
-  retryAttempts: 2
+  retryCount: 2
 
 variables:
   baseUrl: "https://example.com"

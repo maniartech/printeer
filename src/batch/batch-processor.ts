@@ -58,8 +58,12 @@ export class BatchProcessor extends EventEmitter {
         );
       }
 
+      // Apply the file-level `defaults` block and `variables` block to each job
+      // before processing. (BUG-034/035)
+      const jobs = this.applyBatchDefaultsAndVariables(batchData);
+
       // Process the batch
-      return await this.processBatch(batchData.jobs, options);
+      return await this.processBatch(jobs, options);
     } catch (error) {
       this.emit('error', error);
       throw error;
@@ -216,7 +220,8 @@ export class BatchProcessor extends EventEmitter {
         endTime: new Date(),
         duration: 0,
         error: error instanceof Error ? error.message : 'Unknown error',
-        retryCount: job.retryCount || 0
+        // Retries actually attempted before giving up. (BUG-033)
+        retryCount: job.retryCount ?? options.retryAttempts ?? 0
       };
 
       this.results.set(job.id, failureResult);
@@ -241,33 +246,46 @@ export class BatchProcessor extends EventEmitter {
   ): Promise<BatchResult> {
     const startTime = new Date();
 
-    try {
-      // Apply job configuration
-      const config = await this.resolveJobConfiguration(job);
+    // Apply job configuration
+    const config = await this.resolveJobConfiguration(job);
 
-      // Resolve output path with output directory if specified
-      const outputPath = this.resolveOutputPath(job.output, options.outputDirectory);
-      const jobWithResolvedOutput = { ...job, output: outputPath };
+    // Resolve output path with output directory if specified
+    const outputPath = this.resolveOutputPath(job.output, options.outputDirectory);
+    const jobWithResolvedOutput = { ...job, output: outputPath };
 
-      // Execute real conversion
-      await this.executeRealConversion(jobWithResolvedOutput, config);
+    // Retry a failed conversion up to `--retry` times (per-job override via
+    // job.retryCount). attempt 0 is the initial try; result.retryCount records
+    // how many *retries* were actually performed. (BUG-033)
+    const maxRetries = Math.max(0, job.retryCount ?? options.retryAttempts ?? 0);
+    let lastError: unknown;
 
-      const endTime = new Date();
-      const result: BatchResult = {
-        jobId: job.id,
-        status: 'completed',
-        startTime,
-        endTime,
-        duration: endTime.getTime() - startTime.getTime(),
-        outputFile: outputPath,
-        retryCount: job.retryCount || 0
-      };
-
-      return result;
-
-    } catch (error) {
-      throw new Error(`Job execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await this.executeRealConversion(jobWithResolvedOutput, config);
+        const endTime = new Date();
+        return {
+          jobId: job.id,
+          status: 'completed',
+          startTime,
+          endTime,
+          duration: endTime.getTime() - startTime.getTime(),
+          outputFile: outputPath,
+          retryCount: attempt
+        };
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxRetries) {
+          this.emit('job-retry', job, { attempt: attempt + 1, maxRetries });
+          // Small linear backoff, capped, so a transient failure can recover.
+          await new Promise(resolve => setTimeout(resolve, Math.min(2000, 100 * (attempt + 1))));
+        }
+      }
     }
+
+    const attempts = maxRetries + 1;
+    throw new Error(
+      `Job execution failed after ${attempts} attempt${attempts === 1 ? '' : 's'}: ${lastError instanceof Error ? lastError.message : 'Unknown error'}`
+    );
   }
 
   /**
@@ -404,6 +422,53 @@ export class BatchProcessor extends EventEmitter {
   }
 
   /**
+   * Apply the file-level `defaults` and `variables` blocks to every job.
+   *
+   * Precedence (highest wins): per-job value > `defaults` > nothing. For the
+   * variable pool used in `{{...}}` / `{...}` substitution the precedence is:
+   * per-job `variables` > `defaults.variables` > file-level `variables`.
+   * `config` is deep-merged; other fields are job-wins shallow. (BUG-034/035)
+   */
+  private applyBatchDefaultsAndVariables(batchData: BatchData): BatchJob[] {
+    const defaults = (batchData.defaults || {}) as Partial<BatchJob>;
+    const fileVariables = batchData.variables || {};
+
+    return (batchData.jobs || []).map(job => {
+      const merged: BatchJob = { ...defaults, ...job };
+      // Deep-merge config so a default header/footer and a per-job override coexist.
+      merged.config = this.deepMerge(defaults.config, job.config);
+      // Pool variables from all three levels for substitution.
+      merged.variables = {
+        ...fileVariables,
+        ...(defaults.variables || {}),
+        ...(job.variables || {})
+      };
+      // A job with no variables at all should stay undefined so expansion is skipped.
+      if (Object.keys(merged.variables).length === 0) {
+        delete merged.variables;
+      }
+      return merged;
+    });
+  }
+
+  /** Minimal deep merge for plain config objects (source overrides target). */
+  private deepMerge<T>(target: T | undefined, source: T | undefined): T | undefined {
+    if (target === undefined) return source;
+    if (source === undefined) return target;
+    if (
+      typeof target !== 'object' || target === null || Array.isArray(target) ||
+      typeof source !== 'object' || source === null || Array.isArray(source)
+    ) {
+      return source;
+    }
+    const out: Record<string, unknown> = { ...(target as Record<string, unknown>) };
+    for (const [key, value] of Object.entries(source as Record<string, unknown>)) {
+      out[key] = this.deepMerge(out[key], value);
+    }
+    return out as T;
+  }
+
+  /**
    * Parse CSV batch file
    */
   private parseCSVBatch(content: string): BatchData {
@@ -531,8 +596,11 @@ export class BatchProcessor extends EventEmitter {
         errors.push(`Job ${job.id} missing required field: output`);
       }
 
-      // Validate URL format
-      if (job.url) {
+      // Validate URL format — but skip strings that still contain a `{{var}}` /
+      // `{var}` template, since those are only resolved after variable
+      // substitution (a substituted-but-still-invalid URL is caught at convert
+      // time and recorded as a failed job). (BUG-035/037)
+      if (job.url && !/\{\{?\s*\w+\s*\}?\}/.test(job.url)) {
         try {
           new URL(job.url);
         } catch {
@@ -614,22 +682,47 @@ export class BatchProcessor extends EventEmitter {
   ): BatchJob {
     const substituted = { ...job };
 
-    // Substitute in URL
+    // Substitute in URL and output path...
     substituted.url = this.substituteString(job.url, variables);
-
-    // Substitute in output path
     substituted.output = this.substituteString(job.output, variables);
+
+    // ...and in any string within the job's config (e.g. a header/footer
+    // template that references {{companyName}}). (BUG-035)
+    if (job.config) {
+      substituted.config = this.substituteDeep(job.config, variables) as BatchJob['config'];
+    }
 
     return substituted;
   }
 
   /**
-   * Substitute variables in a string template
+   * Substitute variables in a string template. Supports both the documented
+   * double-brace `{{name}}` syntax (used by the shipped examples) and the
+   * single-brace `{name}` form, for back-compat. (BUG-035)
    */
   private substituteString(template: string, variables: Record<string, unknown>): string {
-    return template.replace(/\{(\w+)\}/g, (match, key) => {
-      return variables[key]?.toString() || match;
-    });
+    if (typeof template !== 'string') return template;
+    const sub = (key: string, match: string): string => {
+      const v = variables[key];
+      return v !== undefined && v !== null ? String(v) : match;
+    };
+    return template
+      .replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k) => sub(k, m))
+      .replace(/\{(\w+)\}/g, (m, k) => sub(k, m));
+  }
+
+  /** Recursively substitute variables in every string within a value. */
+  private substituteDeep(value: unknown, variables: Record<string, unknown>): unknown {
+    if (typeof value === 'string') return this.substituteString(value, variables);
+    if (Array.isArray(value)) return value.map(v => this.substituteDeep(v, variables));
+    if (value && typeof value === 'object') {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        out[k] = this.substituteDeep(v, variables);
+      }
+      return out;
+    }
+    return value;
   }
 
   /**
