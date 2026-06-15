@@ -60,7 +60,8 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-017 | medium | tests-quality | Config tests fail on CI (CI/Docker env signal not cleared) | GREEN | [link](BUG-017-config-tests-ci-env-leak.md) |
 | BUG-018 | low | tests-quality | Resource-optimizer test confounds load + pressure (machine-dependent) | GREEN | [link](BUG-018-resource-optimizer-test-confounded.md) |
 | BUG-019 | high | tests-quality | E2E helper stripped infra env flags → Chromium dead on CI Linux | GREEN | [link](BUG-019-e2e-strips-infra-env.md) |
-| BUG-020 | medium | tests-quality | Non-ASCII glyphs in tooling scripts break parse on Windows CI | GREEN | [link](BUG-020-non-ascii-script-parse.md) |
+| BUG-020 | medium | tests-quality | CRLF-on-checkout breaks shebang'd .mjs parse on Windows CI (.gitattributes) | GREEN | [link](BUG-020-non-ascii-script-parse.md) |
+| BUG-021 | high | resources | Pool browser path ignored PRINTEER_NO_SANDBOX → hang on CI Linux | GREEN | [link](BUG-021-pool-path-ignores-no-sandbox.md) |
 
 ### Infrastructure phases
 

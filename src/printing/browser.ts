@@ -942,8 +942,16 @@ export class DefaultBrowserFactory implements BrowserFactory {
       '--disable-ipc-flooding-protection'
     ];
 
-    // Always disable sandbox for root users or Docker environments
-    if (isRoot || isDocker) {
+    // Disable the sandbox for root users, Docker, or when explicitly requested
+    // via PRINTEER_NO_SANDBOX=1. The env flag is essential on CI Linux runners
+    // (e.g. GitHub Actions), where the job user is non-root and non-Docker yet
+    // the kernel user-namespace sandbox is unavailable, so headless Chrome can
+    // only launch with --no-sandbox. Without this the *pool* path (unlike the
+    // oneshot path, which already honored the flag) failed/hung on CI Linux,
+    // and PRINTEER_BUNDLED_ONLY=1 suppressed the no-sandbox fallback configs,
+    // so batch/pool conversions timed out. (BUG-021)
+    const wantNoSandbox = process.env.PRINTEER_NO_SANDBOX === '1';
+    if (isRoot || isDocker || wantNoSandbox) {
       args.push('--no-sandbox', '--disable-setuid-sandbox');
     }
 
