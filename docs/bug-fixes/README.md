@@ -80,7 +80,7 @@ the fix, the test(s) that guarantee it, and any **learnings** carried forward.
 | BUG-037 | medium | batch | Shipped `examples/batch-jobs.yaml` would not run | GREEN | [link](BUG-033-037-batch-features.md) |
 | BUG-038 | low | config/batch | `.printeerrc` library-scope doc clarity + `priority` ignored | GREEN | [link](BUG-038-config-scope-and-priority.md) |
 | BUG-039 | low | tests-quality | Eliminate all 117 `no-explicit-any`; make it a hard gate | GREEN | [link](BUG-039-eliminate-explicit-any.md) |
-| BUG-040 | low | dependencies | Dev-tooling refresh (vitest 3.2.6, esbuild override, ts-eslint 8) → `npm audit` 0, Node 18 kept | GREEN | [link](BUG-040-dev-tooling-refresh.md) |
+| BUG-040 | low | dependencies | Dev-tooling refresh (vitest 3.2.6 + vite 6, ts-eslint 8) → audit 11→6, criticals cleared, Node 18 kept | GREEN | [link](BUG-040-dev-tooling-refresh.md) |
 
 ### Infrastructure phases
 
